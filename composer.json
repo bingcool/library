@@ -29,7 +29,7 @@
     "kwn/php-rdkafka-stubs": "@dev",
     "swoole/ide-helper": "@dev"
   },
-  "autoload-dev": {
+  "autoload": {
     "psr-4": {
       "Common\\Library": "src/"
     }

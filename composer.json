@@ -1,0 +1,38 @@
+{
+  "name": "bingcool/library",
+  "description": "library is a common library attach to swoole extension, for everyone use it easily!",
+  "keywords": [
+    "workerfy",
+    "swoole",
+    "php",
+    "library"
+  ],
+  "license": "MIT",
+  "type": "project",
+  "authors": [
+    {
+      "name": "bingcool",
+      "email": "2437667702@qq.com",
+      "role": "library of swoole"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "php" : ">=7.1.0",
+    "ext-swoole" : ">=4.4.5",
+    "ext-redis": "*",
+    "ext-pdo": "*",
+    "ext-curl": "*",
+    "predis/predis": "2.0.x-dev"
+  },
+  "require-dev": {
+    "kwn/php-rdkafka-stubs": "@dev",
+    "swoole/ide-helper": "@dev"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Common\\Library": "./src"
+    }
+  }
+
+}

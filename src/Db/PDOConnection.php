@@ -14,6 +14,11 @@ namespace Common\Library\Db;
 use PDO;
 use PDOStatement;
 
+/**
+ * Class PDOConnection
+ * @package Common\Library\Db
+ */
+
 abstract class PDOConnection implements ConnectionInterface {
 
     const PARAM_FLOAT = 21;
@@ -301,7 +306,6 @@ abstract class PDOConnection implements ConnectionInterface {
         foreach ($bindParams as $key => $val) {
             // 占位符
             $param = is_numeric($key) ? $key + 1 : $key;
-
             if (is_array($val)) {
                 if (PDO::PARAM_INT == $val[1] && '' === $val[0]) {
                     $val[0] = 0;
@@ -425,7 +429,7 @@ abstract class PDOConnection implements ConnectionInterface {
     }
 
     /**
-     * 批量插入数据
+     * 批量插入数据(推荐使用)
      * @param string $table
      * @param array $dataSet
      * @return int
@@ -1050,7 +1054,7 @@ abstract class PDOConnection implements ConnectionInterface {
      */
     public function getNumRows(): int
     {
-        return $this->numRows;
+        return (int)$this->numRows;
     }
 
     /**

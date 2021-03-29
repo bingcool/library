@@ -11,6 +11,11 @@
 
 namespace Common\Library\HttpClient;
 
+/**
+ * Class BaseCurl
+ * @package Common\Library\HttpClient
+ */
+
 class BaseCurl
 {
     /**

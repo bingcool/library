@@ -11,6 +11,11 @@
 
 namespace Common\Library\Cache;
 
+/**
+ * Class RedisConnection
+ * @package Common\Library\Cache
+ */
+
 class RedisConnection {
 
     /**
@@ -27,6 +32,11 @@ class RedisConnection {
      * @var int
      */
     protected $spendLogNum = 20;
+
+    /**
+     * int
+     */
+    const MAX_SPEND_LOG_NUM = 50;
 
     /**
      * @param $method
@@ -54,17 +64,34 @@ class RedisConnection {
      */
     public function setLimitLogNum(int $spendLogNum) {
         //最大记录前50个操作即可，防止在循坏中大量创建
-        if($spendLogNum > 50) {
-            $spendLogNum = 50;
+        if($spendLogNum > static::MAX_SPEND_LOG_NUM) {
+            $spendLogNum = static::MAX_SPEND_LOG_NUM;
         }
         $this->spendLogNum = $spendLogNum;
+    }
+
+    /**
+     * @param float $time
+     */
+    protected function sleep(float $time = 0.5) {
+        if(class_exists('Swoole\Coroutine\System') && \Swoole\Coroutine::getCid() > 0)
+        {
+            \Swoole\Coroutine\System::sleep($time);
+        }else{
+            if($time < 1)
+            {
+                usleep($time * 1000000);
+            }else
+            {
+                sleep(floor($time));
+            }
+        }
     }
 
     /**
      * __destruct
      */
     public function __destruct() {
-        unset($this->redis);
         $this->lastLogs = [];
     }
 

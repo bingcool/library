@@ -10,9 +10,12 @@
  */
 
 namespace Common\Library\HttpClient;
+
 /**
  * Interface HttpClientInterface
+ * @package Common\Library\HttpClient
  */
+
 interface HttpClientInterface
 {
     /**

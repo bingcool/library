@@ -15,6 +15,11 @@ use RdKafka\Conf;
 use RdKafka\TopicConf;
 use RdKafka\KafkaConsumer;
 
+/**
+ * Class Consumer
+ * @package Common\Library\Kafka
+ */
+
 class Consumer {
     /**
      * @var KafkaConsumer

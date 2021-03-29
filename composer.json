@@ -23,6 +23,7 @@
     "ext-redis": "*",
     "ext-pdo": "*",
     "ext-curl": "*",
+    "ext-json": "*",
     "predis/predis": "2.0.x-dev"
   },
   "require-dev": {

@@ -11,11 +11,23 @@
 
 namespace Swoolefy\Library\Db;
 
+/**
+ * Class SqlBuilder
+ * @package Swoolefy\Library\Db
+ */
+
 class SqlBuilder
 {
     static $preparePrefix = ':SW_PREPARE';
     static $paramCount = 0;
 
+    /**
+     * @param $alias
+     * @param array $conditions
+     * @param $sql
+     * @param $params
+     * @param string $operator
+     */
     public static function buildMultiWhere($alias, array $conditions, &$sql, &$params, $operator = 'AND')
     {
         foreach ($conditions as $field => $value) {
@@ -23,6 +35,14 @@ class SqlBuilder
         }
     }
 
+    /**
+     * @param $alias
+     * @param $field
+     * @param $value
+     * @param $sql
+     * @param $params
+     * @param string $operator
+     */
     public static function buildWhere($alias, $field, $value, &$sql, &$params, $operator = 'AND')
     {
         $prepareField = static::getPrepareField($field);
@@ -45,6 +65,14 @@ class SqlBuilder
         }
     }
 
+    /**
+     * @param $alias
+     * @param $field
+     * @param $value
+     * @param $sql
+     * @param $params
+     * @param string $operator
+     */
     public static function buildIntWhere($alias, $field, $value, &$sql, &$params, $operator = 'AND')
     {
         $prepareField = static::getPrepareField($field);
@@ -73,6 +101,14 @@ class SqlBuilder
         $params["{$prepareField}"] = $value;
     }
 
+    /**
+     * @param $alias
+     * @param $field
+     * @param $value
+     * @param $sql
+     * @param $params
+     * @param string $operator
+     */
     public static function buildNotIntWhere($alias, $field, $value, &$sql, &$params, $operator = 'AND')
     {
         $prepareField = static::getPrepareField($field);
@@ -100,7 +136,14 @@ class SqlBuilder
         $params["{$prepareField}"] = $value;
     }
 
-
+    /**
+     * @param $alias
+     * @param $field
+     * @param $value
+     * @param $sql
+     * @param $params
+     * @param string $operator
+     */
     public static function buildStringWhere($alias, $field, $value, &$sql, &$params, $operator = 'AND')
     {
         $prepareField = static::getPrepareField($field);
@@ -127,7 +170,14 @@ class SqlBuilder
         $params["{$prepareField}"] = $value;
     }
 
-
+    /**
+     * @param $alias
+     * @param $field
+     * @param $startTime
+     * @param $endTime
+     * @param $sql
+     * @param $params
+     */
     public static function buildDateRange($alias, $field, $startTime, $endTime, &$sql, &$params)
     {
         if ($startTime) {
@@ -140,6 +190,14 @@ class SqlBuilder
         }
     }
 
+    /**
+     * @param $alias
+     * @param $field
+     * @param $min
+     * @param $sql
+     * @param $params
+     * @param bool $include
+     */
     public static function buildMinRange($alias, $field, $min, &$sql, &$params, bool $include = true)
     {
         if(is_null($min) || $min === '')
@@ -158,6 +216,14 @@ class SqlBuilder
         $params[":min_{$field}"] = $min;
     }
 
+    /**
+     * @param $alias
+     * @param $field
+     * @param $max
+     * @param $sql
+     * @param $params
+     * @param bool $include
+     */
     public static function buildMaxRange($alias, $field, $max, &$sql, &$params, bool $include = true)
     {
         if(is_null($max) || $max === '')
@@ -176,24 +242,50 @@ class SqlBuilder
         $params[":max_{$field}"] = $max;
     }
 
+    /**
+     * @param $alias
+     * @param $field
+     * @param $keyword
+     * @param $sql
+     * @param $params
+     * @param string $operator
+     */
     public static function buildLike($alias, $field, $keyword, &$sql, &$params, $operator = 'AND')
     {
         $sql .= " $operator {$alias}{$field} like {$keyword}";
     }
 
+    /**
+     * @param $alias
+     * @param $field
+     * @param $rank
+     * @param $sql
+     * @param $params
+     */
     public static function buildOrderBy($alias, $field, $rank, &$sql, &$params)
     {
         if(in_array(strtolower($rank),['asc', 'desc']))
         {
-            $sql .= " order by {$alias}{$field}";
+            $sql .= " order by {$alias}{$field} {$rank}";
         }
     }
 
+    /**
+     * @param $alias
+     * @param $field
+     * @param $sql
+     * @param $params
+     */
     public static function buildGroupBy($alias, $field, &$sql, &$params)
     {
         $sql .= " group by {$alias}{$field}";
     }
 
+    /**
+     * @param $values
+     * @param $params
+     * @return array
+     */
     private static function buildInWhere($values, &$params)
     {
         $prepareParams = [];
@@ -206,6 +298,10 @@ class SqlBuilder
         return $prepareParams;
     }
 
+    /**
+     * @param $field
+     * @return string
+     */
     private static function getPrepareField($field)
     {
         $key = static::$preparePrefix.'_'.$field.'_'.static::$paramCount;
@@ -213,11 +309,21 @@ class SqlBuilder
         return $key;
     }
 
+    /**
+     * @param $table
+     * @param $data
+     * @return array
+     */
     public static function buildInsert($table, $data)
     {
         return self::buildMultiInsert($table, [$data]);
     }
 
+    /**
+     * @param string $table
+     * @param array $dataSet
+     * @return array
+     */
     public static function buildMultiInsert(string $table, array $dataSet)
     {
         $fields = [];

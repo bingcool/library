@@ -125,9 +125,10 @@ class Redis extends RedisConnection {
     }
 
     /**
-     * @method \Redis $name
-     * @param $name
+     * @param $method
      * @param $arguments
+     * @return mixed
+     * @throws \Throwable
      */
     public function __call($method, $arguments) {
         try {
@@ -138,7 +139,7 @@ class Redis extends RedisConnection {
         }catch(\RedisException|\Exception $e) {
             $this->log($method, $arguments, $e->getMessage());
             $this->log($method, $arguments, 'start to reConnect');
-            \Swoole\Coroutine\System::sleep(0.5);
+            $this->sleep(0.5);
             $this->redis->close();
             $this->reConnect();
             $this->log($method, $arguments, "reConnect successful, start to try exec method={$method} again");
@@ -152,6 +153,25 @@ class Redis extends RedisConnection {
     }
 
     /**
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     */
+    public static function __callStatic($name, $arguments)
+    {
+        return \Redis::{$name}(...$arguments);
+    }
+
+    /**
+     * @param $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        return $this->redis->{$name};
+    }
+
+    /**
      * @return array
      */
     public function getConfig() {
@@ -159,12 +179,30 @@ class Redis extends RedisConnection {
     }
 
     /**
+     * @return \Redis
+     */
+    public function getRedisInstance()
+    {
+        return $this->redis;
+    }
+
+    /**
      * @return bool
      */
-    public function isConnect() {
+    public function isConnect()
+    {
         if($this->redis->ping() == '+PONG') {
             return true;
         }
         return false;
+    }
+
+    /**
+     * __destruct
+     */
+    public function __destruct()
+    {
+        parent::__destruct();
+        $this->redis->close();
     }
 }

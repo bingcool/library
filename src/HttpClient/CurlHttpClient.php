@@ -13,6 +13,11 @@ namespace Common\Library\HttpClient;
 
 use Common\Library\Exception\CurlException;
 
+/**
+ * Class CurlHttpClient
+ * @package Common\Library\HttpClient
+ */
+
 class CurlHttpClient implements HttpClientInterface
 {
     /**
@@ -192,13 +197,42 @@ class CurlHttpClient implements HttpClientInterface
     }
 
     /**
-     * @param $url
+     * @param string $url
      * @param array $params
      * @param int $timeOut
      * @return RawResponse
      * @throws Exception
      */
-    public function get($url, array $params = [], int $timeOut = 10)
+    public function get(string $url, array $params = [], int $timeOut = 10)
+    {
+        $url = $this->parseUrl($url, $params);
+        $this->options[CURLOPT_HTTPGET] = "GET";
+        return $this->send($url,'GET', '', $timeOut);
+    }
+
+    /**
+     * @param $url
+     * @param array $params
+     * @param int $timeOut
+     * @return RawResponse|bool
+     * @throws \Exception
+     */
+    public function post($url, array $params, int $timeOut = 10)
+    {
+        if(empty($params))
+        {
+            return  false;
+        }
+        $this->options[CURLOPT_POST] = 1;
+        return $this->send($url,'POST', $params, $timeOut);
+    }
+
+    /**
+     * @param string $url
+     * @param array $params
+     * @return string
+     */
+    public function parseUrl(string $url, array $params = [])
     {
         $uri = parse_url($url);
         if(is_array($params) && !empty($params))
@@ -239,26 +273,7 @@ class CurlHttpClient implements HttpClientInterface
 
         $url = $uri['scheme'].'://'.($user ??'').($pass ?? '').$uri['host'].($port ?? '').($uri['path'] ?? '/').($query ?? '').($fragment ?? '');
 
-        $this->options[CURLOPT_HTTPGET] = "GET";
-
-        return $this->send($url,'GET', '', $timeOut);
-    }
-
-    /**
-     * @param $url
-     * @param array $params
-     * @param int $timeOut
-     * @return RawResponse|bool
-     * @throws \Exception
-     */
-    public function post($url, array $params, int $timeOut = 10)
-    {
-        if(empty($params))
-        {
-            return  false;
-        }
-        $this->options[CURLOPT_POST] = 1;
-        return $this->send($url,'POST', $params, $timeOut);
+        return $url;
     }
 
     /**

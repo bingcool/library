@@ -13,6 +13,10 @@ namespace Common\Library\Db\Concern;
 
 use Common\Library\Db\PDOConnection;
 
+/**
+ * Trait ParseSql
+ * @package Common\Library\Db\Concern
+ */
 trait ParseSql {
 
     /**

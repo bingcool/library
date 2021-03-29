@@ -11,6 +11,11 @@
 
 namespace Common\Library\Db;
 
+/**
+ * Class Util
+ * @package Common\Library\Db
+ */
+
 class Util {
 
     /** 将Pg的整型数组类型字符串转为php数组

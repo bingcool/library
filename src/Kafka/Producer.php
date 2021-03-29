@@ -15,6 +15,11 @@ use RdKafka\Conf;
 use RdKafka\TopicConf;
 use RdKafka\ProducerTopic;
 
+/**
+ * Class Producer
+ * @package Common\Library\Kafka
+ */
+
 class Producer {
     /**
      * @var \RdKafka\Producer

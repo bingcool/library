@@ -13,6 +13,11 @@ namespace Common\Library\Db\Concern;
 
 use DateTime;
 
+/**
+ * Trait TimeStamp
+ * @package Common\Library\Db\Concern
+ */
+
 trait TimeStamp
 {
     /**

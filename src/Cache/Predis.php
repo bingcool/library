@@ -14,6 +14,8 @@ namespace Common\Library\Cache;
 use Predis\Client;
 
 /**
+ * Class Predis
+ * @package Common\Library\Cache
  * @see \Predis\Client
  * @mixin \Predis\Client
  * @codeCoverageIgnore
@@ -169,7 +171,6 @@ use Predis\Client;
 
 class Predis extends RedisConnection {
 	/**
-	 * $predis
 	 * @var \Predis\Client
 	 */
 	protected $redis;
@@ -232,7 +233,7 @@ class Predis extends RedisConnection {
     }
 
 	/**
-	 * __call 重载
+	 * __call overload
 	 * @param  string  $method
 	 * @param  array   $arguments
 	 * @return mixed
@@ -246,7 +247,7 @@ class Predis extends RedisConnection {
         }catch(\Exception $e) {
             $this->log($method, $arguments, $e->getMessage());
             $this->redis->disconnect();
-            \Swoole\Coroutine\System::sleep(0.5);
+            $this->sleep(0.5);
             $this->log($method, $arguments, 'start to try again');
             $this->redis = new \Predis\Client($this->parameters, $this->options);
             $result = $this->redis->{$method}(...$arguments);
@@ -270,6 +271,7 @@ class Predis extends RedisConnection {
 	 * __destruct
 	 */
 	public function __destruct() {
+        parent::__destruct();
         if(isset($this->parameters['persistent'])) {
             $persistent = filter_var($this->parameters['persistent'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             if(!$persistent) {

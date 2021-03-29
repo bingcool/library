@@ -11,6 +11,11 @@
 
 namespace Common\Library\Db\Concern;
 
+/**
+ * Trait Util
+ * @package Common\Library\Db\Concern
+ */
+
 trait Util {
     /**
      * 下划线转驼峰(首字母大写)

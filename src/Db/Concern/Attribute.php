@@ -11,6 +11,10 @@
 
 namespace Common\Library\Db\Concern;
 
+/**
+ * Trait Attribute
+ * @package Common\Library\Db\Concern
+ */
 trait Attribute
 {
     /**

@@ -13,6 +13,11 @@ namespace Common\Library\Db;
 
 use PDO;
 
+/**
+ * Class Pgsql
+ * @package Common\Library\Db
+ */
+
 class Pgsql extends PDOConnection {
 
     /**

@@ -12,7 +12,8 @@
 namespace Common\Library\Db\Concern;
 
 /**
- * 模型事件处理
+ * Trait ModelEvent
+ * @package Common\Library\Db\Concern
  */
 trait ModelEvent
 {
@@ -80,7 +81,6 @@ trait ModelEvent
                     $result = $this->{$eventFunction}();
                 }
             }
-
             return false === $result ? false : true;
         } catch (\Exception $e) {
             throw $e;

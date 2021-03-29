@@ -13,6 +13,11 @@ namespace Common\Library\Db;
 
 use PDO;
 
+/**
+ * Class Mysql
+ * @package Common\Library\Db
+ */
+
 class Mysql extends PDOConnection {
 
     /**

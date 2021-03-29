@@ -12,8 +12,10 @@
 namespace Common\Library\Db;
 
 /**
- * Connection interface
+ * Interface ConnectionInterface
+ * @package Common\Library\Db
  */
+
 interface ConnectionInterface
 {
     /**

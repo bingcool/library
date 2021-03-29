@@ -11,6 +11,11 @@
 
 namespace Common\Library\HttpClient;
 
+/**
+ * Class RawResponse
+ * @package Common\Library\HttpClient
+ */
+
 class RawResponse
 {
     /**

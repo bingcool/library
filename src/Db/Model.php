@@ -443,7 +443,6 @@ abstract class Model implements ArrayAccess
         if($diffData) {
             list($sql, $bindParams) = $this->parseUpdateSql($diffData, $allowFields);
             $this->numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
-            $this->_origin = $this->_data;
             $this->checkResult($this->_data);
             $this->trigger('AfterUpdate');
         }
@@ -535,6 +534,46 @@ abstract class Model implements ArrayAccess
     {
         $value = $this->getData($name);
         return $this->getValue($name, $value);
+    }
+
+    /**
+     * 获取存在记录的字段旧值
+     * @param $field
+     * @return string
+     */
+    public function getOldAttribute(string $field)
+    {
+        if(!$this->isNew())
+        {
+            return $this->_origin[$field] ?? '';
+        }
+        return null;
+    }
+
+    /**
+     * 获取当前对象设置字段最新值
+     * @param $field
+     * @return string
+     */
+    public function getNewAttribute(string $field)
+    {
+        return $this->_data[$field] ?? '';
+    }
+
+    /**
+     * 字段发生脏值变化,可以用于更新某些状态值时触发事件
+     * @param string $field
+     * @return bool
+     */
+    public function isDirty(string $field)
+    {
+        if(in_array($field, $this->getAllowFields())) {
+            if($this->getOldAttribute($field) == $this->getNewAttribute($field))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

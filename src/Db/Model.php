@@ -526,49 +526,50 @@ abstract class Model implements ArrayAccess
 
     /**
      * 获取器 获取数据对象的值
-     * @param  string $name 名称
+     * @param  string $fieldName
      * @return mixed
      * @throws Exception
      */
-    public function getAttribute(string $name)
+    public function getAttribute(string $fieldName)
     {
-        $value = $this->getData($name);
-        return $this->getValue($name, $value);
+        $value = $this->getData($fieldName);
+        return $this->getValue($fieldName, $value);
     }
 
     /**
-     * 获取存在记录的字段旧值
-     * @param $field
+     * 获取存在记录的字段旧值(原生数据库直接读取的值，还没经过format处理的值)
+     * @param string $fieldName
      * @return string
      */
-    public function getOldAttribute(string $field)
+    public function getOldAttributeValue(string $fieldName)
     {
         if(!$this->isNew())
         {
-            return $this->_origin[$field] ?? '';
+            return $this->_origin[$fieldName] ?? '';
         }
         return null;
     }
 
-    /**
-     * 获取当前对象设置字段最新值
-     * @param $field
+    /*
+     * 获取当前对象设置字段最新值(即将要存进数据库的值)
+     * @param string $fieldName
      * @return string
      */
-    public function getNewAttribute(string $field)
+    public function getNewAttributeValue(string $fieldName)
     {
-        return $this->_data[$field] ?? '';
+        return $this->_data[$fieldName] ?? '';
     }
 
     /**
      * 字段发生脏值变化,可以用于更新某些状态值时触发事件
-     * @param string $field
+     * @param string $fieldName
      * @return bool
      */
-    public function isDirty(string $field)
+    public function isDirty(string $fieldName)
     {
-        if(in_array($field, $this->getAllowFields())) {
-            if($this->getOldAttribute($field) == $this->getNewAttribute($field))
+        if(in_array($fieldName, $this->getAllowFields()))
+        {
+            if($this->getOldAttributeValue($fieldName) == $this->getNewAttributeValue($fieldName))
             {
                 return true;
             }

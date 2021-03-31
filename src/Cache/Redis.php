@@ -203,6 +203,8 @@ class Redis extends RedisConnection {
     public function __destruct()
     {
         parent::__destruct();
-        $this->redis->close();
+        if(!$this->isPersistent) {
+            $this->redis->close();
+        }
     }
 }

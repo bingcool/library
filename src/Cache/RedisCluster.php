@@ -157,6 +157,9 @@ class RedisCluster extends RedisConnection {
     public function __destruct()
     {
         parent::__destruct();
-        @$this->redisCluster->close();
+        if(!$this->persistent)
+        {
+            @$this->redisCluster->close();
+        }
     }
 }

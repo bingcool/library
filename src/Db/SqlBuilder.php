@@ -51,15 +51,15 @@ class SqlBuilder
                 if (count($value) > 0) {
                     if (count($value) > 1) {
                         $prepareParams= self::buildInWhere($value,$params);
-                        $sql .= " {$operator} {$alias}{$field} IN (".implode(',',$prepareParams).")";
+                        $sql .= " {$operator} {$alias}.{$field} IN (".implode(',',$prepareParams).")";
                         return;
                     } else {
-                        $sql .= " {$operator} {$alias}{$field}={$prepareField}";
+                        $sql .= " {$operator} {$alias}.{$field}={$prepareField}";
                         $params["{$prepareField}"] = current($value);
                     }
                 }
             } else {
-                $sql .= " {$operator} {$alias}{$field}={$prepareField}";
+                $sql .= " {$operator} {$alias}.{$field}={$prepareField}";
                 $params["{$prepareField}"] = $value;
             }
         }
@@ -88,7 +88,7 @@ class SqlBuilder
             if($count >1)
             {
                 $prepareParams= self::buildInWhere($value,$params);
-                $sql .= " {$operator} {$alias}{$field} IN (".implode(',',$prepareParams).")";
+                $sql .= " {$operator} {$alias}.{$field} IN (".implode(',',$prepareParams).")";
 
                 return;
             }
@@ -97,7 +97,7 @@ class SqlBuilder
         }
 
 
-        $sql .= " {$operator} {$alias}{$field}={$prepareField}";
+        $sql .= " {$operator} {$alias}.{$field}={$prepareField}";
         $params["{$prepareField}"] = $value;
     }
 
@@ -124,7 +124,7 @@ class SqlBuilder
             if($count >1)
             {
                 $prepareParams= self::buildInWhere($value,$params);
-                $sql .= " {$operator} {$alias}{$field} NOT IN (".implode(',',$prepareParams).")";
+                $sql .= " {$operator} {$alias}.{$field} NOT IN (".implode(',',$prepareParams).")";
 
                 return;
             }
@@ -132,7 +132,7 @@ class SqlBuilder
             $value = current($value);
         }
 
-        $sql .= " {$operator} {$alias}{$field} !={$prepareField}";
+        $sql .= " {$operator} {$alias}.{$field} !={$prepareField}";
         $params["{$prepareField}"] = $value;
     }
 
@@ -159,14 +159,14 @@ class SqlBuilder
             if($count >1)
             {
                 $prepareParams= self::buildInWhere($value,$params);
-                $sql .= " {$operator} {$alias}{$field} IN (".implode(',',$prepareParams).")";
+                $sql .= " {$operator} {$alias}.{$field} IN (".implode(',',$prepareParams).")";
                 return;
             }
 
             $value = current($value);
         }
 
-        $sql .= " {$operator} {$alias}{$field}={$prepareField}";
+        $sql .= " {$operator} {$alias}.{$field}={$prepareField}";
         $params["{$prepareField}"] = $value;
     }
 
@@ -181,11 +181,11 @@ class SqlBuilder
     public static function buildDateRange($alias, $field, $startTime, $endTime, &$sql, &$params)
     {
         if ($startTime) {
-            $sql .= " and {$alias}{$field} >= :begin_{$field}";
+            $sql .= " and {$alias}.{$field} >= :begin_{$field}";
             $params[":begin_{$field}"] = strlen($startTime) == 10 ? $startTime . ' 00:00:00' : $startTime;
         }
         if ($endTime) {
-            $sql .= " and {$alias}{$field} <= :end_{$field}";
+            $sql .= " and {$alias}.{$field} <= :end_{$field}";
             $params[":end_{$field}"] = strlen($endTime) == 10 ? $endTime . ' 23:59:59' : $endTime;
         }
     }
@@ -207,10 +207,10 @@ class SqlBuilder
 
         if($include)
         {
-            $sql .= " and {$alias}{$field} >= :min_{$field}";
+            $sql .= " and {$alias}.{$field} >= :min_{$field}";
         }else
         {
-            $sql .= " and {$alias}{$field} > :min_{$field}";
+            $sql .= " and {$alias}.{$field} > :min_{$field}";
         }
 
         $params[":min_{$field}"] = $min;
@@ -233,10 +233,10 @@ class SqlBuilder
 
         if($include)
         {
-            $sql .= " and {$alias}{$field} <= :max_{$field}";
+            $sql .= " and {$alias}.{$field} <= :max_{$field}";
         }else
         {
-            $sql .= " and {$alias}{$field} < :max_{$field}";
+            $sql .= " and {$alias}.{$field} < :max_{$field}";
         }
 
         $params[":max_{$field}"] = $max;
@@ -252,7 +252,7 @@ class SqlBuilder
      */
     public static function buildLike($alias, $field, $keyword, &$sql, &$params, $operator = 'AND')
     {
-        $sql .= " $operator {$alias}{$field} like {$keyword}";
+        $sql .= " $operator {$alias}.{$field} like {$keyword}";
     }
 
     /**
@@ -266,7 +266,7 @@ class SqlBuilder
     {
         if(in_array(strtolower($rank),['asc', 'desc']))
         {
-            $sql .= " order by {$alias}{$field} {$rank}";
+            $sql .= " order by {$alias}.{$field} {$rank}";
         }
     }
 
@@ -278,7 +278,7 @@ class SqlBuilder
      */
     public static function buildGroupBy($alias, $field, &$sql, &$params)
     {
-        $sql .= " group by {$alias}{$field}";
+        $sql .= " group by {$alias}.{$field}";
     }
 
     /**

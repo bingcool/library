@@ -77,7 +77,8 @@ class RedisConnection {
         if(class_exists('Swoole\Coroutine\System') && \Swoole\Coroutine::getCid() > 0)
         {
             \Swoole\Coroutine\System::sleep($time);
-        }else{
+        }else
+        {
             if($time < 1)
             {
                 usleep($time * 1000000);

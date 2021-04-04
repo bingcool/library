@@ -15,6 +15,12 @@ use MongoDB\Client;
 
 class MongodbModel {
     /**
+     * _id 将默认设置成id
+     * @var string
+     */
+    public $_id = null;
+
+    /**
      * $mongodbClient mongodb的客户端对象
      * @var null
      */
@@ -47,12 +53,6 @@ class MongodbModel {
     protected $collectionModels = [];
 
     /**
-     * _id 将默认设置成id
-     * @var string
-     */
-    public $_id = null;
-
-    /**
      * MongodbModel constructor.
      * @param string $uri
      * @param array $uriOptions
@@ -76,7 +76,6 @@ class MongodbModel {
         if(isset($this->database) && is_string($this->database)) {
             return $this->database;
         }
-
     }
 
     /**

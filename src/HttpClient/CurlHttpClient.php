@@ -201,7 +201,7 @@ class CurlHttpClient implements HttpClientInterface
      * @param array $params
      * @param int $timeOut
      * @return RawResponse
-     * @throws Exception
+     * @throws CurlException
      */
     public function get(string $url, array $params = [], int $timeOut = 10)
     {
@@ -215,7 +215,7 @@ class CurlHttpClient implements HttpClientInterface
      * @param array $params
      * @param int $timeOut
      * @return RawResponse|bool
-     * @throws \Exception
+     * @throws CurlException
      */
     public function post($url, array $params, int $timeOut = 10)
     {

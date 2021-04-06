@@ -8,24 +8,24 @@ package Protobuf; //包名，和php_namespace,php_metadata_namespace的最后空
 
 message PkgGetBookListReq{
 	//响应
-	int32 book_id = 1;
-	int32 user_id = 2;
+ 	int32 book_id = 1;
+ 	int32 user_id = 2;
 }
 
 message PkgGetBookListRsp{
 	//响应
-	int32 ret = 1;
-	string msg = 2;
-	GetBookListData data = 3;
+ 	int32 ret = 1;
+ 	string msg = 2;
+ 	GetBookListData data = 3;
 }
 
 message GetBookListData {       //Person  生成php文件的类名
-	string name=1;     //姓名
-	int32  age=2;      //年龄
-	bool   sex=3;      //性别
-	int32  phone=4;    //手机
-	repeated Addr addr = 5;
-	int32  user_id = 6;
+    string name=1;     //姓名
+    int32  age=2;      //年龄
+    bool   sex=3;      //性别
+    int32  phone=4;    //手机
+    repeated Addr addr = 5;
+    int32  user_id = 6;
 	map<string, Addr> map_addr = 7;
 }
 

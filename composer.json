@@ -28,11 +28,18 @@
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",
-    "swoole/ide-helper": "@dev"
+    "swoole/ide-helper": "@dev",
+    "google/protobuf": "^3.15.0",
+    "phpunit/phpunit": "^8.5.0"
   },
   "autoload": {
     "psr-4": {
       "Common\\Library\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Common\\Library\\Tests\\": "tests/"
     }
   }
 

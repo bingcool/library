@@ -16,3 +16,4 @@ $php_out = substr($current_dir, 0, strpos($current_dir, $last_name_space))."$las
 $proto_shell = "protoc -I={$current_dir} --php_out={$php_out} {$proto_name}";
 
 echo $proto_shell;
+//exec($proto_shell);

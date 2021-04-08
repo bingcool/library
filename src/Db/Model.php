@@ -12,6 +12,7 @@
 namespace Common\Library\Db;
 
 use ArrayAccess;
+use Common\Library\Exception\DbException;
 
 /**
  * Class Model
@@ -256,11 +257,11 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * @param $name
+     * @param string $name
      * @param $value
      * @return void
      */
-    public function setAttribute($name, $value): void
+    public function setAttribute(string $name, $value): void
     {
         if($this->isExists() && $name == $this->getPk()) {
             return;
@@ -468,7 +469,7 @@ abstract class Model implements ArrayAccess
     public function delete(bool $force = false): bool
     {
         if(!$this->isExists()) {
-            throw new \RuntimeException('Active object is not exist');
+            throw new DbException('Active object is not exist');
         }
 
         $this->setIsNew(false);
@@ -482,7 +483,7 @@ abstract class Model implements ArrayAccess
             $this->numRows = $this->getConnection()->createCommand($sql)->delete($bindParams);
         }else {
             if($this->processDelete() === false) {
-                throw new \RuntimeException('ProcessDelete Failed');
+                throw new DbException('ProcessDelete Failed');
             }
         }
         $this->exists(false);

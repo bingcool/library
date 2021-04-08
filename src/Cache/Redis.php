@@ -117,20 +117,20 @@ class Redis extends RedisConnection {
     }
 
     /**
-     * @param mixed $password
+     * @param string $password
      */
-    public function auth($password) {
+    public function auth(string $password) {
         $this->password = $password;
         $this->redis->auth($password);
     }
 
     /**
-     * @param $method
-     * @param $arguments
+     * @param string $method
+     * @param array $arguments
      * @return mixed
      * @throws \Throwable
      */
-    public function __call($method, $arguments) {
+    public function __call(string $method, array $arguments) {
         try {
             $this->log($method, $arguments,"start to exec method={$method}");
             $result = $this->redis->{$method}(...$arguments);
@@ -153,20 +153,20 @@ class Redis extends RedisConnection {
     }
 
     /**
-     * @param $name
-     * @param $arguments
+     * @param string $name
+     * @param array $arguments
      * @return mixed
      */
-    public static function __callStatic($name, $arguments)
+    public static function __callStatic(string $name, array $arguments)
     {
         return \Redis::{$name}(...$arguments);
     }
 
     /**
-     * @param $name
+     * @param string $name
      * @return mixed
      */
-    public function __get($name)
+    public function __get(string $name)
     {
         return $this->redis->{$name};
     }

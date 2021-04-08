@@ -87,8 +87,8 @@ class CurlHttpClient implements HttpClientInterface
      * @throws CurlException
      */
     public function send(
-        $url,
-        $method,
+        string $url,
+        string $method,
         $body = null,
         int $timeOut = 10
     ) {
@@ -119,7 +119,7 @@ class CurlHttpClient implements HttpClientInterface
      * @param array  $headers The request headers.
      * @param int    $timeOut The timeout in seconds for the request.
      */
-    public function openConnection($url, $method, $body, array $headers = [], $timeOut = 10)
+    public function openConnection(string $url, string $method, $body, array $headers = [], $timeOut = 10)
     {
         if($url)
         {
@@ -211,13 +211,13 @@ class CurlHttpClient implements HttpClientInterface
     }
 
     /**
-     * @param $url
+     * @param string $url
      * @param array $params
      * @param int $timeOut
      * @return RawResponse|bool
      * @throws CurlException
      */
-    public function post($url, array $params, int $timeOut = 10)
+    public function post(string $url, array $params, int $timeOut = 10)
     {
         if(empty($params))
         {

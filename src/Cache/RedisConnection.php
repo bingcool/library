@@ -39,11 +39,11 @@ class RedisConnection {
     const MAX_SPEND_LOG_NUM = 50;
 
     /**
-     * @param $method
-     * @param $arguments
-     * @param $errorMsg
+     * @param string $method
+     * @param mixed $arguments
+     * @param string $errorMsg
      */
-    protected function log($method, $arguments, $errorMsg = 'ok') {
+    protected function log(string $method, $arguments, string $errorMsg = 'ok') {
         if(count($this->lastLogs) > $this->spendLogNum) {
             $this->lastLogs = [];
         }

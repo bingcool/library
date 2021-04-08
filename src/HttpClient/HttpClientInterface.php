@@ -30,5 +30,5 @@ interface HttpClientInterface
      *
      * @throws \Common\Library\Exception\CurlException
      */
-    public function send($url, $method, $body, int $timeOut);
+    public function send(string $url, string $method, $body, int $timeOut);
 }

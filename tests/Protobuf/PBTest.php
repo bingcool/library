@@ -25,7 +25,7 @@ class StackTest extends  TestCase {
 
     }
 
-    public function testtestSerializer1()
+    public function testtestSerializer1(?int $cid=2)
     {
         $listData = new GetBookListData();
         $listData->setUserId(12345);
@@ -59,7 +59,7 @@ class StackTest extends  TestCase {
         Serializer::mergeFromArray($rsp1, $arr);
 
         //$rsp1 = Serializer::decodeMessage($rsp1, $arr);
-
+        var_dump($cid);
         var_dump($rsp1->getData()->getSex());
         foreach ($rsp1->getData()->getMapAddr() as $key => $addr)
         {

@@ -94,13 +94,13 @@ class RedisCluster extends RedisConnection {
     }
 
     /**
-     * @param $method
-     * @param $arguments
+     * @param string $method
+     * @param array $arguments
      * @return mixed
      * @throws \RedisClusterException
      * @throws \Throwable
      */
-    public function __call($method, $arguments)
+    public function __call(string $method, array $arguments)
     {
         try {
             $this->log($method, $arguments,"redisCluster start to exec method={$method}");
@@ -125,11 +125,11 @@ class RedisCluster extends RedisConnection {
     }
 
     /**
-     * @param $name
-     * @param $arguments
+     * @param string $name
+     * @param array $arguments
      * @return mixed
      */
-    public static function __callStatic($name, $arguments)
+    public static function __callStatic(string $name, array $arguments)
     {
         return \RedisCluster::{$name}(...$arguments);
     }
@@ -138,7 +138,7 @@ class RedisCluster extends RedisConnection {
      * @param $name
      * @return mixed
      */
-    public function __get($name)
+    public function __get(string $name)
     {
         return $this->redisCluster->{$name};
     }

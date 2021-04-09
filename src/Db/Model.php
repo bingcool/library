@@ -222,7 +222,8 @@ abstract class Model implements ArrayAccess
     /**
      * @return string
      */
-    public function getTableName() {
+    public function getTableName(): string
+    {
         return $this->table;
     }
 
@@ -269,14 +270,17 @@ abstract class Model implements ArrayAccess
 
         $method = 'set' . self::studly($name) . 'Attr';
 
-        if(method_exists($this, $method)) {
+        if(method_exists($this, $method))
+        {
             // 返回修改器处理过的数据
             $value = $this->$method($value);
             $this->_set[$name] = true;
-            if(is_null($value)) {
+            if(is_null($value))
+            {
                 return;
             }
-        }else if(isset($this->fieldTypeMap[$name])) {
+        }else if(isset($this->fieldTypeMap[$name]))
+        {
             //类型转换
             $value = $this->writeTransform($value, $this->fieldTypeMap[$name]);
         }
@@ -295,7 +299,8 @@ abstract class Model implements ArrayAccess
     public function save(): bool
     {
         $result = $this->isExists() ? $this->updateData() : $this->insertData();
-        if(false === $result) {
+        if(false === $result)
+        {
             return false;
         }
         // 重新记录原始数据
@@ -314,7 +319,8 @@ abstract class Model implements ArrayAccess
         // new flag
         $this->setIsNew(true);
 
-        if(false === $this->trigger('BeforeInsert')) {
+        if(false === $this->trigger('BeforeInsert'))
+        {
             return false;
         }
 
@@ -325,16 +331,19 @@ abstract class Model implements ArrayAccess
             $pk = $this->getPk();
             // 对于自定义的主键值，需要设置
             $pkValue = $this->createPkValue();
-            if($pkValue) {
+            if($pkValue)
+            {
                 $this->_data[$pk] = $pkValue;
-            }else {
+            }else
+            {
                 // 数据表设置自增pk的，则不需要设置允许字段
                 $allowFields = array_diff($allowFields, [$pk]);
             }
             list($sql, $bindParams) = $this->parseInsertSql($allowFields);
             $this->numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
             // 对于自增的pk,插入成功,需要赋值
-            if(!isset($this->_data[$pk])) {
+            if(!isset($this->_data[$pk]))
+            {
                 $this->_data[$pk] = $this->getConnection()->getLastInsID($pk);
             }
         }catch (\Exception $exception) {
@@ -366,7 +375,8 @@ abstract class Model implements ArrayAccess
      */
     protected function getAllowFields(): array
     {
-        if(empty($this->tableFields)) {
+        if(empty($this->tableFields))
+        {
             $schemaInfo = $this->getSchemaInfo();
             $fields = $schemaInfo['fields'];
             if(!empty($this->disuseFields)) {
@@ -393,7 +403,8 @@ abstract class Model implements ArrayAccess
      */
     protected function getSchemaInfo(): array
     {
-        if(empty($this->schemaInfo)) {
+        if(empty($this->schemaInfo))
+        {
             $table = $this->table ? $this->table . $this->suffix : $this->table;
             $schemaInfo = $this->getConnection()->getSchemaInfo($table);
             $this->schemaInfo = $schemaInfo;
@@ -410,7 +421,8 @@ abstract class Model implements ArrayAccess
     {
         list($sql, $bindParams) = $this->parseFindSqlByPk();
         $attributes = $this->getConnection()->createCommand($sql)->findOne($bindParams);
-        if($attributes) {
+        if($attributes)
+        {
             $this->parseOrigin($attributes);
             return $this;
         }else {
@@ -433,7 +445,8 @@ abstract class Model implements ArrayAccess
 
         $this->checkData();
         // 自动获取有更新的数据
-        if(!$attributes) {
+        if(!$attributes)
+        {
             $diffData = $this->getChangeData();
         }else {
             // 指定字段更新
@@ -441,7 +454,8 @@ abstract class Model implements ArrayAccess
         }
 
         $allowFields = $this->getAllowFields();
-        if($diffData) {
+        if($diffData)
+        {
             list($sql, $bindParams) = $this->parseUpdateSql($diffData, $allowFields);
             $this->numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
             $this->checkResult($this->_data);
@@ -474,15 +488,19 @@ abstract class Model implements ArrayAccess
 
         $this->setIsNew(false);
 
-        if(!$this->isExists || false === $this->trigger('BeforeDelete')) {
+        if(!$this->isExists || false === $this->trigger('BeforeDelete'))
+        {
             return false;
         }
 
-        if($force) {
+        if($force)
+        {
             list($sql, $bindParams) = $this->parseDeleteSql();
             $this->numRows = $this->getConnection()->createCommand($sql)->delete($bindParams);
-        }else {
-            if($this->processDelete() === false) {
+        }else
+        {
+            if($this->processDelete() === false)
+            {
                 throw new DbException('ProcessDelete Failed');
             }
         }
@@ -586,9 +604,11 @@ abstract class Model implements ArrayAccess
     protected function getValue(string $fieldName, $value)
     {
         $method = 'get' . self::studly($fieldName) . 'Attr';
-        if(method_exists($this, $method)) {
+        if(method_exists($this, $method))
+        {
             $value = $this->$method($value);
-        }else if(isset($this->fieldTypeMap[$fieldName])) {
+        }else if(isset($this->fieldTypeMap[$fieldName]))
+        {
             $value = $this->readTransform($value, $this->fieldTypeMap[$fieldName]);
         }
         return $value;
@@ -599,10 +619,13 @@ abstract class Model implements ArrayAccess
      * @return array|null
      */
     public function getAttributes() {
-        if(is_null($this->_attributes)) {
-            if($this->isExists() && $this->_origin) {
+        if(is_null($this->_attributes))
+        {
+            if($this->isExists() && $this->_origin)
+            {
                 foreach($this->_origin as $fieldName=>$value) {
-                    if(in_array($fieldName, $this->getAllowFields())) {
+                    if(in_array($fieldName, $this->getAllowFields()))
+                    {
                         $attributes[$fieldName] = $this->getValue($fieldName, $value);
                     }else {
                         unset($this->_origin[$fieldName]);

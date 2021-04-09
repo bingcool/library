@@ -119,7 +119,13 @@ class CurlHttpClient implements HttpClientInterface
      * @param array  $headers The request headers.
      * @param int    $timeOut The timeout in seconds for the request.
      */
-    public function openConnection(string $url, string $method, $body, array $headers = [], $timeOut = 10)
+    public function openConnection(
+        string $url,
+        string $method,
+        $body,
+        array $headers = [],
+        $timeOut = 10
+    )
     {
         if($url)
         {

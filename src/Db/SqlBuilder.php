@@ -96,7 +96,6 @@ class SqlBuilder
             $value = current($value);
         }
 
-
         $sql .= " {$operator} {$alias}.{$field}={$prepareField}";
         $params["{$prepareField}"] = $value;
     }
@@ -191,6 +190,7 @@ class SqlBuilder
     }
 
     /**
+     * 大于等于某个值
      * @param string $alias
      * @param string $field
      * @param $min
@@ -217,6 +217,7 @@ class SqlBuilder
     }
 
     /**
+     * 小于等于某个值
      * @param string $alias
      * @param string $field
      * @param $max

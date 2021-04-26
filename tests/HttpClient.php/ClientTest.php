@@ -15,7 +15,7 @@ class ClientTest extends  TestCase
         ]);
         $result = $curl->get('https://www.baidu.com');
 
-        var_dump($result->getHeaders());
+        var_dump($result->getRequestTotalTime());
 
     }
 }

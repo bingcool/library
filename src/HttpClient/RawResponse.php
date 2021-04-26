@@ -114,6 +114,14 @@ class RawResponse
     }
 
     /**
+     * @return mixed|string
+     */
+    public function getRequestTotalTime()
+    {
+        return $this->info['total_time'] ?? '';
+    }
+
+    /**
      * @param string $opt as:
      * "url"
      * "content_type"

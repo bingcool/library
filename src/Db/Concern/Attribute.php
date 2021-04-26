@@ -168,14 +168,7 @@ trait Attribute
      * @return array
      */
     protected function parseDiffData() {
-        $diffData = array_udiff_assoc($this->_data, $this->_origin, function ($a, $b) {
-            if ((empty($a) || empty($b)) && $a !== $b) {
-                return 1;
-            }
-
-            return is_object($a) || $a != $b ? 1 : 0;
-        });
-
+        $diffData = static::dirtyArray($this->_data, $this->_origin);
         // 只读字段不允许更新
         foreach ($this->readOnly as $key => $field) {
             if (isset($diffData[$field])) {

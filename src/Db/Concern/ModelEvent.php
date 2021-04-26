@@ -90,7 +90,7 @@ trait ModelEvent
     /**
      * @param string $event
      * @param \Closure $func
-     * @throws Exception
+     * @throws DbException
      */
     public function setEventHandle(string $event, \Closure $func)
     {
@@ -102,7 +102,7 @@ trait ModelEvent
             static::BEFORE_DELETE,
             static::AFTER_DELETE
         ])) {
-            throw new \Exception("AddEventHandle first argument of eventName type error");
+            throw new \Common\Library\Exception\DbException("AddEventHandle first argument of eventName type error");
         }
 
         $this->customEventHandlers[$event] = $func;

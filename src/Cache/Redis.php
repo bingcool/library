@@ -113,7 +113,10 @@ class Redis extends RedisConnection {
         }else {
             $this->connect(...$config);
         }
-        $this->auth($this->password);
+        if($this->password) {
+            $this->auth($this->password);
+        }
+
     }
 
     /**

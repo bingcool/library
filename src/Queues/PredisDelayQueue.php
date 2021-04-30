@@ -9,9 +9,10 @@
 +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Queue;
+namespace Common\Library\Queues;
 
 use Common\Library\Cache\Predis;
+use Common\Library\Cache\RedisConnection;
 
 class PredisDelayQueue extends BaseDelayQueue
 {
@@ -29,6 +30,14 @@ class PredisDelayQueue extends BaseDelayQueue
     public function __construct(Predis $redis, string $delayKey, ?string $option = null)
     {
         parent::__construct($redis, $delayKey, $option);
+    }
+
+    /**
+     * @return RedisConnection|\Predis\Client
+     */
+    public function getRedis()
+    {
+        return $this->redis;
     }
 
     /**
@@ -67,19 +76,37 @@ class PredisDelayQueue extends BaseDelayQueue
 
         $withScores = (int)($options['withscores'] ?? 0);
 
-        $luaScript = $this->getRangeByScoreLuaScript();
+        $luaScript = LuaScripts::getRangeByScoreLuaScript();
 
         if ($withScores > 0 && isset($offset) && isset($limit)) {
-            $result = $this->redis->eval($luaScript, 1,$this->delayKey, ...[$start, $end, $offset, $limit, $withScores]);
+            $result = $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end, $offset, $limit, $withScores]);
             return $this->mapResult($result);
         } else if (isset($offset) && isset($limit)) {
-            return $this->redis->eval($luaScript, 1,$this->delayKey, ...[$start, $end, $offset, $limit]);
+            return $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end, $offset, $limit]);
         } else if ($withScores > 0) {
-            $result = $this->redis->eval($luaScript, 1,$this->delayKey, ...[$start, $end, '', '', $withScores]);
+            $result = $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end, '', '', $withScores]);
             return $this->mapResult($result);
         } else {
-            return $this->redis->eval($luaScript, 1,$this->delayKey, ...[$start, $end]);
+            return $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end]);
         }
+    }
+
+    /**
+     * 重试
+     * @param $member
+     * @param int $delayTime
+     * @return mixed
+     */
+    public function retry($member, int $delayTime)
+    {
+        $retryTimes = $this->redis->hGet($this->retryMessageKey, $member);
+        if($retryTimes >= $this->retryTimes)
+        {
+            $this->redis->hDel($this->retryMessageKey, $member);
+            return;
+        }
+
+        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(),2, ...[$this->retryMessageKey, $this->delayKey, $member, time() + $delayTime]);
     }
 
 }

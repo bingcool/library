@@ -9,7 +9,7 @@
 +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Queue\Interfaces;
+namespace Common\Library\Queues\Interfaces;
 
 Abstract class AbstractDelayQueueInterface
 {

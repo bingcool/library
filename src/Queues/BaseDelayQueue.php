@@ -9,11 +9,11 @@
 +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Queue;
+namespace Common\Library\Queues;
 
 use Common\Library\Cache\RedisConnection;
 use Common\Library\Exception\QueueException;
-use \Common\Library\Queue\Interfaces\AbstractDelayQueueInterface;
+use \Common\Library\Queues\Interfaces\AbstractDelayQueueInterface;
 
 class BaseDelayQueue extends AbstractDelayQueueInterface
 {
@@ -26,6 +26,18 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      * @var string
      */
     protected $delayKey;
+
+    /**
+     * 记录重试信息
+     * @var string
+     */
+    protected $retryMessageKey;
+
+    /**
+     * 重试次数
+     * @var int
+     */
+    protected $retryTimes = 3;
 
     /**
      * @var array
@@ -52,11 +64,11 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     {
         $this->redis = $redis;
         $this->delayKey = $delayKey;
+        $this->retryMessageKey = $delayKey.':retry_delq_msg';
         if($option && !in_array(strtoupper($option), static::OPTIONS))
         {
             throw new QueueException('Redis Sort Score Number Option Error');
         }
-
         $this->option = $option;
     }
 
@@ -66,6 +78,19 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     public function setOption($option)
     {
         $this->option = $option;
+    }
+
+    /**
+     * 重试次数
+     * @param int $retryTimes
+     */
+    public function setRetryTimes(int $retryTimes)
+    {
+        if($retryTimes <= 0)
+        {
+            return;
+        }
+        $this->retryTimes = $retryTimes;
     }
 
     /**
@@ -207,6 +232,23 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     }
 
     /**
+     * @return string
+     */
+    public function getRetryMessageKey()
+    {
+        return $this->retryMessageKey;
+    }
+
+    /**
+     * 获取目前队列重试的成员数量
+     * @return int
+     */
+    public function getRetryNumbers()
+    {
+        return $this->redis->hLen($this->getRetryMessageKey());
+    }
+
+    /**
      * @param $start
      * @param $end
      * @param array $options
@@ -217,37 +259,21 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     }
 
     /**
-     * @return string
+     * 重试
+     * @param $member
+     * @param int $delayTime
+     * @return mixed
      */
-    public static function getRangeByScoreLuaScript()
+    public function retry($member, int $delayTime)
     {
-        $lua = <<<LUA
-local delayKey = KEYS[1];
-local startScore = ARGV[1];
-local endScore = ARGV[2];
-local offset =  ARGV[3];
-local limit = ARGV[4];
-local withScores = ARGV[5];
+        $retryTimes = $this->redis->hGet($this->retryMessageKey, $member);
+        if($retryTimes >= $this->retryTimes)
+        {
+            $this->redis->hDel($this->retryMessageKey, $member);
+            return;
+        }
 
-local ret = {};
-
-if ( (type(tonumber(limit)) == 'number' ) and ( tonumber(withScores) == 1 ) ) then
-    ret = redis.call('zRangeByScore', delayKey, startScore, endScore,'withscores','limit', offset, limit);
-elseif type(tonumber(limit)) == 'number' then
-    ret = redis.call('zRangeByScore', delayKey, startScore, endScore, 'limit', offset, limit);
-elseif ( tonumber(withScores) == 1 ) then
-    ret = redis.call('zRangeByScore', delayKey, startScore, endScore, 'withscores');
-else
-    ret = redis.call('zRangeByScore', delayKey, startScore, endScore);
-end;
-
--- delete data
-    redis.call('zRemRangeByScore', delayKey, startScore, endScore);
-    
-    return ret;
-    
-LUA;
-        return $lua;
+        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), [$this->retryMessageKey, $this->delayKey, $member, (time() + $delayTime)], 2);
     }
 
     /**

@@ -7,7 +7,7 @@ $redis = new \Common\Library\Cache\Redis();
 $redis->connect('127.0.0.1');
 
 
-$queue = new \Common\Library\Queue\RedisDelayQueue(
+$queue = new \Common\Library\Queues\RedisDelayQueue(
     $redis,
     'ali_delay_key'
 );

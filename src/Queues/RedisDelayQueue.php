@@ -9,7 +9,7 @@
 +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Queue;
+namespace Common\Library\Queues;
 
 use Common\Library\Cache\Redis;
 use Common\Library\Cache\Predis;
@@ -51,7 +51,7 @@ class RedisDelayQueue extends BaseDelayQueue
 
         $withScores = (int)($options['withscores'] ?? 0);
 
-        $luaScript = $this->getRangeByScoreLuaScript();
+        $luaScript = LuaScripts::getRangeByScoreLuaScript();
 
         if ($withScores > 0 && isset($offset) && isset($limit)) {
             $result = $this->redis->eval($luaScript, [$this->delayKey, $start, $end, $offset, $limit, $withScores], 1);
@@ -62,7 +62,7 @@ class RedisDelayQueue extends BaseDelayQueue
             $result = $this->redis->eval($luaScript, [$this->delayKey, $start, $end, '', '', $withScores], 1);
             return $this->mapResult($result);
         } else {
-            return $this->redis->eval($this->getLuaScript(), [$this->delayKey, $start, $end], 1);
+            return $this->redis->eval($luaScript, [$this->delayKey, $start, $end], 1);
         }
     }
 }

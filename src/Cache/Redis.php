@@ -52,6 +52,7 @@ class Redis extends RedisConnection {
         if(!extension_loaded('redis')) {
             throw new \Exception("Missing extension redis, please install it");
         }
+        unset($this->redis);
         $this->redis = new \Redis();
     }
 
@@ -108,6 +109,7 @@ class Redis extends RedisConnection {
      */
     protected function reConnect() {
         $config = $this->config;
+        $this->buildRedis();
         if($this->isPersistent) {
             $this->pconnect(...$config);
         }else {
@@ -116,7 +118,6 @@ class Redis extends RedisConnection {
         if($this->password) {
             $this->auth($this->password);
         }
-
     }
 
     /**

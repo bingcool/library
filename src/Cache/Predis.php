@@ -268,6 +268,14 @@ class Predis extends RedisConnection {
     }
 
     /**
+     * @return Client
+     */
+    public function getPredisInstance()
+    {
+        return $this->redis;
+    }
+
+    /**
 	 * __destruct
 	 */
 	public function __destruct() {

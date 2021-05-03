@@ -11,6 +11,7 @@
 
 namespace Common\Library\Db;
 
+use Common\Library\Exception\DbException;
 use PDO;
 use PDOStatement;
 
@@ -319,7 +320,7 @@ abstract class PDOConnection implements ConnectionInterface {
             }
 
             if(!$result) {
-                throw new \Exception("Error occurred  when binding parameters '{$param}',lastSql=".$this->getRealSql($this->queryStr, $bindParams));
+                throw new DbException("Error occurred  when binding parameters '{$param}',lastSql=".$this->getRealSql($this->queryStr, $bindParams));
             }
         }
     }

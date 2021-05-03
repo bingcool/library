@@ -42,6 +42,7 @@ Abstract class AbstractPubSub
 
     /**
      * isCoroutine
+     * @return bool
      */
     protected function isCoroutine()
     {
@@ -49,6 +50,8 @@ Abstract class AbstractPubSub
         {
             $this->isCoroutine = true;
         }
+
+        return $this->isCoroutine;
     }
 
     abstract public function publish(string $channel, string $message);

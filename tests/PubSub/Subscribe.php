@@ -16,8 +16,6 @@ if(isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 1) {
     $redis = new \Common\Library\Cache\Redis();
     $redis->connect('127.0.0.1');
     $pubSub = new \Common\Library\PubSub\RedisPubSub($redis);
-
-
 //    $redis = new \Redis();
 //    $redis->pconnect(
 //        '127.0.0.1',

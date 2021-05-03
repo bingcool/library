@@ -31,7 +31,7 @@ class PredisPubSub extends AbstractPubSub
      */
     public function __construct($redis)
     {
-       parent::__construct($redis);
+        parent::__construct($redis);
     }
 
     /**
@@ -50,7 +50,7 @@ class PredisPubSub extends AbstractPubSub
      */
     public function subscribe(array $channels, $callback)
     {
-       return $this->handleSubscribe($channels, $callback, false);
+        return $this->handleSubscribe($channels, $callback, false);
     }
 
     /**
@@ -70,36 +70,7 @@ class PredisPubSub extends AbstractPubSub
      */
     protected function handleSubscribe(array $channels, $callback, bool $isPattern = false)
     {
-        if($this->isCoroutine)
-        {
-            \Swoole\Coroutine::create(function () use($channels, $callback, $isPattern)
-            {
-                try
-                {
-                    return $this->handleMessage($this->getPubSubConsumer(), $channels, $callback, $isPattern);
-                }catch (\Exception $e)
-                {
-                    if(class_exists("Workerfy\\AbstractProcess"))
-                    {
-                        \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
-                    }
-                }
-            });
-
-        }else {
-            return $this->handleMessage($this->getPubSubConsumer(), $channels, $callback, $isPattern);
-        }
-    }
-
-    /**
-     * @param PubSubConsumer $pubSubConsumer
-     * @param array $channels
-     * @param callable $callback
-     * @param bool $isPattern
-     * @return mixed
-     */
-    protected function handleMessage(PubSubConsumer $pubSubConsumer, array $channels, $callback, bool $isPattern = false)
-    {
+        $pubSubConsumer = $this->getPubSubConsumer();
         if($isPattern)
         {
             $pubSubConsumer->psubscribe(...$channels);
@@ -117,34 +88,73 @@ class PredisPubSub extends AbstractPubSub
             $msg = $message->payload;
             if($kind == 'message')
             {
-                return call_user_func($callback, $this->redis, $channel, $msg, $pubSubConsumer);
+                if($this->isCoroutine)
+                {
+                    $exception = '';
+                    \Swoole\Coroutine::create(function () use($callback, $channel, $msg, & $exception)
+                    {
+                        try
+                        {
+                            return call_user_func($callback, $this->redis, $channel, $msg);
+                        }catch (\Throwable $throwable)
+                        {
+                            if(class_exists("Workerfy\\AbstractProcess"))
+                            {
+                                \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
+                            }else
+                            {
+                                $exception = $throwable;
+                            }
+                        }
+                    });
+
+                    if($exception instanceof \Throwable)
+                    {
+                        throw $exception;
+                    }
+                }else
+                {
+                    return call_user_func($callback, $this->redis, $channel, $msg);
+                }
+
             }else if($kind == 'pmessage')
             {
                 $pattern = $message->pattern ?? '';
-                return call_user_func($callback, $this->redis, $pattern, $channel, $msg, $pubSubConsumer);
+
+                if($this->isCoroutine)
+                {
+                    \Swoole\Coroutine::create(function () use($callback, $pattern, $channel, $msg)
+                    {
+                        try
+                        {
+                            return call_user_func($callback, $this->redis, $pattern, $channel, $msg);
+                        }catch (\Exception $e)
+                        {
+                            if(class_exists("Workerfy\\AbstractProcess"))
+                            {
+                                \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
+                            }
+                        }
+                    });
+                }else
+                {
+                    return call_user_func($callback, $this->redis, $pattern, $channel, $msg);
+                }
             }
         }
     }
-
 
     /**
      * @return PubSubConsumer|null
      */
     protected function getPubSubConsumer()
     {
-        if($this->isCoroutine)
+        if(!$this->pubSubConsumer)
         {
-            $pubSubConsumer = $this->redis->pubSubLoop();
-            return $pubSubConsumer;
-        }else
-        {
-            if(!$this->pubSubConsumer)
-            {
-                $this->pubSubConsumer = $this->redis->pubSubLoop();
-            }
-
-            return $this->pubSubConsumer;
+            $this->pubSubConsumer = $this->redis->pubSubLoop();
         }
+
+        return $this->pubSubConsumer;
     }
 
     /**

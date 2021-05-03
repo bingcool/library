@@ -56,21 +56,31 @@ class RedisPubSub extends AbstractPubSub
     {
         if($this->isCoroutine)
         {
-            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use($callback)
+            $exception = '';
+            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use($callback, & $exception)
             {
-                \Swoole\Coroutine::create(function () use($callback, $redis, $chan, $msg)
+                \Swoole\Coroutine::create(function () use($callback, $redis, $chan, $msg, & $exception)
                 {
                     try
                     {
                         return call_user_func($callback, $redis, $chan, $msg);
-                    }catch (\Exception $e)
+                    }catch (\Throwable $throwable)
                     {
                         if(class_exists("Workerfy\\AbstractProcess"))
                         {
-                            \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
+                            \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($throwable);
+                        }else
+                        {
+                            $exception = $throwable;
                         }
                     }
                 });
+
+                if($exception instanceof \Throwable)
+                {
+                    throw $exception;
+                }
+
             });
 
         }else {

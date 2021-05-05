@@ -36,7 +36,7 @@ class Producer extends AbstractKafka {
      * @var array
      */
     protected $defaultConfig = [
-        'enable.idempotence' => true,
+        'enable.idempotence' => 0,
         'message.send.max.retries' => 10
     ];
 

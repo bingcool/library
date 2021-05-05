@@ -14,9 +14,9 @@ $producer = new \Common\Library\Kafka\Producer($metaBrokerList, $topicName);
 //$producer->setConf($conf);
 
 // 可以重新设置注入topicConf
-//$topicConf = new \RdKafka\TopicConf();
-//$topicConf->set('request.required.acks', 1);
-//$producer->setTopicConf($topicConf);
+$topicConf = new \RdKafka\TopicConf();
+$topicConf->set('request.required.acks', 1);
+$producer->setTopicConf($topicConf);
 
 while (1)
 {

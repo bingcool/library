@@ -20,21 +20,11 @@ use RdKafka\ProducerTopic;
  * @package Common\Library\Kafka
  */
 
-class Producer {
+class Producer extends AbstractKafka {
     /**
      * @var \RdKafka\Producer
      */
     protected $rdKafkaProducer;
-
-    /**
-     * @var string
-     */
-    protected $metaBrokerList = '127.0.0.1:9092';
-
-    /**
-     * @var Conf
-     */
-    protected $conf;
 
     /**
      * @var ProducerTopic
@@ -42,14 +32,19 @@ class Producer {
     protected $producerTopic;
 
     /**
-     * @var TopicConf
+     * global config
+     * @var array
      */
-    protected $topicConf;
+    protected $defaultConfig = [
+        'enable.idempotence' => true,
+        'message.send.max.retries' => 10
+    ];
 
     /**
-     * @var string
+     * topic config
+     * @var array
      */
-    protected $topicName;
+    protected $defaultTopicConfig = [];
 
     /**
      * Producer constructor.
@@ -60,37 +55,8 @@ class Producer {
     {
         $this->conf = new \RdKafka\Conf();
         $this->setBrokerList($metaBrokerList);
+        $this->setConfig();
         $this->topicName = $topicName;
-    }
-
-    /**
-     * @param $metaBrokerList
-     */
-    public function setBrokerList($metaBrokerList)
-    {
-        if(is_array($metaBrokerList)) {
-            $metaBrokerList = implode(',', $metaBrokerList);
-        }
-        if(!empty($metaBrokerList)) {
-            $this->metaBrokerList = $metaBrokerList;
-            $this->conf->set('metadata.broker.list', $metaBrokerList);
-        }
-    }
-
-    /**
-     * @param string $topicName
-     */
-    public function setTopicName(string $topicName)
-    {
-        $this->topicName = $topicName;
-    }
-
-    /**
-     * @return string
-     */
-    public function getTopicName()
-    {
-        return $this->topicName;
     }
 
     /**
@@ -99,14 +65,6 @@ class Producer {
     public function setConf(Conf $conf)
     {
         $this->conf = $conf;
-    }
-
-    /**
-     * @return Conf
-     */
-    public function getConf()
-    {
-        return $this->conf;
     }
 
     /**
@@ -125,6 +83,7 @@ class Producer {
         if(!$this->topicConf) {
             $this->topicConf = new TopicConf();
         }
+        $this->setTopicConfig();
         return $this->topicConf;
     }
 
@@ -145,7 +104,7 @@ class Producer {
     public function getProducerTopic()
     {
         if(!$this->producerTopic) {
-            $this->producerTopic = $this->getRdKafkaProducer()->newTopic($this->topicName, $this->topicConf ?? null);
+            $this->producerTopic = $this->getRdKafkaProducer()->newTopic($this->topicName, $this->getTopicConf() ?? null);
         }
 
         return $this->producerTopic;
@@ -154,6 +113,8 @@ class Producer {
     /**
      * @param string $payload
      * @param int $timeoutMs
+     *
+     * 同一个key的信息将会配分配到相同的分区，所有比如对于以下orderId顺序处理事件，传入orderId即可
      * @param string|null $key
      * @param int $partition
      * @param int $msgFlag
@@ -168,12 +129,13 @@ class Producer {
         $msgFlag = 0
     ) {
         if(!$this->topicName) {
-            throw new \Exception('Kafka Producer Missing topicName');
+            throw new \RdKafka\Exception('Kafka Producer Missing topicName');
         }
         $this->getRdKafkaProducer();
         $this->rdKafkaProducer->addBrokers($this->metaBrokerList);
         $this->producerTopic = $this->getProducerTopic();
         $this->producerTopic->produce($partition, $msgFlag, $payload, $key);
+        $this->rdKafkaProducer->poll(0);
         $this->rdKafkaProducer->flush($timeoutMs);
     }
 
@@ -195,12 +157,13 @@ class Producer {
         $msgFlag = 0
     ) {
         if(!$this->topicName) {
-            throw new \Exception('Kafka Producer Missing topicName');
+            throw new \RdKafka\Exception('Kafka Producer Missing topicName');
         }
         $this->getRdKafkaProducer();
         $this->rdKafkaProducer->addBrokers($this->metaBrokerList);
         $this->producerTopic = $this->getProducerTopic();
         $this->producerTopic->producev($partition, $msgFlag, $payload, $key ?? null, $headers ?? null, $timeoutMs ?? null);
+        $this->rdKafkaProducer->poll(0);
         $this->rdKafkaProducer->flush($timeoutMs);
     }
 

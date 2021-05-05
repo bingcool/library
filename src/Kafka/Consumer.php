@@ -20,31 +20,11 @@ use RdKafka\KafkaConsumer;
  * @package Common\Library\Kafka
  */
 
-class Consumer {
+class Consumer extends AbstractKafka {
     /**
      * @var KafkaConsumer
      */
     protected $rdKafkaConsumer;
-
-    /**
-     * @var string
-     */
-    protected $metaBrokerList = '127.0.0.9092';
-
-    /**
-     * @var string
-     */
-    protected $topicName;
-
-    /**
-     * @var Conf
-     */
-    protected $conf;
-
-    /**
-     * @var TopicConf;
-     */
-    protected $topicConf;
 
     /**
      * @var string
@@ -57,12 +37,15 @@ class Consumer {
     protected $rebalanceCbCallbacks = [];
 
     /**
+     * global config
      * @var array
      */
-    protected $defaultConf = [
+    protected $defaultConfig = [
         'enable.auto.commit' => 1,
         'auto.commit.interval.ms' => 200,
-        'auto.offset.reset' => 'earliest'
+        'auto.offset.reset' => 'earliest',
+        'session.timeout.ms' => 45 * 1000,
+        'max.poll.interval.ms' => 600 * 1000
     ];
 
     /**
@@ -77,37 +60,9 @@ class Consumer {
     {
         $this->conf = new \RdKafka\Conf();
         $this->setBrokerList($metaBrokerList);
-        $this->setDefaultConf();
+        $this->setConfig();
         $this->setRebalanceCb();
         $this->topicName = $topicName;
-    }
-
-    /**
-     * @param array $conf
-     */
-    public function setDefaultConf(array $conf = [])
-    {
-        $conf = array_merge($this->defaultConf, $conf);
-        foreach($conf as $key => $value) {
-            $this->conf->set($key, $value);
-            if($key == 'auto.offset.reset') {
-                $this->getTopicConf()->set($key, $value);
-            }
-        }
-    }
-
-    /**
-     * @param $metaBrokerList
-     */
-    public function setBrokerList($metaBrokerList)
-    {
-        if(is_array($metaBrokerList)) {
-            $metaBrokerList = implode(',', $metaBrokerList);
-        }
-        if(!empty($metaBrokerList)) {
-            $this->metaBrokerList = $metaBrokerList;
-            $this->conf->set('metadata.broker.list', $metaBrokerList);
-        }
     }
 
     /**
@@ -160,7 +115,7 @@ class Consumer {
                     }
                     break;
                 default:
-                    throw new \Exception("kafka Consumer RebalanceCb ErrorCode={$err}");
+                    throw new \RdKafka\Exception("kafka Consumer RebalanceCb ErrorCode={$err}");
             }
         };
     }
@@ -186,35 +141,11 @@ class Consumer {
     }
 
     /**
-     * @param string $topicName
-     */
-    public function setTopicName(string $topicName)
-    {
-        $this->topicName = $topicName;
-    }
-
-    /**
-     * @return string
-     */
-    public function getTopicName()
-    {
-        return $this->topicName;
-    }
-
-    /**
      * @param Conf $conf
      */
     public function setConf(Conf $conf)
     {
         $this->conf = $conf;
-    }
-
-    /**
-     * @return Conf
-     */
-    public function getConf()
-    {
-        return $this->conf;
     }
 
     /**
@@ -226,17 +157,6 @@ class Consumer {
     }
 
     /**
-     * @return TopicConf
-     */
-    public function getTopicConf()
-    {
-        if(!$this->topicConf) {
-            $this->topicConf = new TopicConf();
-        }
-        return $this->topicConf;
-    }
-
-    /**
      * @param string|null $topicName
      * @return KafkaConsumer
      * @throws Throwable
@@ -244,7 +164,7 @@ class Consumer {
     public function subject(string $topicName = null)
     {
         if(!$this->groupId) {
-            throw new \Exception('Kafka Consumer Missing GroupId');
+            throw new \RdKafka\Exception('Kafka Consumer Missing GroupId');
         }
         if($topicName) {
             $this->topicName = $topicName;

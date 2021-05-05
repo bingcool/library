@@ -28,9 +28,7 @@
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",
-    "swoole/ide-helper": "@dev",
-    "google/protobuf": "^3.15.0",
-    "phpunit/phpunit": "^8.5.0"
+    "swoole/ide-helper": "@dev"
   },
   "autoload": {
     "psr-4": {

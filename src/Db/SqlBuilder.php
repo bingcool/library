@@ -66,6 +66,7 @@ class SqlBuilder
     }
 
     /**
+     * 数字整型条件
      * @param string $alias
      * @param string $field
      * @param mixed $value
@@ -101,6 +102,7 @@ class SqlBuilder
     }
 
     /**
+     * 数字整型条件
      * @param string $alias
      * @param string $field
      * @param $value
@@ -111,10 +113,10 @@ class SqlBuilder
     public static function buildNotIntWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
     {
         $prepareField = static::getPrepareField($field);
-        if( is_null($value) )
+        if(is_null($value))
             return ;
 
-        if( is_array($value) )
+        if(is_array($value))
         {
             $count = count($value);
             if($count ==0)
@@ -131,11 +133,12 @@ class SqlBuilder
             $value = current($value);
         }
 
-        $sql .= " {$operator} {$alias}.{$field} !={$prepareField}";
+        $sql .= " {$operator} {$alias}.{$field} !={$prepareField} ";
         $params["{$prepareField}"] = $value;
     }
 
     /**
+     * 字符串条件
      * @param string $alias
      * @param string $field
      * @param $value
@@ -170,6 +173,7 @@ class SqlBuilder
     }
 
     /**
+     * 日期范围
      * @param string $alias
      * @param string $field
      * @param $startTime
@@ -241,6 +245,22 @@ class SqlBuilder
         }
 
         $params[":max_{$field}"] = $max;
+    }
+
+    /**
+     * 在两个值之间
+     * @param string $alias
+     * @param string $field
+     * @param int $min
+     * @param int $max
+     * @param string $sql
+     * @param array $params
+     * @param bool $include
+     */
+    public static function buildBetweenRange(string $alias, string $field, int $min, int $max, string &$sql, array &$params, bool $include = true)
+    {
+        self::buildMinRange($alias, $field, $min, $sql, $params, $include);
+        self::buildMaxRange($alias, $field, $max, $sql, $params, $include);
     }
 
     /**

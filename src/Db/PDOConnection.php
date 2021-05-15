@@ -55,6 +55,8 @@ abstract class PDOConnection implements ConnectionInterface {
         'support_savepoint' => false,
         // sql执行日志条目设置,不能设置太大,适合调试使用,设置为0，则不使用
         'spend_log_limit' => 30,
+        // 是否开启dubug
+        'debug' => 1
     ];
 
     /**
@@ -121,6 +123,11 @@ abstract class PDOConnection implements ConnectionInterface {
     protected $lastLogs = [];
 
     /**
+     * @var int
+     */
+    protected $debug = 1;
+
+    /**
      * PDO连接参数
      * @var array
      */
@@ -172,6 +179,7 @@ abstract class PDOConnection implements ConnectionInterface {
     public function __construct(array $config = []) {
         $this->config = array_merge($this->config, $config);
         $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
+        $this->debug = (int)$this->config['debug'] ?? 1;
     }
 
     /**
@@ -198,9 +206,9 @@ abstract class PDOConnection implements ConnectionInterface {
             if(empty($this->config['dsn'])) {
                 $this->config['dsn'] = $this->parseDsn();
             }
-            $startTime = microtime(true);
+            $startTime = $this->debug ? microtime(true) : 0;
             $this->PDOInstance = $this->createPdo($this->config['dsn'], $this->config['username'], $this->config['password'], $params);
-            $endTime = microtime(true);
+            $endTime = $this->debug ? microtime(true) : 0;
             $this->log('Connect start', 'Connect successful, Spend Time='.($endTime - $startTime));
             return $this->PDOInstance;
         } catch (\PDOException|\Exception|\Throwable $e) {
@@ -246,22 +254,29 @@ abstract class PDOConnection implements ConnectionInterface {
     public function PDOStatementHandle(string $sql, array $bindParams = []): PDOStatement
     {
         $this->initConnect();
-
         // 记录SQL语句
         $this->queryStr = $sql;
-
         $this->bind = $bindParams;
+
         try {
-            $queryStartTime = microtime(true);
-            $this->log('Execute sql start',"sql={$this->queryStr},bindParams=".json_encode($bindParams, JSON_UNESCAPED_UNICODE));
+            if($this->debug)
+            {
+                $queryStartTime = microtime(true);
+                $this->log('Execute sql start',"sql={$this->queryStr},bindParams=".json_encode($bindParams, JSON_UNESCAPED_UNICODE));
+            }
             // 预处理
             $this->PDOStatement = $this->PDOInstance->prepare($sql);
             // 参数绑定
             $this->bindValue($bindParams);
             // 执行查询
             $this->PDOStatement->execute();
-            $queryEndTime = microtime(true);
-            $this->log('Execute sql end','Execute successful, Execute time='.($queryEndTime - $queryStartTime));
+
+            if($this->debug)
+            {
+                $queryEndTime = microtime(true);
+                $this->log('Execute sql end','Execute successful, Execute time='.($queryEndTime - $queryStartTime));
+            }
+
             $this->reConnectTimes = 0;
             return $this->PDOStatement;
         } catch (\PDOException|\Exception|\Throwable $e) {
@@ -1026,19 +1041,30 @@ abstract class PDOConnection implements ConnectionInterface {
     }
 
     /**
-     * @param $action
+     * @param string $action
      * @param string $msg
      */
-    protected function log($action, $msg = ''): void
+    protected function log(string $action, string $msg = ''): void
     {
-        $spendLogLimit = $this->config['spend_log_limit'] ?? 0;
-        //使用连接池的话，可能会将多次的执行sql流程存在log中，没有释放，此时看到的sql流程就不准确了,或者清空了前面的
-        if($spendLogLimit) {
-            if(count($this->lastLogs) > $spendLogLimit) {
-                $this->lastLogs = [];
+        if($this->debug)
+        {
+            $spendLogLimit = $this->config['spend_log_limit'] ?? 0;
+            //使用连接池的话，可能会将多次的执行sql流程存在log中，没有释放，此时看到的sql流程就不准确了,或者清空了前面的
+            if($spendLogLimit) {
+                if(count($this->lastLogs) > $spendLogLimit) {
+                    $this->lastLogs = [];
+                }
+                $this->lastLogs[] = ['time'=>date('Y-m-d, H:i:s'),'action'=>$action, 'msg'=>$msg];
             }
-            $this->lastLogs[] = ['time'=>date('Y-m-d, H:i:s'),'action'=>$action, 'msg'=>$msg];
         }
+    }
+
+    /**
+     * @return int|mixed
+     */
+    public function isDebug()
+    {
+        return $this->debug;
     }
 
     /**

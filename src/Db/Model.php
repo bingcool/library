@@ -362,7 +362,7 @@ abstract class Model implements ArrayAccess
     /**
      * @return int
      */
-    public function getLastInsertId(): int
+    public function getLastInsertId(): ?int
     {
         if($this->isNew() && $this->isExists()) {
             return $this->getPkValue();

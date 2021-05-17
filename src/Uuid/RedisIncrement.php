@@ -26,6 +26,11 @@ class RedisIncrement
     protected $incrKey;
 
     /**
+     * @var int
+     */
+    protected $retryTimes = 3;
+
+    /**
      * @var bool
      */
     protected $isPredisDriver = false;
@@ -76,18 +81,25 @@ class RedisIncrement
         {
             $count = 1;
         }
-        $dataArr = $this->doHandle($count);
+
+        $dataArr = [];
+        do {
+            $dataArr = $this->doHandle($count);
+            if(!empty($dataArr))
+            {
+                break;
+            }
+            usleep(15*1000);
+            --$this->retryTimes;
+        }while($this->retryTimes);
 
         if(empty($dataArr))
         {
-            usleep(15*1000);
-            $dataArr = $this->doHandle($count);
-            if(empty($dataArr))
-            {
-                return null;
-            }
+            return null;
         }
+
         list($prefixNumber, $incrId) = $dataArr;
+
         if(!isset($incrId) || !is_numeric($prefixNumber))
         {
             return null;

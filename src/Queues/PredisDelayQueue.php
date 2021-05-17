@@ -41,7 +41,6 @@ class PredisDelayQueue extends BaseDelayQueue
     }
 
     /**
-     * @param string $key
      * @param $start
      * @param $end
      * @param bool|null $withScores

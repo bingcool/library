@@ -5,7 +5,6 @@ namespace Common\Library\Tests\HttpClient;
 use PHPUnit\Framework\TestCase;
 use Common\Library\Protobuf\Serializer;
 
-
 class ClientTest extends  TestCase
 {
     public function testRedisIncr()

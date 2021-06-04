@@ -11,6 +11,8 @@
 
 namespace Swoolefy\Library\Db;
 
+use Common\Library\Exception\DbException;
+
 /**
  * Class SqlBuilder
  * @package Swoolefy\Library\Db
@@ -36,6 +38,7 @@ class SqlBuilder
     }
 
     /**
+     * field = int|string  or field in (int,int...) or field in ('name1','name2'...)
      * @param string $alias
      * @param string $field
      * @param mixed $value
@@ -50,7 +53,7 @@ class SqlBuilder
             if (is_array($value)) {
                 if (count($value) > 0) {
                     if (count($value) > 1) {
-                        $prepareParams= self::buildInWhere($value,$params);
+                        $prepareParams = self::buildInWhere($value,$params);
                         $sql .= " {$operator} {$alias}.{$field} IN (".implode(',',$prepareParams).")";
                         return;
                     } else {
@@ -66,7 +69,26 @@ class SqlBuilder
     }
 
     /**
-     * 数字整型条件
+     * field = 数字或者字符串
+     * @param string $alias
+     * @param string $field
+     * @param $value
+     * @param string $sql
+     * @param array $params
+     * @param string $operator
+     */
+    public static function buildEqual(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
+    {
+        if(is_array($value) || is_object($value))
+        {
+            throw new DbException('Params item of value must string or int');
+        }
+
+        self::buildWhere($alias, $field, $value, $sql, $params, $operator);
+    }
+
+    /**
+     * 数字整型条件 field = int   or field in (id1,id2...)
      * @param string $alias
      * @param string $field
      * @param mixed $value
@@ -102,7 +124,7 @@ class SqlBuilder
     }
 
     /**
-     * 数字整型条件
+     * 数字整型条件 field != int or field not in (id1,id2...)
      * @param string $alias
      * @param string $field
      * @param $value
@@ -138,7 +160,7 @@ class SqlBuilder
     }
 
     /**
-     * 字符串条件
+     * 字符串条件 field = 'name'  or  field not in ('name1','name2'...)
      * @param string $alias
      * @param string $field
      * @param $value

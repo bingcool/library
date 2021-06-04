@@ -4,7 +4,7 @@ namespace Common\Library\Tests\Protobuf;
 use PHPUnit\Framework\TestCase;
 use Common\Library\Protobuf\Serializer;
 
-class StackTest extends  TestCase {
+class PBTest extends  TestCase {
 
     public $serializer;
 
@@ -21,7 +21,7 @@ class StackTest extends  TestCase {
         //$req->setUserId('45678');
         $req->setBookId(123456789);
 
-        var_dump(Serializer::serializeToPhpArray($req));
+        var_dump(Serializer::serializeToArray($req));
 
     }
 

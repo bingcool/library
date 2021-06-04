@@ -105,7 +105,7 @@ class RedisIncrement
             return null;
         }
 
-        $autoIncrId = (int)$prefixNumber + $incrId;
+        $autoIncrId = (int)$prefixNumber + (int)$incrId;
 
         return $autoIncrId;
     }

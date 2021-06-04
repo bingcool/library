@@ -35,8 +35,6 @@ $consumer->setGroupId('group_order_pay');
 // 订阅返回消费实例
 $rdKafkaConsumer = $consumer->subject();
 
-
-
 while (true)
 {
     // 10s 超时
@@ -53,6 +51,7 @@ while (true)
                 //var_dump($payload);
                 break;
             case RD_KAFKA_RESP_ERR__PARTITION_EOF:
+                rd_kafka_err2str(RD_KAFKA_RESP_ERR__PARTITION_EOF);
                 echo "No more messages; will wait for more";
                 break;
             case RD_KAFKA_RESP_ERR__TIMED_OUT:

@@ -110,7 +110,7 @@ abstract class PDOConnection implements ConnectionInterface {
      * 数据表字段信息
      * @var array
      */
-    protected $tableFields = [];
+    protected $_tableFields = [];
 
     /**
      * @var array
@@ -279,12 +279,16 @@ abstract class PDOConnection implements ConnectionInterface {
 
             $this->reConnectTimes = 0;
             return $this->PDOStatement;
-        } catch (\PDOException|\Exception|\Throwable $e) {
-            if($this->reConnectTimes < 4 && $this->isBreak($e)) {
+        } catch (\PDOException $e) {
+            if($this->reConnectTimes < 4 && ($this->isBreak($e) || $e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) ) {
                 ++$this->reConnectTimes;
                 return $this->close()->PDOStatementHandle($sql, $bindParams);
             }
             throw $e;
+        }catch (\Exception|\Throwable $t)
+        {
+            $this->log('Execute sql error', $t->getMessage());
+            throw $t;
         }
     }
 

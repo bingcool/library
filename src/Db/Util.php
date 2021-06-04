@@ -55,7 +55,7 @@ class Util {
         $data = array_filter($data, function ($item) {
             return !($item === '' || is_null($item));
         });
-        return  "{" . implode(',', $data) . "}";
+        return  '{' . implode(',', $data) . '}';
     }
 
     /**

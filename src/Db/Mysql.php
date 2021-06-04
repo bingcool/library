@@ -51,7 +51,7 @@ class Mysql extends PDOConnection {
     public function getFields(string $tableName): array
     {
         $sourceTableName = $tableName;
-        if(!isset($this->tableFields[$tableName]) && empty($this->tableFields[$tableName]) || isset($this->objExpireTime)) {
+        if(!isset($this->_tableFields[$tableName]) && empty($this->_tableFields[$tableName]) || isset($this->objExpireTime)) {
 
             [$tableName] = explode(' ', $tableName);
 
@@ -83,10 +83,10 @@ class Mysql extends PDOConnection {
                 }
             }
             $fieldResult = $this->fieldCase($info);
-            $this->tableFields[$sourceTableName] = $fieldResult;
+            $this->_tableFields[$sourceTableName] = $fieldResult;
         }
 
-        return  $this->tableFields[$sourceTableName];
+        return  $this->_tableFields[$sourceTableName];
     }
 
     /**

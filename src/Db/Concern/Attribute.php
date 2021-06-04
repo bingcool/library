@@ -27,19 +27,19 @@ trait Attribute
      * 字段自动类型转换
      * @var array
      */
-    protected $fieldTypeMap = [];
+    protected $_fieldTypeMap = [];
 
     /**
      * 数据表废弃字段
      * @var array
      */
-    protected $disuseFields = [];
+    protected $_disuseFields = [];
 
     /**
      * 数据表只读字段
      * @var array
      */
-    protected $readOnly = [];
+    protected $_readOnly = [];
 
     /**
      * 当前模型数据
@@ -118,12 +118,12 @@ trait Attribute
 
     /**
      * 设置允许写入的字段,默认获取数据表所有字段
-     * @param  array $field 允许写入的字段
+     * @param  array $fields 允许写入的字段
      * @return $this
      */
-    public function allowField(array $field)
+    public function allowField(array $fields)
     {
-        $this->tableFields = $field;
+        $this->_tableFields = $fields;
         return $this;
     }
 
@@ -160,7 +160,7 @@ trait Attribute
      */
     protected function getChangeData(): array
     {
-        $diffData = $this->force ? $this->_data : $this->parseDiffData();
+        $diffData = $this->_force ? $this->_data : $this->parseDiffData();
         return $diffData;
     }
 
@@ -170,7 +170,7 @@ trait Attribute
     protected function parseDiffData() {
         $diffData = static::dirtyArray($this->_data, $this->_origin);
         // 只读字段不允许更新
-        foreach ($this->readOnly as $key => $field) {
+        foreach ($this->_readOnly as $key => $field) {
             if (isset($diffData[$field])) {
                 unset($diffData[$field]);
             }
@@ -224,7 +224,7 @@ trait Attribute
     {
         $diffData = $originAttributes = $newAttributes = [];
         foreach($customFields as $fieldName) {
-            if(isset($this->readOnly[$fieldName]) || !isset($this->_data[$fieldName]) || !isset($this->_origin[$fieldName])) {
+            if(isset($this->_readOnly[$fieldName]) || !isset($this->_data[$fieldName]) || !isset($this->_origin[$fieldName])) {
                 continue;
             }
             $diffData[$fieldName] = $this->_data[$fieldName];

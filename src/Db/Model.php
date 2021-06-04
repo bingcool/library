@@ -56,24 +56,24 @@ abstract class Model implements ArrayAccess
     protected $isNew = true;
 
     /**
-     * @var string
-     */
-    protected $suffix = '';
-
-    /**
-     * @var array
-     */
-    protected $tableFields = [];
-
-    /**
-     * @var array
-     */
-    protected $schemaInfo = [];
-
-    /**
      * @var int
      */
     protected $numRows = 0;
+
+    /**
+     * @var string
+     */
+    protected $_suffix = '';
+
+    /**
+     * @var array
+     */
+    protected $_tableFields = [];
+
+    /**
+     * @var array
+     */
+    protected $_schemaInfo = [];
 
     /**
      * @var array
@@ -83,7 +83,7 @@ abstract class Model implements ArrayAccess
     /**
      * @var bool
      */
-    protected $force = false;
+    protected $_force = false;
 
     /**
      * Model constructor.
@@ -279,10 +279,10 @@ abstract class Model implements ArrayAccess
             {
                 return;
             }
-        }else if(isset($this->fieldTypeMap[$name]))
+        }else if(isset($this->_fieldTypeMap[$name]))
         {
             //类型转换
-            $value = $this->writeTransform($value, $this->fieldTypeMap[$name]);
+            $value = $this->writeTransform($value, $this->_fieldTypeMap[$name]);
         }
         // 源数据
         if(!$this->isExists()) $this->_origin[$name] = $value;
@@ -329,7 +329,7 @@ abstract class Model implements ArrayAccess
         try {
             $allowFields = $this->getAllowFields();
             $pk = $this->getPk();
-            // 对于自定义的主键值，需要设置
+            // 自定义的主键值
             $pkValue = $this->createPkValue();
             if($pkValue)
             {
@@ -341,8 +341,8 @@ abstract class Model implements ArrayAccess
             }
             list($sql, $bindParams) = $this->parseInsertSql($allowFields);
             $this->numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
-            // 对于自增的pk,插入成功,需要赋值
-            if(!isset($this->_data[$pk]))
+            // 自增的pk,插入成功,需要赋值
+            if(!isset($this->_data[$pk]) || is_null($this->_data[$pk]) || $this->_data[$pk] == '')
             {
                 $this->_data[$pk] = $this->getConnection()->getLastInsID($pk);
             }
@@ -375,18 +375,18 @@ abstract class Model implements ArrayAccess
      */
     protected function getAllowFields(): array
     {
-        if(empty($this->tableFields))
+        if(empty($this->_tableFields))
         {
             $schemaInfo = $this->getSchemaInfo();
             $fields = $schemaInfo['fields'];
-            if(!empty($this->disuseFields)) {
+            if(!empty($this->_disuseFields)) {
                 // 废弃字段
-                $fields = array_diff($fields, $this->disuseFields);
+                $fields = array_diff($fields, $this->_disuseFields);
             }
-            $this->tableFields = $fields;
+            $this->_tableFields = $fields;
         }
 
-        return $this->tableFields;
+        return $this->_tableFields;
     }
 
     /**
@@ -403,14 +403,14 @@ abstract class Model implements ArrayAccess
      */
     protected function getSchemaInfo(): array
     {
-        if(empty($this->schemaInfo))
+        if(empty($this->_schemaInfo))
         {
-            $table = $this->table ? $this->table . $this->suffix : $this->table;
+            $table = $this->table ? $this->table . $this->_suffix : $this->table;
             $schemaInfo = $this->getConnection()->getSchemaInfo($table);
-            $this->schemaInfo = $schemaInfo;
+            $this->_schemaInfo = $schemaInfo;
         }
 
-        return $this->schemaInfo;
+        return $this->_schemaInfo;
     }
 
     /**
@@ -472,7 +472,7 @@ abstract class Model implements ArrayAccess
      */
     public function update(array $attributes): bool
     {
-        $this->force = false;
+        $this->_force = false;
         return $this->updateData($attributes);
     }
 
@@ -588,7 +588,7 @@ abstract class Model implements ArrayAccess
     {
         if(in_array($fieldName, $this->getAllowFields()))
         {
-            if($this->getOldAttributeValue($fieldName) == $this->getNewAttributeValue($fieldName))
+            if($this->getOldAttributeValue($fieldName) != $this->getNewAttributeValue($fieldName))
             {
                 return true;
             }
@@ -607,9 +607,9 @@ abstract class Model implements ArrayAccess
         if(method_exists($this, $method))
         {
             $value = $this->$method($value);
-        }else if(isset($this->fieldTypeMap[$fieldName]))
+        }else if(isset($this->_fieldTypeMap[$fieldName]))
         {
-            $value = $this->readTransform($value, $this->fieldTypeMap[$fieldName]);
+            $value = $this->readTransform($value, $this->_fieldTypeMap[$fieldName]);
         }
         return $value;
     }
@@ -654,7 +654,7 @@ abstract class Model implements ArrayAccess
      */
     public function setSuffix(string $suffix)
     {
-        $this->suffix = $suffix;
+        $this->_suffix = $suffix;
         return $this;
     }
 
@@ -664,7 +664,7 @@ abstract class Model implements ArrayAccess
      */
     public function getSuffix(): string
     {
-        return $this->suffix ?: '';
+        return $this->_suffix ?: '';
     }
 
     /**

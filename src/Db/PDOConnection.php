@@ -196,6 +196,8 @@ abstract class PDOConnection implements ConnectionInterface {
         }
 
         $this->config = array_merge($this->config, $config);
+        $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
+        $this->debug = (int)$this->config['debug'] ?? 1;
         if(isset($this->config['params']) && is_array($this->config['params'])) {
             $params = $this->config['params'] + $this->params;
         } else {

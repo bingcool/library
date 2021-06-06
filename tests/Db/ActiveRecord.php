@@ -19,10 +19,10 @@ class ActiveRecord extends \Common\Library\Db\Model
 
     /**
      * 获取当前模型的数据库
-     * @return PDOConnection
+     * @return mixed
      */
     public function getConnection()
     {
-
+        return Make::getDbConnection($this->userId);
     }
 }

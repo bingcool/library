@@ -58,7 +58,7 @@ abstract class Model implements ArrayAccess
     /**
      * @var int
      */
-    protected $numRows = 0;
+    protected $_numRows = 0;
 
     /**
      * @var string
@@ -103,10 +103,9 @@ abstract class Model implements ArrayAccess
     /**
      * @return Model
      */
-    public static function model(): Model
+    public static function model(...$params): Model
     {
-        $class = get_called_class();
-        return new $class();
+        return new static(...$params);
     }
 
     /**
@@ -216,7 +215,7 @@ abstract class Model implements ArrayAccess
      */
     public function getNumRows(): int
     {
-        return $this->numRows;
+        return $this->_numRows;
     }
 
     /**
@@ -330,17 +329,17 @@ abstract class Model implements ArrayAccess
             $allowFields = $this->getAllowFields();
             $pk = $this->getPk();
             // 自定义的主键值
-            $pkValue = $this->createPkValue();
-            if($pkValue)
+            if(!isset($this->_data[$pk]))
             {
-                $this->_data[$pk] = $pkValue;
+                $pkValue = $this->createPkValue();
+                $pkValue && $this->_data[$pk] = $pkValue;
             }else
             {
                 // 数据表设置自增pk的，则不需要设置允许字段
                 $allowFields = array_diff($allowFields, [$pk]);
             }
             list($sql, $bindParams) = $this->parseInsertSql($allowFields);
-            $this->numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+            $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
             // 自增的pk,插入成功,需要赋值
             if(!isset($this->_data[$pk]) || is_null($this->_data[$pk]) || $this->_data[$pk] == '')
             {
@@ -457,10 +456,10 @@ abstract class Model implements ArrayAccess
         if($diffData)
         {
             list($sql, $bindParams) = $this->parseUpdateSql($diffData, $allowFields);
-            $this->numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
+            $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
             $this->checkResult($this->_data);
-            $this->trigger('AfterUpdate');
         }
+        $this->trigger('AfterUpdate');
 
         return true;
     }
@@ -479,6 +478,7 @@ abstract class Model implements ArrayAccess
     /**
      * @param bool $force 强制物理删除
      * @return bool
+     * @throws \DbException
      */
     public function delete(bool $force = false): bool
     {
@@ -496,7 +496,7 @@ abstract class Model implements ArrayAccess
         if($force)
         {
             list($sql, $bindParams) = $this->parseDeleteSql();
-            $this->numRows = $this->getConnection()->createCommand($sql)->delete($bindParams);
+            $this->_numRows = $this->getConnection()->createCommand($sql)->delete($bindParams);
         }else
         {
             if($this->processDelete() === false)
@@ -619,22 +619,18 @@ abstract class Model implements ArrayAccess
      * @return array|null
      */
     public function getAttributes() {
-        if(is_null($this->_attributes))
+        if($this->isExists() && $this->_origin)
         {
-            if($this->isExists() && $this->_origin)
-            {
-                foreach($this->_origin as $fieldName=>$value) {
-                    if(in_array($fieldName, $this->getAllowFields()))
-                    {
-                        $attributes[$fieldName] = $this->getValue($fieldName, $value);
-                    }else {
-                        unset($this->_origin[$fieldName]);
-                    }
+            foreach($this->_origin as $fieldName=>$value) {
+                if(in_array($fieldName, $this->getAllowFields()))
+                {
+                    $attributes[$fieldName] = $this->getValue($fieldName, $value);
+                }else {
+                    unset($this->_origin[$fieldName]);
                 }
             }
-            $this->_attributes = $attributes ?? null;
         }
-
+        $this->_attributes = $attributes ?? null;
         return $this->_attributes;
     }
 

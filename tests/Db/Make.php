@@ -51,7 +51,6 @@ class Make
             $db = new Mysql($config);
             static::$mysqlDb = $db;
         }
-
-        static::$mysqlDb;
+        return static::$mysqlDb;
     }
 }

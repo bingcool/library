@@ -7,7 +7,7 @@ CREATE TABLE `tbl_order`(
     `user_id` int(11) not null default 0 COMMENT 'user_id',
     `order_amount` float(11,2) not null default 0.00 COMMENT '订单金额',
     `order_product_ids` text not null COMMENT '订单关联产品ID',
-    `orer_status` tinyint(2) not null default 1 COMMENT '订单状态',
+    `order_status` tinyint(2) not null default 1 COMMENT '订单状态',
     `remark` varchar(256) not null default '' COMMENT '备注',
     `create_time` datetime not null DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

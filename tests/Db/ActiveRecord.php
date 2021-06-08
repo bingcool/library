@@ -25,4 +25,12 @@ class ActiveRecord extends \Common\Library\Db\Model
     {
         return Make::getDbConnection($this->userId);
     }
+
+    /**
+     * @return mixed|void
+     */
+    public function createPkValue()
+    {
+        return time() + rand(1,100000);
+    }
 }

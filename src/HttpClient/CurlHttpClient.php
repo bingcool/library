@@ -92,6 +92,7 @@ class CurlHttpClient implements HttpClientInterface
         $body = null,
         int $timeOut = 10
     ) {
+        $method = strtoupper($method);
         $this->openConnection($url, $method, $body, $this->headers, $timeOut);
         $this->sendRequest();
         $curlErrorCode = $this->baseCurl->errno();
@@ -143,11 +144,11 @@ class CurlHttpClient implements HttpClientInterface
             $this->options[CURLOPT_TIMEOUT] = $timeOut;
         }
 
-        if($method !== "GET")
+        if($method !== 'GET')
         {
             if(empty($body))
             {
-                throw new CurlException("Curl Body empty");
+                throw new CurlException('Curl Body empty');
             }
             $this->options[CURLOPT_POSTFIELDS] = $body;
         }

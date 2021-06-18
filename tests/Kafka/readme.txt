@@ -1,9 +1,6 @@
 参考https://www.cnblogs.com/angelyan/p/14445710.html
 
-
-
 firewall-cmd --zone=public --add-port=9092/tcp --permanent
-
 
 firewall-cmd --zone=public --add-port=2181/tcp --permanent
 

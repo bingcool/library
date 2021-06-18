@@ -1,6 +1,6 @@
 <?php
 
-namespace Common\Library\Tests\HttpClient;
+namespace Common\Library\Tests\Uuid;
 
 use PHPUnit\Framework\TestCase;
 use Common\Library\Protobuf\Serializer;

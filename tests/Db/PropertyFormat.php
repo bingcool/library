@@ -13,4 +13,14 @@ trait PropertyFormat
     {
         return json_decode($value, true);
     }
+
+    protected function setJsonDataAttr($value)
+    {
+        return is_array($value) ? json_encode($value) : $value;
+    }
+
+    protected function getJsonDataAttr($value)
+    {
+        return json_decode($value, true);
+    }
 }

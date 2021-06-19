@@ -7,6 +7,7 @@ namespace Common\Library\Tests\Db;
 * @property integer $user_id
 * @property float $order_amount
 * @property string $order_product_ids
+* @property string $json_data
 * @property integer $order_status
 * @property string $remark
 * @property string $create_time

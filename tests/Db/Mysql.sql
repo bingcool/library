@@ -7,12 +7,15 @@ CREATE TABLE `tbl_order`(
     `user_id` int(11) not null default 0 COMMENT 'user_id',
     `order_amount` float(11,2) not null default 0.00 COMMENT '订单金额',
     `order_product_ids` text not null COMMENT '订单关联产品ID',
+    `json_data` json default null COMMENT 'json数据',
     `order_status` tinyint(2) not null default 1 COMMENT '订单状态',
     `remark` varchar(256) not null default '' COMMENT '备注',
     `create_time` datetime not null DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`order_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+alter table tbl_order add json_data json default null COMMENT 'json数据';
 
 CREATE TABLE `tbl_app_info` (
  `id` bigint(21) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',

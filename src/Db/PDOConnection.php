@@ -137,6 +137,7 @@ abstract class PDOConnection implements ConnectionInterface {
         PDO::ATTR_ORACLE_NULLS      => PDO::NULL_NATURAL,
         PDO::ATTR_STRINGIFY_FETCHES => false,
         PDO::ATTR_EMULATE_PREPARES  => false,
+        PDO::ATTR_AUTOCOMMIT        => 1 //必须设置为1，否则在事务commit后,后面insert将无法进行
     ];
 
     /**
@@ -860,13 +861,15 @@ abstract class PDOConnection implements ConnectionInterface {
     /**
      * 用于非自动提交状态下面的查询提交
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
     public function commit()
     {
         $this->initConnect();
 
         $this->log('Transaction commit start','transaction commit start');
+
+        // 不管多少层内嵌事务，最外层一次commit时候才真正一次性提交commit
         if (1 == $this->transTimes) {
             $this->PDOInstance->commit();
         }

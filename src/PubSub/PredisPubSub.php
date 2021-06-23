@@ -100,7 +100,7 @@ class PredisPubSub extends AbstractPubSub
                         {
                             if(class_exists("Workerfy\\AbstractProcess"))
                             {
-                                \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
+                                \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($throwable);
                             }else
                             {
                                 $exception = $throwable;

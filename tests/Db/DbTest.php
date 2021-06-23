@@ -83,7 +83,7 @@ class DbTest extends TestCase
 
         try{
 
-            $this->testUpdateOnject();
+            $this->testUpdateObject();
 
             $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)" )->insert([
                 ':order_id' => time(),

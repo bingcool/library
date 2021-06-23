@@ -69,18 +69,18 @@ class Queue
 
     /**
      * push data to list
-     * @param mixed ...$values
+     * @param mixed ...$items
      * @return bool|int
      */
-    public function push(...$values)
+    public function push(...$items)
     {
         $push = [];
 
-        if(empty($values))
+        if(empty($items))
         {
             return false;
         }
-        foreach($values as $v)
+        foreach($items as $v)
         {
             $push[] = is_array($v) ? json_encode($v) : $v;
         }

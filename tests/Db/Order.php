@@ -55,6 +55,7 @@ class Order extends ActiveRecord
     public function onAfterInsert()
     {
         parent::onAfterInsert();
+        var_dump($this->getDiffAttributes());
     }
 
     public function onAfterUpdate()

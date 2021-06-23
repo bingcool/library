@@ -47,14 +47,17 @@ class DbTest extends TestCase
         var_dump($order->getAttributes());
     }
 
-    public function testUpdateOnject()
+    public function testUpdateObject()
     {
         $orderId = 1623132269;
         $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
         $order->order_product_ids = [1,2,3,4,5,6,7,8];
         $order->remark = '中国小米（mi）'.rand(1,1000);
         $order->save();
-        var_dump($order->order_id, $order->getNumRows());
+
+        $diff = $order->getDirtyAttributeFields();
+
+        var_dump($order->order_id, $diff);
     }
 
     public function testDeleteObject()

@@ -198,21 +198,34 @@ trait Attribute
      */
     public function getDiffAttributes() {
         if($this->isNew()) {
-            foreach($this->_origin as $field=>$value) {
+            foreach($this->_data as $field=>$value) {
                 $newAttributes[$field] = $this->getValue($field, $value);
             }
             $diffAttributes = [
                 'old_attributes' => [],
                 'new_attributes' => $newAttributes ?? []
             ];
+            $this->_diffAttributes = $diffAttributes;
         }else {
-            if(empty($this->_diffAttributes)) {
-                $this->parseDiffData();
-            }
+            $this->parseDiffData();
             $diffAttributes = $this->_diffAttributes;
         }
 
         return $diffAttributes;
+    }
+
+    /**
+     * 获取发生脏变的属性字段
+     * @return array
+     */
+    public function getDirtyAttributeFields()
+    {
+        $diffAttributes = $this->_diffAttributes;
+        if(empty($diffAttributes))
+        {
+            $diffAttributes = $this->getDiffAttributes();
+        }
+        return array_keys($diffAttributes['new_attributes'] ?? []);
     }
 
     /**
@@ -230,13 +243,6 @@ trait Attribute
             $diffData[$fieldName] = $this->_data[$fieldName];
             $originAttributes[$fieldName] = $this->getValue($fieldName, $this->_origin[$fieldName]);
             $newAttributes[$fieldName] = $this->getValue($fieldName, $this->_data[$fieldName]);
-        }
-
-        if($originAttributes) {
-            $this->_diffAttributes = [
-                'old_attributes' => $originAttributes ?? [],
-                'new_attributes' => $newAttributes ?? []
-            ];
         }
 
         return $diffData;

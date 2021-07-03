@@ -19,7 +19,7 @@ class DbTest extends TestCase
             $order->order_amount = 100.50;
             $order->order_product_ids = [1234455,4567888];
             $order->order_status = 1;
-            $order->remark = '尽快发货';
+            $order->remark = '尽快发货-nnn';
             //$order->json_data = ['go','php','java','swoole'];
             $order->json_data = ['1234455','4567888'];
             $order->save();
@@ -29,6 +29,10 @@ class DbTest extends TestCase
         {
             var_dump($e->getMessage());
         }
+
+        // 可以多次调用save(执行update)
+        //$order->remark = '中美关系';
+        //$order->save();
     }
 
     public function testFindList()

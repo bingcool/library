@@ -424,9 +424,6 @@ abstract class Model implements ArrayAccess
         {
             $this->parseOrigin($attributes);
             return $this;
-        }else {
-            $this->exists(false);
-            return false;
         }
     }
 

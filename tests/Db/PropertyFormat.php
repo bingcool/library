@@ -21,6 +21,6 @@ trait PropertyFormat
 
     protected function getJsonDataAttr($value)
     {
-        return json_decode($value, true);
+        return json_decode($value, true) ?? [];
     }
 }

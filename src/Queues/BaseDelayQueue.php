@@ -13,7 +13,7 @@ namespace Common\Library\Queues;
 
 use Common\Library\Cache\RedisConnection;
 use Common\Library\Exception\QueueException;
-use \Common\Library\Queues\Interfaces\AbstractDelayQueueInterface;
+use Common\Library\Queues\Interfaces\AbstractDelayQueueInterface;
 
 class BaseDelayQueue extends AbstractDelayQueueInterface
 {

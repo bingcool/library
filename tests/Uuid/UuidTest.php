@@ -17,7 +17,7 @@ class ClientTest extends  TestCase
 
         $UUID = new \Common\Library\Uuid\RedisIncrement($redis,'order_incr_id');
 
-        var_dump($redis->ttl('order_incr_id'));
+        //var_dump($redis->ttl('order_incr_id'));
 
         // 批量获取，批量处理分配
         $list = [

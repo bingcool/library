@@ -73,6 +73,13 @@ class CurlHttpClient implements HttpClientInterface
         ];
     }
 
+    /**
+     * @return resource
+     */
+    public function getCurlHandler()
+    {
+        return $this->baseCurl->getCurlHandler();
+    }
 
     /**
      * Sends a request to the server and returns the raw response.
@@ -80,6 +87,7 @@ class CurlHttpClient implements HttpClientInterface
      * @param string $url The endpoint to send the request to.
      * @param string $method The request method.
      * @param string $body The body of the request.
+     * @param int $connectTimeOut The timeout in seconds for the request.
      * @param int $timeOut The timeout in seconds for the request.
      *
      * @return RawResponse Raw response from the server.
@@ -90,10 +98,11 @@ class CurlHttpClient implements HttpClientInterface
         string $url,
         string $method,
         $body = null,
+        int $connectTimeOut = 10,
         int $timeOut = 10
     ) {
         $method = strtoupper($method);
-        $this->openConnection($url, $method, $body, $this->headers, $timeOut);
+        $this->openConnection($url, $method, $body, $this->headers, $connectTimeOut, $timeOut);
         $this->sendRequest();
         $curlErrorCode = $this->baseCurl->errno();
         $this->curlErrorCode = $curlErrorCode;
@@ -118,14 +127,16 @@ class CurlHttpClient implements HttpClientInterface
      * @param string $method  The request method.
      * @param string $body    The body of the request.
      * @param array  $headers The request headers.
-     * @param int    $timeOut The timeout in seconds for the request.
+     * @param int    $connectTimeOut The timeout in seconds for the connect request.
+     * @param int    $readTimeOut The timeout in seconds for the request.
      */
     public function openConnection(
         string $url,
         string $method,
         $body,
         array $headers = [],
-        $timeOut = 10
+        $connectTimeOut = 10,
+        $readTimeOut = 10
     )
     {
         if($url)
@@ -138,17 +149,21 @@ class CurlHttpClient implements HttpClientInterface
             $this->options[CURLOPT_HTTPHEADER] = $this->compileRequestHeaders($headers);
         }
 
-        if($timeOut)
+        if($connectTimeOut)
         {
-            $this->options[CURLOPT_CONNECTTIMEOUT] = 10;
-            $this->options[CURLOPT_TIMEOUT] = $timeOut;
+            $this->options[CURLOPT_CONNECTTIMEOUT] = $connectTimeOut;
+        }
+
+        if($readTimeOut)
+        {
+            $this->options[CURLOPT_TIMEOUT] = $readTimeOut;
         }
 
         if($method !== 'GET')
         {
             if(empty($body))
             {
-                throw new CurlException('Curl Body empty');
+                throw new CurlException('Post Curl Body empty');
             }
             $this->options[CURLOPT_POSTFIELDS] = $body;
         }
@@ -206,15 +221,21 @@ class CurlHttpClient implements HttpClientInterface
     /**
      * @param string $url
      * @param array $params
+     * @param int $connectTimeOut
      * @param int $timeOut
      * @return RawResponse
      * @throws CurlException
      */
-    public function get(string $url, array $params = [], int $timeOut = 10)
+    public function get(
+        string $url,
+        array $params = [],
+        int $connectTimeOut = 10,
+        int $timeOut = 10
+    )
     {
         $url = $this->parseUrl($url, $params);
         $this->options[CURLOPT_HTTPGET] = "GET";
-        return $this->send($url,'GET', '', $timeOut);
+        return $this->send($url,'GET', '', $connectTimeOut, $timeOut);
     }
 
     /**
@@ -224,14 +245,14 @@ class CurlHttpClient implements HttpClientInterface
      * @return RawResponse|bool
      * @throws CurlException
      */
-    public function post(string $url, array $params, int $timeOut = 10)
+    public function post(string $url, array $params, int $connectTimeOut = 10, int $timeOut = 10)
     {
         if(empty($params))
         {
             return  false;
         }
         $this->options[CURLOPT_POST] = 1;
-        return $this->send($url,'POST', $params, $timeOut);
+        return $this->send($url,'POST', $params, $connectTimeOut, $timeOut);
     }
 
     /**

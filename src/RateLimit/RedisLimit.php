@@ -16,7 +16,7 @@ use Common\Library\Exception\UuidException;
 class RedisLimit
 {
     /**
-     *
+     * rate limit key
      */
     const PREFIX_LIMIT = 'rate_limit:';
 
@@ -71,7 +71,7 @@ class RedisLimit
      * @param int $limitTime
      * @param int $limitNum
      * @param int $remainTime
-     *
+     * @return int
      */
     public function checkLimit(
         string $key,
@@ -92,13 +92,13 @@ class RedisLimit
 
         if($this->isPredisDriver)
         {
-            $isAccess = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $limitNum, $requireId]);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $limitNum, $requireId]);
         }else
         {
-            $isAccess = $this->redis->eval($this->getLuaLimitScript(),[$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $limitNum, $requireId],1);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(),[$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $limitNum, $requireId],1);
         }
 
-        return $isAccess ?? true;
+        return $isLimit;
     }
 
     /**
@@ -120,30 +120,30 @@ class RedisLimit
 local rateKey = KEYS[1];
 local startMilliSecond = ARGV[1];
 local endMilliSecond = ARGV[2];
-local remRemainTime = ARGV[3];
-local limitNum = ARGV[4];
-local requireId = ARGV[5];
+local remRemainTime = tonumber(ARGV[3]);
+local limitNum = tonumber(ARGV[4]);
+local requireId = tonumber(ARGV[5]);
 
 -- get in limit time count
-count = redis.call('zCount', rateKey, startMilliSecond, endMilliSecond);
+local count = redis.call('zCount', rateKey, startMilliSecond, endMilliSecond);
 -- can access rate limit
 if (count < limitNum) then
     -- delete data
     redis.call('zRemRangeByScore', rateKey, '-inf', remRemainTime);
     redis.call('zAdd', rateKey, endMilliSecond, requireId);
-    return true;
+    return 0;
 else 
-    return false;
+    return 1;
 end;
-
-return true;
 
 LUA;
         return $lua;
 
     }
 
-
+    /**
+     * @return string
+     */
     protected function getMilliSecond()
     {
         $time = explode(" ", microtime());
@@ -180,6 +180,5 @@ LUA;
             $this->isPredisDriver = $isPredisDriver;
         }
     }
-
 
 }

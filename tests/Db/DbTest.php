@@ -22,6 +22,8 @@ class DbTest extends TestCase
             $order->remark = '尽快发货-nnn';
             //$order->json_data = ['go','php','java','swoole'];
             $order->json_data = ['1234455','4567888'];
+            $order->nnnn = 'njnnnj';
+            var_dump($order->getData());
             $order->save();
             var_dump($order->order_id, $order->getNumRows());
 
@@ -48,7 +50,7 @@ class DbTest extends TestCase
     {
         $orderId = 1623132269;
         $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
-        var_dump($order->getAttributes());
+        var_dump($order->getOldAttributeValue('remark', true));
     }
 
     public function testUpdateObject()

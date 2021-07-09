@@ -541,7 +541,7 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * 获取器 获取数据对象的值
+     * 获取器 获取当前数据对象的值
      * @param  string $fieldName
      * @return mixed
      * @throws Exception
@@ -555,25 +555,42 @@ abstract class Model implements ArrayAccess
     /**
      * 获取存在记录的字段旧值(原生数据库直接读取的值，还没经过format处理的值)
      * @param string $fieldName
+     * @param bool $format
      * @return string
      */
-    public function getOldAttributeValue(string $fieldName)
+    public function getOldAttributeValue(string $fieldName, bool $format = false)
     {
         if(!$this->isNew())
         {
-            return $this->_origin[$fieldName] ?? '';
+             if($format)
+             {
+                 $value = $this->getOrigin($fieldName);
+                 if(!is_null($value))
+                 {
+                     $value = $this->getValue($fieldName, $value);
+                 }
+             }else
+             {
+                 $value = $this->_origin[$fieldName] ?? null;
+             }
         }
-        return null;
+
+        return $value ?? null;
     }
 
     /*
      * 获取当前对象设置字段最新值(即将要存进数据库的值)
      * @param string $fieldName
+     * @param bool $format
      * @return string
      */
-    public function getNewAttributeValue(string $fieldName)
+    public function getNewAttributeValue(string $fieldName, bool $format = false)
     {
-        return $this->_data[$fieldName] ?? '';
+        if($format)
+        {
+            return $this->getAttribute($fieldName);
+        }
+        return $this->_data[$fieldName] ?? null;
     }
 
     /**

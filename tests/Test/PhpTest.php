@@ -74,6 +74,10 @@ class PhpTest extends TestCase
 
     public function testQueryString()
     {
+        $binTree = new \stdClass();
+        $binTree->data = null;
+        $binTree->left = null;
+        $binTree->right =  null;
 
     }
 

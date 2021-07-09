@@ -58,6 +58,15 @@ class Order extends ActiveRecord
         var_dump($this->getDiffAttributes());
     }
 
+    public function onBeforeUpdate(): bool
+    {
+        if($this->isDirty('remark'))
+        {
+            var_dump('remark change');
+        }
+        return parent::onBeforeUpdate();
+    }
+
     public function onAfterUpdate()
     {
         if($this->isDirty('order_product_ids'))

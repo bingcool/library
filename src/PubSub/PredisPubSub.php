@@ -11,6 +11,7 @@
 
 namespace Common\Library\PubSub;
 
+use Common\Library\Cache\RedisConnection;
 use Predis\PubSub\Consumer as PubSubConsumer;
 
 class PredisPubSub extends AbstractPubSub
@@ -29,7 +30,7 @@ class PredisPubSub extends AbstractPubSub
      * RedisPubSub constructor.
      * @param $redis
      */
-    public function __construct($redis)
+    public function __construct(RedisConnection $redis)
     {
         parent::__construct($redis);
     }

@@ -11,6 +11,7 @@
 
 namespace Common\Library\Uuid;
 
+use Common\Library\Cache\RedisConnection;
 use Common\Library\Exception\UuidException;
 
 class RedisIncrement
@@ -41,7 +42,7 @@ class RedisIncrement
      * @param $incrKey
      * @Param $isPredisDriver
      */
-    public function __construct($redis, string $incrKey, ?bool $isPredisDriver = null)
+    public function __construct(RedisConnection $redis, string $incrKey, ?bool $isPredisDriver = null)
     {
         $this->redis = $redis;
         $this->incrKey = $incrKey;

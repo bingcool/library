@@ -11,6 +11,8 @@
 
 namespace Common\Library\PubSub;
 
+use Common\Library\Cache\RedisConnection;
+
 class RedisPubSub extends AbstractPubSub
 {
     /**
@@ -22,7 +24,7 @@ class RedisPubSub extends AbstractPubSub
      * RedisPubSub constructor.
      * @param $redis
      */
-    public function __construct($redis)
+    public function __construct(RedisConnection $redis)
     {
         parent::__construct($redis);
         // no timeout

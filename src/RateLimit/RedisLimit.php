@@ -11,6 +11,7 @@
 
 namespace Common\Library\RateLimit;
 
+use Common\Library\Cache\RedisConnection;
 use Common\Library\Exception\UuidException;
 
 class RedisLimit
@@ -60,7 +61,7 @@ class RedisLimit
     /**
      * RedisLimit constructor.
      */
-    public function __construct($redis)
+    public function __construct(RedisConnection $redis)
     {
         $this->redis = $redis;
         $this->isPredisDriver($isPredisDriver ?? null);

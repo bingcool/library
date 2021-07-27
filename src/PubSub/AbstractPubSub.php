@@ -11,6 +11,8 @@
 
 namespace Common\Library\PubSub;
 
+use Common\Library\Cache\RedisConnection;
+
 Abstract class AbstractPubSub
 {
     /**
@@ -26,7 +28,7 @@ Abstract class AbstractPubSub
     /**
      * AbstractPubSub constructor.
      */
-    public function __construct($redis)
+    public function __construct(RedisConnection $redis)
     {
         $this->redis = $redis;
         $this->isCoroutine();

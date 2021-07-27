@@ -63,7 +63,6 @@ class RedisConnection {
      * @param int $logNum
      */
     public function setLimitLogNum(int $spendLogNum) {
-        //最大记录前50个操作即可，防止在循坏中大量创建
         if($spendLogNum > static::MAX_SPEND_LOG_NUM) {
             $spendLogNum = static::MAX_SPEND_LOG_NUM;
         }
@@ -92,7 +91,8 @@ class RedisConnection {
     /**
      * __destruct
      */
-    public function __destruct() {
+    public function __destruct()
+    {
         $this->lastLogs = [];
     }
 

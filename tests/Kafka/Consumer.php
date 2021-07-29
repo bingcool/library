@@ -29,6 +29,11 @@ $consumer->setRebalanceCb(function (\RdKafka\KafkaConsumer $kafkaConsumer, $err,
     }
 });
 
+// 设置conf的配置项
+$consumer->setConfig([
+    // 自动提交offset如果设置为0,那么是手动提交，需要自己在程序最后commit()
+    'enable.auto.commit' => 1
+]);
 
 // 设置消费分组Id
 $consumer->setGroupId('group_order_pay');

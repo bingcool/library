@@ -19,11 +19,11 @@
   "minimum-stability": "dev",
   "require": {
     "php" : ">=7.1.0",
-    "ext-redis": "*",
     "ext-pdo": "*",
     "ext-curl": "*",
     "ext-json": "*",
-    "predis/predis": "~1.1.7"
+    "predis/predis": "~1.1.7",
+    "malkusch/lock": "dev-master"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",

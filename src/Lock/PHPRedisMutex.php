@@ -1,5 +1,5 @@
 <?php
-namespace Common\library\Lock;
+namespace Common\Library\Lock;
 
 use malkusch\lock\exception\LockReleaseException;
 use Throwable;
@@ -19,17 +19,7 @@ class PHPRedisMutex extends \malkusch\lock\mutex\PHPRedisMutex
     /**
      * @var int The timeout in seconds a lock may live.
      */
-    protected $timeout;
-
-    /**
-     * @var string The lock key.
-     */
-    protected $key;
-
-    /**
-     * @var double The timestamp when the lock was acquired.
-     */
-    protected $acquired;
+    private $timeout;
 
     public function __construct(array $redisAPIs, string $name, int $timeout = 3)
     {
@@ -78,30 +68,6 @@ class PHPRedisMutex extends \malkusch\lock\mutex\PHPRedisMutex
         }
 
         return $codeResult;
-    }
-
-    /**
-     * @return bool
-     */
-    public function getLock(): bool
-    {
-        $this->acquired = microtime(true);
-        return $this->acquire($this->key, $this->timeout + 1);
-    }
-
-    /**
-     * @return bool
-     */
-    public function releaseLock(): bool
-    {
-        try
-        {
-            $this->unlock();
-            return true;
-        } catch (LockReleaseException $lockReleaseException)
-        {
-            throw $lockReleaseException;
-        }
     }
 
     /**

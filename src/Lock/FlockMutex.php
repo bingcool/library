@@ -1,5 +1,5 @@
 <?php
-namespace Common\library\Lock;
+namespace Common\Library\Lock;
 
 /**
 +----------------------------------------------------------------------

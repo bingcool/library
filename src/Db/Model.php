@@ -328,7 +328,7 @@ abstract class Model implements ArrayAccess
         try {
             $allowFields = $this->getAllowFields();
             $pk = $this->getPk();
-            // 自定义的主键值
+            // define increment primary key
             if(!isset($this->_data[$pk]))
             {
                 $pkValue = $this->createPkValue();
@@ -340,7 +340,7 @@ abstract class Model implements ArrayAccess
             }
             list($sql, $bindParams) = $this->parseInsertSql($allowFields);
             $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
-            // 自增的pk,插入成功,需要赋值
+            // if increment primary key insert successful set primary key to data array
             if(!isset($this->_data[$pk]) || is_null($this->_data[$pk]) || $this->_data[$pk] == '')
             {
                 $this->_data[$pk] = $this->getConnection()->getLastInsID($pk);
@@ -350,9 +350,9 @@ abstract class Model implements ArrayAccess
         }catch (\Throwable $throwable) {
             throw $throwable;
         }
-        // 标记数据已经存在
+        // set exist
         $this->exists(true);
-        // 所有的数据表原始字段值设置
+        // query buildAttributes
         $this->buildAttributes();
         $this->trigger('AfterInsert');
         return $this->_data[$pk] ?? false;
@@ -440,12 +440,12 @@ abstract class Model implements ArrayAccess
         }
 
         $this->checkData();
-        // 自动获取有更新的数据
         if(!$attributes)
         {
+            // auto get change fields
             $diffData = $this->getChangeData();
         }else {
-            // 指定字段更新
+            // specify update fields
             $diffData = $this->getCustomData($attributes);
         }
 

@@ -75,7 +75,6 @@ class Queue
     public function push(...$items)
     {
         $push = [];
-
         if(empty($items))
         {
             return false;
@@ -84,8 +83,7 @@ class Queue
         {
             $push[] = is_array($v) ? json_encode($v) : $v;
         }
-
-        // Predis handel
+        // Predis handle
         if($this->isPredisDriver) {
             return $this->redis->lPush($this->queueKey, $push);
         }

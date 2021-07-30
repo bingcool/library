@@ -55,7 +55,7 @@ class RedisLimit
     /**
      * @var bool
      */
-    protected $isPredisDriver = false;
+    protected $isPredisDriver;
 
 
     /**
@@ -64,7 +64,7 @@ class RedisLimit
     public function __construct(RedisConnection $redis)
     {
         $this->redis = $redis;
-        $this->isPredisDriver($isPredisDriver ?? null);
+        $this->isPredisDriver();
     }
 
     /**
@@ -164,9 +164,9 @@ LUA;
      */
     public function isPredisDriver(?bool $isPredisDriver = null)
     {
-        if(!is_object($this->redis))
+        if(!is_null($this->isPredisDriver))
         {
-            throw new UuidException(sprintf('%s::%s params of redis must be a object',__CLASS__,__FUNCTION__));
+            return $this->isPredisDriver;
         }
 
         if(is_null($isPredisDriver))

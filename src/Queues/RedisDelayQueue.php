@@ -29,7 +29,7 @@ class RedisDelayQueue extends BaseDelayQueue
     {
         if($redis instanceof Predis)
         {
-            throw new QueueException('RedisDelayQueue __construct first param of redis can not use Common\Library\Cache\Predis');
+            throw new QueueException('RedisDelayQueue __construct first argument of redis can not use Common\Library\Cache\Predis');
         }
         parent::__construct($redis, $delayKey, $option);
     }

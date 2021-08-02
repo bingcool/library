@@ -6,24 +6,35 @@ use Throwable;
 
 /**
  * +----------------------------------------------------------------------
-* | Common library of swoole
-* +----------------------------------------------------------------------
-* | Licensed ( https://opensource.org/licenses/MIT )
-* +----------------------------------------------------------------------
-* | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-* +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
-class PHPRedisMutex extends \malkusch\lock\mutex\PHPRedisMutex
+class PHPRedisMutex extends \malkusch\lock\mutex\PredisMutex
 {
     /**
-     * @var int The timeout in seconds a lock may live.
+     * The prefix for the lock key.
      */
-    private $timeout;
+    private const PREFIX = 'lock_';
+
+    /**
+     * @var int
+     */
+    protected $timeOut;
+
+    /**
+     * @var string The lock key.
+     */
+    private $key;
 
     public function __construct(array $redisAPIs, string $name, int $timeout = 3)
     {
         $this->timeOut = $timeout;
+        $this->key = self::PREFIX . $name;
         parent::__construct($redisAPIs, $name, $timeout);
     }
 
@@ -46,15 +57,13 @@ class PHPRedisMutex extends \malkusch\lock\mutex\PHPRedisMutex
 
             if($chan ?? null)
             {
-                $chan->pop($this->timeout + 1);
+                $chan->pop($this->timeOut + 1);
             }
-        } catch (Throwable $exception)
-        {
+        } catch (Throwable $exception) {
             $codeException = $exception;
 
             throw $exception;
-        } finally
-        {
+        } finally {
             try {
                 $this->unlock();
             } catch (LockReleaseException $lockReleaseException) {
@@ -68,6 +77,26 @@ class PHPRedisMutex extends \malkusch\lock\mutex\PHPRedisMutex
         }
 
         return $codeResult;
+    }
+
+    /**
+     * @return bool
+     */
+    public function acquireLock(): bool
+    {
+        return $this->acquire($this->key, $this->timeOut);
+    }
+
+    /**
+     * @return bool
+     */
+    public function releaseLock():bool
+    {
+        if (!$this->release($this->key)) {
+            throw new LockReleaseException('Failed to release the lock.');
+        }
+
+        return true;
     }
 
     /**

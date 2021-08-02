@@ -16,11 +16,25 @@ use Throwable;
 
 class PredisMutex extends \malkusch\lock\mutex\PredisMutex
 {
+    /**
+     * The prefix for the lock key.
+     */
+    private const PREFIX = 'lock_';
+
+    /**
+     * @var int
+     */
     protected $timeOut;
+
+    /**
+     * @var string The lock key.
+     */
+    private $key;
 
     public function __construct(array $redisAPIs, string $name, int $timeout = 3)
     {
         $this->timeOut = $timeout;
+        $this->key = self::PREFIX . $name;
         parent::__construct($redisAPIs, $name, $timeout);
     }
 
@@ -63,6 +77,26 @@ class PredisMutex extends \malkusch\lock\mutex\PredisMutex
         }
 
         return $codeResult;
+    }
+
+    /**
+     * @return bool
+     */
+    public function acquireLock(): bool
+    {
+        return $this->acquire($this->key, $this->timeOut);
+    }
+
+    /**
+     * @return bool
+     */
+    public function releaseLock():bool
+    {
+        if (!$this->release($this->key)) {
+            throw new LockReleaseException('Failed to release the lock.');
+        }
+
+        return true;
     }
 
     /**

@@ -216,7 +216,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     }
 
     /**
-     * @return RedisConnection|\Redis
+     * @return RedisConnection
      */
     public function getRedis()
     {

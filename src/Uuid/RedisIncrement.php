@@ -17,7 +17,7 @@ use Common\Library\Exception\UuidException;
 class RedisIncrement
 {
     /**
-     * @var \Redis
+     * @var RedisConnection
      */
     protected $redis;
 
@@ -42,36 +42,13 @@ class RedisIncrement
      * @param $incrKey
      * @Param $isPredisDriver
      */
-    public function __construct(RedisConnection $redis, string $incrKey, ?bool $isPredisDriver = null)
+    public function __construct(RedisConnection $redis, string $incrKey)
     {
         $this->redis = $redis;
         $this->incrKey = $incrKey;
-        $this->isPredisDriver($isPredisDriver);
+        $this->isPredisDriver();
     }
 
-    /**
-     * @param bool|null $isPredisDriver
-     * @throws \UuidException
-     */
-    public function isPredisDriver(?bool $isPredisDriver = null)
-    {
-        if(!is_null($this->isPredisDriver))
-        {
-            return $this->isPredisDriver;
-        }
-
-        if(is_null($isPredisDriver))
-        {
-            if((class_exists('Predis\\Client') && $this->redis instanceof \Predis\Client)
-                || (class_exists('Common\Library\Cache\Predis') && $this->redis instanceof \Common\Library\Cache\Predis))
-            {
-                $this->isPredisDriver = true;
-            }
-        }else
-        {
-            $this->isPredisDriver = $isPredisDriver;
-        }
-    }
 
     /**
      * @return null
@@ -135,6 +112,19 @@ class RedisIncrement
     {
         return LuaScripts::getUuidLuaScript();
     }
+
+    /**
+     * @return bool
+     */
+    public function isPredisDriver()
+    {
+        if($this->redis instanceof \Common\Library\Cache\Predis)
+        {
+            $this->isPredisDriver = true;
+        }
+        return $this->isPredisDriver;
+    }
+
 
 }
 

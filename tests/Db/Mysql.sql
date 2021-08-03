@@ -35,3 +35,14 @@ CREATE TABLE `tbl_app_info` (
  `modify_user` varchar(30) DEFAULT NULL COMMENT '修改人',
  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `tbl_users` (
+    `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键用户ID',
+    `user_name` varchar(512)  NOT NULL DEFAULT '' COMMENT '用户名',
+    `sex` tinyint(2) DEFAULT null COMMENT '性别',
+    `phone` varchar(16) NOT NULL DEFAULT '' COMMENT '手机',
+    `birth_day` date not null DEFAULT '1970-01-01' COMMENT '生日',
+    `create_time` datetime not null DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    primary key (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8;

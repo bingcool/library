@@ -22,7 +22,7 @@ class RedisLimit
     const PREFIX_LIMIT = 'rate_limit:';
 
     /**
-     * @var \Predis\Client|\Redis
+     * @var RedisConnection
      */
     protected $redis;
 
@@ -55,7 +55,7 @@ class RedisLimit
     /**
      * @var bool
      */
-    protected $isPredisDriver;
+    protected $isPredisDriver = false;
 
 
     /**
@@ -159,27 +159,15 @@ LUA;
     }
 
     /**
-     * @param bool|null $isPredisDriver
-     * @throws UuidException
+     * @return bool
      */
-    public function isPredisDriver(?bool $isPredisDriver = null)
+    public function isPredisDriver()
     {
-        if(!is_null($this->isPredisDriver))
+        if($this->redis instanceof \Common\Library\Cache\Predis)
         {
-            return $this->isPredisDriver;
+            $this->isPredisDriver = true;
         }
-
-        if(is_null($isPredisDriver))
-        {
-            if((class_exists('Predis\\Client') && $this->redis instanceof \Predis\Client)
-                || (class_exists('Common\Library\Cache\Predis') && $this->redis instanceof \Common\Library\Cache\Predis))
-            {
-                $this->isPredisDriver = true;
-            }
-        }else
-        {
-            $this->isPredisDriver = $isPredisDriver;
-        }
+        return $this->isPredisDriver;
     }
 
 }

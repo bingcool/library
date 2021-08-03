@@ -18,7 +18,7 @@ class Queue
 {
 
     /**
-     * @var \Redis
+     * @var RedisConnection
      */
     protected $redis;
 
@@ -84,7 +84,8 @@ class Queue
             $push[] = is_array($v) ? json_encode($v) : $v;
         }
         // Predis handle
-        if($this->isPredisDriver) {
+        if($this->isPredisDriver)
+        {
             return $this->redis->lPush($this->queueKey, $push);
         }
         return $this->redis->lPush($this->queueKey, ...$push);
@@ -110,7 +111,11 @@ class Queue
             }
             $this->redis->eval(LuaScripts::getQueueLuaScript(), 2, ...[$this->retryQueueKey, $this->queueKey, '-inf', time(), 0, 100]);
         }else {
-            $result = $this->redis->brPop($this->queueKey, $timeOut);
+            /**
+             * @var \Redis $redis
+             */
+            $redis = $this->redis;
+            $result = $redis->brPop($this->queueKey, $timeOut);
             $this->redis->eval(LuaScripts::getQueueLuaScript(), [$this->retryQueueKey, $this->queueKey, '-inf', time(), 0, 100], 2);
         }
 
@@ -177,12 +182,22 @@ class Queue
     {
         if($this->retryQueueCount() == 0 && (int)$this->redis->lLen($this->queueKey) == 0 )
         {
-            $this->redis->del($this->retryMessageKey);
+            if($this->isPredisDriver)
+            {
+                $this->redis->del([$this->retryMessageKey]);
+            }else
+            {
+                /**
+                 * @var \Redis $redis
+                 */
+                $redis = $this->redis;
+                $redis->del($this->retryMessageKey);
+            }
         }
     }
 
     /**
-     * @return \Redis|\Predis\Client|RedisConnection
+     * @return RedisConnection
      */
     public function getRedis()
     {

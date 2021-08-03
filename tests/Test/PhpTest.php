@@ -81,5 +81,38 @@ class PhpTest extends TestCase
 
     }
 
+    /**
+     * @param array $arr 二分查找的数据必须是有序的线性链表数据
+     * @param $number
+     * @return int
+     */
+    public function testBinarySearch($arr, $number) {
+        // 非数组或者数组为空，直接返回-1
+        if (!is_array($arr) || empty($arr)) {
+            return -1;
+        }
+        // 初始变量值
+        $len = count($arr);
+        $lower = 0;
+        $high = $len - 1;
+        // 最低点比最高点大就退出
+        while ($lower <= $high) {
+            // 以中间点作为参照点比较
+            $middle = intval(($lower + $high) / 2);
+            if ($arr[$middle] > $number) {
+                // 查找数比参照点小，舍去右边
+                $high = $middle - 1;
+            } else if ($arr[$middle] < $number) {
+                // 查找数比参照点大，舍去左边
+                $lower = $middle + 1;
+            } else {
+                // 查找数与参照点相等，则找到返回
+                return $middle;
+            }
+        }
+        // 未找到，返回-1
+        return -1;
+    }
+
 }
 

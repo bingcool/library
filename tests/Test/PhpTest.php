@@ -51,8 +51,43 @@ class PhpTest extends TestCase
         $result = $this->maoSort($arr);
         var_dump($result);
     }
+    public function testSelectSort()
+    {
+        $arr = [1,2,45,67,21,89,44,66,33];
+        $result = $this->selectSort($arr);
+        var_dump($result);
+    }
 
     protected function maoSort($arr)
+    {
+        $length = count($arr);
+        if($length <= 1)
+        {
+            return $arr;
+        }
+
+        for($i=1;$i<$length;$i++)
+        {
+            for($j=0;$j<$length-$i;$j++)
+            {
+                if($arr[$j] > $arr[$j+1])
+                {
+                     $tmp = $arr[$j];
+                     $arr[$j] = $arr[$j+1];
+                     $arr[$j+1] = $tmp;
+                }
+            }
+        }
+
+        return $arr;
+    }
+
+    /**
+     * 选择排序法
+     * @param $arr
+     * @return mixed
+     */
+    protected function selectSort($arr)
     {
         $length = count($arr);
 

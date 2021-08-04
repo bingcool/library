@@ -108,7 +108,7 @@ class RedisLimit
     protected function getRequireId()
     {
         $key = $this->rateKey.':reqId';
-        $redisIncrement = new \Common\Library\Uuid\RedisIncrement($this->redis,$key, $this->isPredisDriver);
+        $redisIncrement = new \Common\Library\Uuid\RedisIncrement($this->redis,$key);
         return $redisIncrement->getIncrId();
     }
 

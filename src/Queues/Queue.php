@@ -41,7 +41,7 @@ class Queue
     protected $retryMessageKey;
 
     /**
-     * @var string 重试次数
+     * @var integer 重试次数
      */
     protected $retryTimes = 3;
 
@@ -164,6 +164,14 @@ class Queue
             return;
         }
         $this->retryTimes = $retryTimes;
+    }
+
+    /**
+     * @return int
+     */
+    public function getRetryTimes()
+    {
+        return $this->retryTimes;
     }
 
     /**

@@ -390,8 +390,8 @@ trait Attribute
                 }
                 break;
             default:
-                if (false !== strpos($type, '\\')) {
-                    // 对象类型
+                if (false !== strpos($type, '\\'))
+                {
                     $value = new $type($value);
                 }
         }

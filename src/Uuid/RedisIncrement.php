@@ -12,7 +12,6 @@
 namespace Common\Library\Uuid;
 
 use Common\Library\Cache\RedisConnection;
-use Common\Library\Exception\UuidException;
 
 class RedisIncrement
 {

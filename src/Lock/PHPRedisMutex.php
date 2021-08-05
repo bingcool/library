@@ -58,6 +58,7 @@ class PHPRedisMutex extends \malkusch\lock\mutex\PredisMutex
             if($chan ?? null)
             {
                 $chan->pop($this->timeOut + 1);
+                $chan->close();
             }
         } catch (Throwable $exception) {
             $codeException = $exception;

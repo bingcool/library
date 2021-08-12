@@ -12,7 +12,6 @@
 namespace Common\Library\RateLimit;
 
 use Common\Library\Cache\RedisConnection;
-use Common\Library\Exception\UuidException;
 
 class RedisLimit
 {
@@ -50,7 +49,7 @@ class RedisLimit
      * 如果只有秒级流量控制，那么设置为1分钟(60s)即可
      * @var integer
      */
-    protected $remainTime;
+    protected $ttl;
 
     /**
      * @var bool
@@ -71,25 +70,25 @@ class RedisLimit
      * @param string $key
      * @param int $limitTime
      * @param int $limitNum
-     * @param int $remainTime
+     * @param int $ttl
      * @return int
      */
     public function checkLimit(
         string $key,
         int $limitTime,
         int $limitNum,
-        int $remainTime = 3600
+        int $ttl = 3600
     )
     {
         $this->rateKey = self::PREFIX_LIMIT.$key;
         $this->limitTime = $limitTime;
         $this->limitNum = $limitNum;
-        $this->remainTime = $remainTime;
+        $this->ttl = $ttl;
 
         $requireId = $this->getRequireId();
         $endMilliSecond = $this->getMilliSecond();
         $startMilliSecond = $endMilliSecond - ($this->limitTime * 1000);
-        $remRemainTime = $endMilliSecond - ($this->remainTime * 1000);
+        $remRemainTime = $endMilliSecond - ($this->ttl * 1000);
 
         if($this->isPredisDriver)
         {

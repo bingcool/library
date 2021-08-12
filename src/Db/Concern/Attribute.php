@@ -45,13 +45,13 @@ trait Attribute
      * 当前模型数据
      * @var array
      */
-    private $_data = [];
+    protected $_data = [];
 
     /**
      * 原始数据
      * @var array
      */
-    private $_origin = [];
+    protected $_origin = [];
 
     /**
      * afterUpdate后可以获取不同属性
@@ -226,6 +226,26 @@ trait Attribute
             $diffAttributes = $this->getDiffAttributes();
         }
         return array_keys($diffAttributes['new_attributes'] ?? []);
+    }
+
+    /**
+     * hasDirtyAttributeFields active record 是否有发生变化字段值
+     * @return bool
+     */
+    public function hasDirtyAttributeFields()
+    {
+        if($this->isNew())
+        {
+            return true;
+        }else
+        {
+            $diffAttributes = $this->getDirtyAttributeFields();
+            if($diffAttributes)
+            {
+                return true;
+            }
+            return false;
+        }
     }
 
     /**

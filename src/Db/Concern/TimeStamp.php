@@ -23,7 +23,7 @@ trait TimeStamp
     /**
      * @var string
      */
-    public $dateFormat = 'Y-m-d H:i:s';
+    protected $dateFormat = 'Y-m-d H:i:s';
 
     /**
      * 时间日期字段格式化处理

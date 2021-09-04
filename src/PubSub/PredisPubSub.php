@@ -84,7 +84,6 @@ class PredisPubSub extends AbstractPubSub
         foreach($pubSubConsumer as $message)
         {
             $kind = $message->kind;
-
             $channel = $message->channel;
             $msg = $message->payload;
             if($kind == 'message')

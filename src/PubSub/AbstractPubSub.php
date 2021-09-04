@@ -16,7 +16,7 @@ use Common\Library\Cache\RedisConnection;
 Abstract class AbstractPubSub
 {
     /**
-     * @var mixed
+     * @var RedisConnection
      */
     protected $redis;
 

@@ -26,6 +26,11 @@ class RedisIncrement
     protected $incrKey;
 
     /**
+     * @var array
+     */
+    protected $followConnections = [];
+
+    /**
      * @var int
      */
     protected $retryTimes = 3;
@@ -37,14 +42,16 @@ class RedisIncrement
 
     /**
      * RedisIncr constructor.
-     * @param $redis
-     * @param $incrKey
+     * @param RedisConnection $redis
+     * @param string $incrKey
+     * @param array $followConnections
      * @Param $isPredisDriver
      */
-    public function __construct(RedisConnection $redis, string $incrKey)
+    public function __construct(RedisConnection $redis, string $incrKey, array $followConnections = [])
     {
         $this->redis = $redis;
         $this->incrKey = $incrKey;
+        $this->followConnections = $followConnections;
         $this->isPredisDriver();
     }
 
@@ -59,9 +66,8 @@ class RedisIncrement
             $count = 1;
         }
 
-        $dataArr = [];
         do {
-            $dataArr = $this->doHandle($count);
+            $dataArr = $this->doHandle($this->redis, $count);
             if(!empty($dataArr))
             {
                 break;
@@ -69,6 +75,22 @@ class RedisIncrement
             usleep(15*1000);
             --$this->retryTimes;
         }while($this->retryTimes);
+
+        if(empty($dataArr))
+        {
+            if(count($this->followConnections) > 0)
+            {
+                foreach($this->followConnections as $connection)
+                {
+                    $dataArr = $this->doHandle($connection, $count);
+                    if(!empty($dataArr))
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
 
         if(empty($dataArr))
         {
@@ -88,20 +110,25 @@ class RedisIncrement
     }
 
     /**
-     * @param $count
+     * @param RedisConnection $connection
+     * @param int $count
      * @return mixed
      */
-    protected function doHandle($count)
+    protected function doHandle(RedisConnection $connection, int $count)
     {
-        if($this->isPredisDriver)
+        try {
+            if($this->isPredisDriver)
+            {
+                $dataArr = $connection->eval($this->getLuaScripts(), 1, ...[$this->incrKey, $step = $count ?? 1]);
+            }else
+            {
+                $dataArr = $connection->eval($this->getLuaScripts(), [$this->incrKey, $step = $count ?? 1], 1);
+            }
+        }catch (\Throwable $e)
         {
-            $dataArr = $this->redis->eval($this->getLuaScripts(), 1, ...[$this->incrKey, $step = $count ?? 1]);
-        }else
-        {
-            $dataArr = $this->redis->eval($this->getLuaScripts(), [$this->incrKey, $step = $count ?? 1], 1);
-        }
 
-        return $dataArr;
+        }
+        return $dataArr ?? [];
     }
 
     /**

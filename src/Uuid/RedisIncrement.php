@@ -26,6 +26,12 @@ class RedisIncrement
     protected $incrKey;
 
     /**
+     * set between 5s ~ 20s , default 15s
+     * @var integer
+     */
+    protected $ttl;
+
+    /**
      * @var array
      */
     protected $followConnections = [];
@@ -44,13 +50,20 @@ class RedisIncrement
      * RedisIncr constructor.
      * @param RedisConnection $redis
      * @param string $incrKey
+     * @param integer $ttl
      * @param array $followConnections
      * @Param $isPredisDriver
      */
-    public function __construct(RedisConnection $redis, string $incrKey, array $followConnections = [])
+    public function __construct(
+        RedisConnection $redis,
+        string $incrKey,
+        int $ttl = 15,
+        array $followConnections = []
+    )
     {
         $this->redis = $redis;
         $this->incrKey = $incrKey;
+        $this->ttl = $ttl;
         $this->followConnections = $followConnections;
         $this->isPredisDriver();
     }
@@ -119,10 +132,10 @@ class RedisIncrement
         try {
             if($this->isPredisDriver)
             {
-                $dataArr = $connection->eval($this->getLuaScripts(), 1, ...[$this->incrKey, $step = $count ?? 1]);
+                $dataArr = $connection->eval($this->getLuaScripts(), 1, ...[$this->incrKey, $step = $count ?? 1, $this->ttl]);
             }else
             {
-                $dataArr = $connection->eval($this->getLuaScripts(), [$this->incrKey, $step = $count ?? 1], 1);
+                $dataArr = $connection->eval($this->getLuaScripts(), [$this->incrKey, $step = $count ?? 1, $this->ttl], 1);
             }
         }catch (\Throwable $e)
         {

@@ -76,6 +76,7 @@ trait ParseSql {
 
     /**
      * parseDeleteSql
+     * @return array
      */
     protected function parseDeleteSql() {
         $pk = $this->getPk();
@@ -100,7 +101,7 @@ trait ParseSql {
     /**
      * @param string $where
      * @param array $bindParams
-     * @return $this|boolean
+     * @return $this
      */
     public function findOne(string $where, array $bindParams = []) {
         $sql = $this->parseWhereSql($where);

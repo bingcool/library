@@ -32,8 +32,9 @@ trait Util {
      * 比较关联数组数据值不同,发生变化的的$array1的字段数组
      * @param array $array1
      * @param array $array2
+     * @return array
      */
-    public static function dirtyArray(array $array1, array $array2)
+    public static function dirtyArray(array $array1, array $array2): array
     {
         $diff = array_udiff_assoc($array1, $array2, function ($a, $b) {
             if ((empty($a) || empty($b)) && $a !== $b) {

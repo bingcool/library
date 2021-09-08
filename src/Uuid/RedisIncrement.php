@@ -52,7 +52,7 @@ class RedisIncrement
      * @param string $incrKey
      * @param integer $ttl
      * @param array $followConnections
-     * @Param $isPredisDriver
+     * @return void
      */
     public function __construct(
         RedisConnection $redis,
@@ -70,7 +70,7 @@ class RedisIncrement
 
 
     /**
-     * @return null
+     * @return int|null
      */
     public function getIncrId(?int $count = null)
     {
@@ -79,13 +79,14 @@ class RedisIncrement
             $count = 1;
         }
 
+        $usleepTime = 15 * 1000;
         do {
             $dataArr = $this->doHandle($this->redis, $count);
             if(!empty($dataArr))
             {
                 break;
             }
-            usleep(15*1000);
+            usleep($usleepTime);
             --$this->retryTimes;
         }while($this->retryTimes);
 

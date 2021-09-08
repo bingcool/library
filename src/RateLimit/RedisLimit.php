@@ -31,7 +31,7 @@ class RedisLimit
     protected $rateKey;
 
     /**
-     * 滑动窗口时间，小时|分钟|秒级别
+     * 滑动窗口时间，小时|分钟|秒 级别
      * @var integer
      */
     protected $limitTime;
@@ -59,6 +59,7 @@ class RedisLimit
 
     /**
      * RedisLimit constructor.
+     * @param RedisConnection $redis
      */
     public function __construct(RedisConnection $redis)
     {
@@ -142,7 +143,7 @@ LUA;
     }
 
     /**
-     * @return string
+     * @return int
      */
     protected function getMilliSecond()
     {

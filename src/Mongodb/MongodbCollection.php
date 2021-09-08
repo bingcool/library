@@ -11,8 +11,8 @@
 
 namespace Common\Library\Mongodb;
 
-class MongodbCollection {
-
+class MongodbCollection
+{
     /**
      * _id 将默认设置成id
      */
@@ -38,7 +38,7 @@ class MongodbCollection {
      * @param   array   $insertData
      * @return  mixed
      */
-    public  function bulkWrite($insertData) {
+    public function bulkWrite($insertData) {
         return $this->collectionInstance->bulkWrite($insertData);
     }
 
@@ -83,7 +83,7 @@ class MongodbCollection {
             foreach($documents as $k => $document) {
                 $result[$k] = iterator_to_array($document);
                 if(isset($result[$k]['_id'])) {
-                    if(!is_null($this->_id) &&  ($this->_id != '_id')) {
+                    if(!is_null($this->_id) && ($this->_id != '_id')) {
                         $result[$k][$this->_id] = (string) $result[$k]['_id'];
                         unset($result[$k]['_id']);
                     }else {
@@ -361,7 +361,7 @@ class MongodbCollection {
     }
 
     /**
-     * count 计算总数
+     * count
      * @return int
      */
     public function count($filter, array $options = []) {
@@ -380,10 +380,10 @@ class MongodbCollection {
     }
 
     /**
-     * 本类找不到函数时,自动重载collection类的原始函数
-     * @param   string    $method
-     * @param   mixed     $args
-     * @return  mixed
+     * 自动重载collection类的原始函数
+     * @param  string $method
+     * @param  mixed  $args
+     * @return mixed
      */
     public function __call($method, $args) {
         return call_user_func_array([$this->collectionInstance, $method], $args);

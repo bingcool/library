@@ -54,10 +54,10 @@ class RawResponse
 
     /**
      * Return the response headers.
-     * @param string $headeKey
+     * @param string|null $headeKey
      * @return array|mixed
      */
-    public function getHeaders(string $headerKey = null)
+    public function getHeaders(?string $headerKey = null)
     {
         if($headerKey)
         {
@@ -82,7 +82,7 @@ class RawResponse
      * @param bool $assoc
      * @return mixed
      */
-    public function getDecodeBody($assoc = true)
+    public function getDecodeBody(bool $assoc = true)
     {
         return json_decode($this->body, $assoc) ?? $this->body;
     }
@@ -155,7 +155,7 @@ class RawResponse
      *
      * @param string $rawHeaders The raw headers from the response.
      */
-    protected function setHeadersFromString($rawHeaders)
+    protected function setHeadersFromString(string $rawHeaders)
     {
         // Normalize line breaks
         $rawHeaders = str_replace("\r\n", "\n", $rawHeaders);

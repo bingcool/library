@@ -167,7 +167,7 @@ class MongodbModel {
     }
 
     /**
-     * __destruct 销毁初始化变量
+     * __destruct
      */
     public function __destruct() {
         $this->databaseObject = null;

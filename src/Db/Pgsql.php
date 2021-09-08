@@ -106,6 +106,9 @@ class Pgsql extends PDOConnection {
         return $info;
     }
 
+    /**
+     * @return bool
+     */
     protected function supportSavepoint(): bool
     {
         return true;

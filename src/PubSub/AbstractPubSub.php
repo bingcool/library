@@ -21,9 +21,9 @@ Abstract class AbstractPubSub
     protected $redis;
 
     /**
-     * @var bool
+     * @var null|bool
      */
-    protected $isCoroutine = false;
+    protected $isCoroutine;
 
     /**
      * AbstractPubSub constructor.
@@ -48,9 +48,16 @@ Abstract class AbstractPubSub
      */
     protected function isCoroutine()
     {
+        if(!is_null($this->isCoroutine))
+        {
+            return $this->isCoroutine;
+        }
         if(class_exists('Swoole\Coroutine') && \Swoole\Coroutine::getCid() > 0)
         {
             $this->isCoroutine = true;
+        }else
+        {
+            $this->isCoroutine = false;
         }
 
         return $this->isCoroutine;

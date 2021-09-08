@@ -74,6 +74,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
 
     /**
      * @param $option
+     * @return void
      */
     public function setOption($option)
     {
@@ -83,6 +84,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     /**
      * 重试次数
      * @param int $retryTimes
+     * @return void
      */
     public function setRetryTimes(int $retryTimes)
     {
@@ -156,6 +158,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
 
     /**
      * @param array $memberArr
+     * @return int
      */
     public function rem(array $memberArr)
     {
@@ -173,7 +176,6 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     }
 
     /**
-     * @param string $key
      * @param $start
      * @param $end
      * @param bool|null $withScores
@@ -186,7 +188,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
 
     /**
      * @param $member
-     * @return int
+     * @return int|bool
      */
     public function rank($member)
     {
@@ -195,10 +197,10 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
 
     /**
      * 针对返回withScores的数据，取出数据保持与直接调用$redis->zRangeByScore('key', 0, 3, array('withscores' => TRUE);保持一致
-     * @param $result
+     * @param array $result
      * @return array
      */
-    protected function mapResult($result)
+    protected function mapResult(array $result)
     {
         $chuncks = array_chunk($result, 2, false);
         $data = [];

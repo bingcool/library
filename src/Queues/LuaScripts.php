@@ -13,6 +13,9 @@ namespace Common\Library\Queues;
 
 class LuaScripts
 {
+    /**
+     * @return string
+     */
     public static function getDelayRetryLuaScript()
     {
         $lua = <<<LUA

@@ -135,8 +135,8 @@ class CurlHttpClient implements HttpClientInterface
         string $method,
         $body,
         array $headers = [],
-        $connectTimeOut = 10,
-        $readTimeOut = 10
+        int $connectTimeOut = 10,
+        int $readTimeOut = 10
     )
     {
         if($url)
@@ -245,8 +245,12 @@ class CurlHttpClient implements HttpClientInterface
      * @return RawResponse|bool
      * @throws CurlException
      */
-    public function post(string $url, array $params, int $connectTimeOut = 10, int $timeOut = 10)
-    {
+    public function post(
+        string $url,
+        array $params,
+        int $connectTimeOut = 10,
+        int $timeOut = 10
+    ){
         if(empty($params))
         {
             return  false;

@@ -630,6 +630,7 @@ abstract class PDOConnection implements ConnectionInterface {
     /**
      * @param string $string
      * @param int $parameterType
+     * @return string
      */
     public function quote(string $string, $parameterType = PDO::PARAM_STR): string
     {
@@ -1078,6 +1079,7 @@ abstract class PDOConnection implements ConnectionInterface {
 
     /**
      * getLog
+     * @return array
      */
     public function getLastLogs(): array
     {
@@ -1094,7 +1096,7 @@ abstract class PDOConnection implements ConnectionInterface {
     }
 
     /**
-     * 析构方法
+     * __destruct
      */
     public function __destruct()
     {

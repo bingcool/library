@@ -29,6 +29,7 @@ class PredisPubSub extends AbstractPubSub
     /**
      * RedisPubSub constructor.
      * @param $redis
+     * @return void
      */
     public function __construct(RedisConnection $redis)
     {
@@ -48,6 +49,7 @@ class PredisPubSub extends AbstractPubSub
     /**
      * @param array $channels
      * @param $callback
+     * @return mixed
      */
     public function subscribe(array $channels, $callback)
     {
@@ -57,6 +59,7 @@ class PredisPubSub extends AbstractPubSub
     /**
      * @param array $patterns
      * @param $callback
+     * @return mixed
      */
     public function psubscribe(array $patterns, $callback)
     {
@@ -159,6 +162,7 @@ class PredisPubSub extends AbstractPubSub
 
     /**
      * @param array $channels
+     * @return void
      */
     public function unsubscribe(array $channels)
     {
@@ -168,6 +172,7 @@ class PredisPubSub extends AbstractPubSub
 
     /**
      * @param array $patterns
+     * @return void
      */
     public function punsubscribe(array $patterns)
     {

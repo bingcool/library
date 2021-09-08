@@ -556,7 +556,7 @@ abstract class Model implements ArrayAccess
      * 获取存在记录的字段旧值(原生数据库直接读取的值，还没经过format处理的值)
      * @param string $fieldName
      * @param bool $format
-     * @return string
+     * @return mixed
      */
     public function getOldAttributeValue(string $fieldName, bool $format = false)
     {
@@ -578,7 +578,7 @@ abstract class Model implements ArrayAccess
         return $value ?? null;
     }
 
-    /*
+    /**
      * 获取当前对象设置字段最新值(即将要存进数据库的值)
      * @param string $fieldName
      * @param bool $format
@@ -598,7 +598,7 @@ abstract class Model implements ArrayAccess
      * @param string $fieldName
      * @return bool
      */
-    public function isDirty(string $fieldName)
+    public function isDirty(string $fieldName): bool
     {
         if(in_array($fieldName, $this->getAllowFields()))
         {
@@ -750,8 +750,7 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * 析构方法
-     * @access public
+     * __destruct
      */
     public function __destruct()
     {

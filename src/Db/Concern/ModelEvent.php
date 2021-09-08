@@ -110,7 +110,7 @@ trait ModelEvent
 
     /**
      * @param string $event
-     * @return array|null
+     * @return \Closure
      */
     public function getEventHandle(string $event = '')
     {

@@ -16,7 +16,7 @@ use Common\Library\Exception\DbException;
 
 /**
  * Class Model
- * @package Swoolefy\Library\Db
+ * @package Common\Library\Db
  */
 
 abstract class Model implements ArrayAccess

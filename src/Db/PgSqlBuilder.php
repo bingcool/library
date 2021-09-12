@@ -9,7 +9,7 @@
 +----------------------------------------------------------------------
  */
 
-namespace Swoolefy\Library\Db;
+namespace Common\Library\Db;
 
 use Common\Library\Exception\DbException;
 

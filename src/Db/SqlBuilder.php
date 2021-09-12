@@ -9,13 +9,13 @@
 +----------------------------------------------------------------------
  */
 
-namespace Swoolefy\Library\Db;
+namespace Common\Library\Db;
 
 use Common\Library\Exception\DbException;
 
 /**
  * Class SqlBuilder
- * @package Swoolefy\Library\Db
+ * @package Common\Library\Db
  */
 
 class SqlBuilder

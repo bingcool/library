@@ -68,7 +68,6 @@ class RedisIncrement
         $this->isPredisDriver();
     }
 
-
     /**
      * @return int|null
      */

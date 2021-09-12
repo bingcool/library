@@ -13,6 +13,9 @@ namespace Common\Library\Pool;
 
 class BasePool extends \Swoole\ConnectionPool
 {
+    /**
+     * @return int
+     */
     public function getSize()
     {
         return $this->num;

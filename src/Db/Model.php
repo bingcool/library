@@ -29,8 +29,10 @@ abstract class Model implements ArrayAccess
 
     const BEFORE_INSERT = 'BeforeInsert';
     const AFTER_INSERT = 'AfterInsert';
+    const AFTER_INSERT_TRANSACTION = 'afterInsertTransaction';
     const BEFORE_UPDATE = 'BeforeUpdate';
     const AFTER_UPDATE = 'AfterUpdate';
+    const AFTER_UPDATE_TRANSACTION = 'afterUpdateTransaction';
     const BEFORE_DELETE = 'BeforeDelete';
     const AFTER_DELETE = 'AfterDelete';
 
@@ -84,6 +86,11 @@ abstract class Model implements ArrayAccess
      * @var bool
      */
     protected $_force = false;
+
+    /**
+     * @var string
+     */
+    protected $_scene;
 
     /**
      * Model constructor.
@@ -284,7 +291,10 @@ abstract class Model implements ArrayAccess
             $value = $this->writeTransform($value, $this->_fieldTypeMap[$name]);
         }
         // 源数据
-        if(!$this->isExists()) $this->_origin[$name] = $value;
+        if(!$this->isExists())
+        {
+            $this->_origin[$name] = $value;
+        }
 
         // 设置数据对象属性
         $this->_data[$name] = $value;
@@ -311,7 +321,7 @@ abstract class Model implements ArrayAccess
     /**
      * 新增写入数据
      * @return bool
-     * @throws Exception
+     * @throws \Throwable
      */
     protected function insertData(): bool
     {
@@ -338,17 +348,29 @@ abstract class Model implements ArrayAccess
                 // 数据表设置自增pk的，则不需要设置允许字段
                 $allowFields = array_diff($allowFields, [$pk]);
             }
+
             list($sql, $bindParams) = $this->parseInsertSql($allowFields);
-            $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+            if(method_exists($this,'onAfterInsertTransaction')) {
+                try {
+                    $this->transaction(function () use($sql, $bindParams) {
+                        $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+                        $this->onAfterInsertTransaction();
+                    });
+                }catch (\Throwable $e)
+                {
+                    $this->_numRows = 0;
+                    throw $e;
+                }
+            }else {
+                $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+            }
             // if increment primary key insert successful set primary key to data array
             if(!isset($this->_data[$pk]) || is_null($this->_data[$pk]) || $this->_data[$pk] == '')
             {
                 $this->_data[$pk] = $this->getConnection()->getLastInsID($pk);
             }
-        }catch (\Exception $exception) {
-            throw $exception;
-        }catch (\Throwable $throwable) {
-            throw $throwable;
+        }catch (\Exception|\Throwable $e) {
+            throw $e;
         }
         // set exist
         $this->exists(true);
@@ -431,6 +453,7 @@ abstract class Model implements ArrayAccess
      * 保存写入更新数据
      * @param array $attributes
      * @return bool
+     * @throws \Throwable
      */
     protected function updateData(array $attributes = []): bool
     {
@@ -453,10 +476,22 @@ abstract class Model implements ArrayAccess
         if($diffData)
         {
             list($sql, $bindParams) = $this->parseUpdateSql($diffData, $allowFields);
-            $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
+            if(method_exists($this,'onAfterUpdateTransaction')) {
+                try {
+                    $this->transaction(function () use($sql, $bindParams) {
+                        $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
+                        $this->onAfterUpdateTransaction();
+                    });
+                }catch (\Throwable $e) {
+                    $this->_numRows = 0;
+                    throw $e;
+                }
+            }else {
+                $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
+            }
             $this->checkResult($this->_data);
+            $this->trigger('AfterUpdate');
         }
-        $this->trigger('AfterUpdate');
 
         return true;
     }
@@ -475,7 +510,7 @@ abstract class Model implements ArrayAccess
     /**
      * @param bool $force 强制物理删除
      * @return bool
-     * @throws \DbException
+     * @throws \Throwable
      */
     public function delete(bool $force = false): bool
     {
@@ -517,6 +552,31 @@ abstract class Model implements ArrayAccess
         $this->skipEvent(self::BEFORE_UPDATE);
         $this->skipEvent(self::AFTER_UPDATE);
         return true;
+    }
+
+    /**
+     * @return string
+     */
+    public function getScene()
+    {
+        return $this->_scene;
+    }
+
+    /**
+     * @param string $value
+     */
+    public function setScene(string $value)
+    {
+        $this->_scene = $value;
+    }
+
+    /**
+     * 当前对象的迭代器
+     * @return \ArrayIterator
+     */
+    public function getIterator()
+    {
+        return new \ArrayIterator($this->getAttributes());
     }
 
     /**
@@ -582,7 +642,7 @@ abstract class Model implements ArrayAccess
      * 获取当前对象设置字段最新值(即将要存进数据库的值)
      * @param string $fieldName
      * @param bool $format
-     * @return string
+     * @return string|null
      */
     public function getNewAttributeValue(string $fieldName, bool $format = false)
     {
@@ -629,10 +689,32 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * 获取对象经过属性的getter函数处理后的真实存在的业务目标数据
+     * 获取当前对象经过属性的getter函数处理后的业务目标数据
      * @return array|null
      */
     public function getAttributes() {
+        if($this->_data)
+        {
+            foreach($this->_data as $fieldName=>$value) {
+                if(in_array($fieldName, $this->getAllowFields()))
+                {
+                    $attributes[$fieldName] = $this->getValue($fieldName, $value);
+                }else {
+                    unset($this->_data[$fieldName]);
+                }
+            }
+        }
+        $this->_attributes = $attributes ?? [];
+        return $this->_attributes;
+    }
+
+    /**
+     * 获取当前对象存在的record经过属性的getter函数处理后的业务真实目标数据(存在数据)
+     *
+     * @return array
+     */
+    public function getOldAttributes()
+    {
         if($this->isExists() && $this->_origin)
         {
             foreach($this->_origin as $fieldName=>$value) {
@@ -644,8 +726,7 @@ abstract class Model implements ArrayAccess
                 }
             }
         }
-        $this->_attributes = $attributes ?? null;
-        return $this->_attributes;
+        return $attributes ?? [];
     }
 
     /**

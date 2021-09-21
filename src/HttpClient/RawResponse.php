@@ -88,6 +88,14 @@ class RawResponse
     }
 
     /**
+     * @return mixed
+     */
+    public function toArray()
+    {
+        return $this->getDecodeBody(true);
+    }
+
+    /**
      * Return the HTTP response code.
      *
      * @return int

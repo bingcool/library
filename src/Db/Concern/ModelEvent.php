@@ -11,6 +11,8 @@
 
 namespace Common\Library\Db\Concern;
 
+use Common\Library\Exception\DbException;
+
 /**
  * Trait ModelEvent
  * @package Common\Library\Db\Concern
@@ -60,7 +62,7 @@ trait ModelEvent
      * 触发事件
      * @param  string $event 事件名
      * @return bool
-     * @throws Exception
+     * @throws \Exception
      */
     protected function trigger(string $event): bool
     {
@@ -100,9 +102,11 @@ trait ModelEvent
             static::BEFORE_UPDATE,
             static::AFTER_UPDATE,
             static::BEFORE_DELETE,
-            static::AFTER_DELETE
+            static::AFTER_DELETE,
+            static::AFTER_INSERT_TRANSACTION,
+            static::AFTER_UPDATE_TRANSACTION
         ])) {
-            throw new \Common\Library\Exception\DbException("AddEventHandle first argument of eventName type error");
+            throw new DbException("AddEventHandle first argument of eventName type error");
         }
 
         $this->customEventHandlers[$event] = $func;

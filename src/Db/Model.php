@@ -28,11 +28,13 @@ abstract class Model implements ArrayAccess
     use Concern\Util;
 
     const BEFORE_INSERT = 'BeforeInsert';
+    const BEFORE_INSERT_TRANSACTION = 'BeforeInsertTransaction';
+    const AFTER_INSERT_TRANSACTION = 'AfterInsertTransaction';
     const AFTER_INSERT = 'AfterInsert';
-    const AFTER_INSERT_TRANSACTION = 'afterInsertTransaction';
     const BEFORE_UPDATE = 'BeforeUpdate';
+    const BEFORE_UPDATE_TRANSACTION = 'BeforeUpdateTransaction';
+    const AFTER_UPDATE_TRANSACTION = 'AfterUpdateTransaction';
     const AFTER_UPDATE = 'AfterUpdate';
-    const AFTER_UPDATE_TRANSACTION = 'afterUpdateTransaction';
     const BEFORE_DELETE = 'BeforeDelete';
     const AFTER_DELETE = 'AfterDelete';
 
@@ -350,19 +352,32 @@ abstract class Model implements ArrayAccess
             }
 
             list($sql, $bindParams) = $this->parseInsertSql($allowFields);
-            if(method_exists($this,'onAfterInsertTransaction')) {
-                try {
+            try {
+                $hasBeforeInsertTransaction =  method_exists($this,'onBeforeInsertTransaction');
+                $hasAfterInsertTransaction = method_exists($this,'onAfterInsertTransaction');
+                if($hasBeforeInsertTransaction && $hasAfterInsertTransaction) {
+                    $this->transaction(function () use($sql, $bindParams) {
+                        $this->onBeforeInsertTransaction();
+                        $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+                        $this->onAfterInsertTransaction();
+                    });
+                }else if($hasBeforeInsertTransaction) {
+                    $this->transaction(function () use($sql, $bindParams) {
+                        $this->onBeforeInsertTransaction();
+                        $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+                    });
+                }else if($hasAfterInsertTransaction) {
                     $this->transaction(function () use($sql, $bindParams) {
                         $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
                         $this->onAfterInsertTransaction();
                     });
-                }catch (\Throwable $e)
-                {
-                    $this->_numRows = 0;
-                    throw $e;
+                }else {
+                    $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
                 }
-            }else {
-                $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+            }catch (\Throwable $e)
+            {
+                $this->_numRows = 0;
+                throw $e;
             }
             // if increment primary key insert successful set primary key to data array
             if(!isset($this->_data[$pk]) || is_null($this->_data[$pk]) || $this->_data[$pk] == '')
@@ -476,18 +491,32 @@ abstract class Model implements ArrayAccess
         if($diffData)
         {
             list($sql, $bindParams) = $this->parseUpdateSql($diffData, $allowFields);
-            if(method_exists($this,'onAfterUpdateTransaction')) {
-                try {
+            $hasBeforeUpdateTransaction = method_exists($this,'onBeforeUpdateTransaction');
+            $hasAfterUpdateTransaction = method_exists($this,'onAfterUpdateTransaction');
+            try {
+                if($hasBeforeUpdateTransaction && $hasAfterUpdateTransaction) {
+                    $this->transaction(function () use($sql, $bindParams) {
+                        $this->onBeforeUpdateTransaction();
+                        $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
+                        $this->onAfterUpdateTransaction();
+                    });
+                }else if($hasBeforeUpdateTransaction) {
+                    $this->transaction(function () use($sql, $bindParams) {
+                        $this->onBeforeUpdateTransaction();
+                        $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
+                    });
+                }else if($hasAfterUpdateTransaction) {
                     $this->transaction(function () use($sql, $bindParams) {
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                         $this->onAfterUpdateTransaction();
                     });
-                }catch (\Throwable $e) {
-                    $this->_numRows = 0;
-                    throw $e;
+                }else {
+                    $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                 }
-            }else {
-                $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
+
+            }catch (\Throwable $e) {
+                $this->_numRows = 0;
+                throw $e;
             }
             $this->checkResult($this->_data);
             $this->trigger('AfterUpdate');

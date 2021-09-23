@@ -23,6 +23,9 @@ class Order extends ActiveRecord
      */
     protected $table = 'tbl_order';
 
+    /**
+     * @var string
+     */
     protected $pk = 'order_id';
 
     /**
@@ -52,11 +55,24 @@ class Order extends ActiveRecord
         return parent::onBeforeInsert();
     }
 
+    public function onAfterInsertTransaction()
+    {
+        $user = new User();
+        $user->user_name = 'bingcool'.rand(1,1000);
+        $user->birth_day = '1991-05-05';
+        $user->sex = 1;
+        $user->phone = '12345678';
+        $user->save();
+
+    }
+
     public function onAfterInsert()
     {
         parent::onAfterInsert();
         var_dump($this->getDiffAttributes());
     }
+
+
 
     public function onBeforeUpdate(): bool
     {
@@ -65,6 +81,24 @@ class Order extends ActiveRecord
             var_dump('remark change');
         }
         return parent::onBeforeUpdate();
+    }
+
+    public function onBeforeUpdateTransaction()
+    {
+        var_dump('onBeforeUpdateTransaction');
+        $user = new User(1632412243);
+        var_dump($user->isExists());
+        $user->delete(true);
+    }
+
+    public function onAfterUpdateTransaction()
+    {
+        $user = new User();
+        $user->user_name = 'bingcool'.rand(1,1000);
+        $user->birth_day = '1991-05-05';
+        $user->sex = 1;
+        $user->phone = '12345678';
+        $user->save();
     }
 
     public function onAfterUpdate()

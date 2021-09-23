@@ -103,7 +103,9 @@ trait ModelEvent
             static::AFTER_UPDATE,
             static::BEFORE_DELETE,
             static::AFTER_DELETE,
+            static::BEFORE_INSERT_TRANSACTION,
             static::AFTER_INSERT_TRANSACTION,
+            static::BEFORE_UPDATE_TRANSACTION,
             static::AFTER_UPDATE_TRANSACTION
         ])) {
             throw new DbException("AddEventHandle first argument of eventName type error");

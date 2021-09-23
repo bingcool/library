@@ -23,7 +23,7 @@ class DbTest extends TestCase
             //$order->json_data = ['go','php','java','swoole'];
             $order->json_data = ['1234455','4567888'];
             $order->nnnn = 'njnnnj';
-            var_dump($order->getData());
+            //var_dump($order->getData());
             $order->save();
             var_dump($order->order_id, $order->getNumRows());
 
@@ -55,7 +55,7 @@ class DbTest extends TestCase
 
     public function testUpdateObject()
     {
-        $orderId = 1623132269;
+        $orderId = 1632234455;
         $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
         $order->order_product_ids = [1,2,3,4,5,6,7,8];
         $order->remark = '中国小米（mi）'.rand(1,1000);
@@ -147,7 +147,7 @@ class DbTest extends TestCase
 
     public function testJson()
     {
-        $orderId = 1623132269;
+        $orderId = 1632219150;
         $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
 
         $connection = $order->getConnection();

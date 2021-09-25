@@ -58,17 +58,17 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      * RedisDelayQueue constructor.
      * @param RedisConnection $redis
      * @param string $delayKey
-     * @throws \QueueException
+     * @throws QueueException
      */
     public function __construct(RedisConnection $redis, string $delayKey, ?string $option = null)
     {
-        $this->redis = $redis;
-        $this->delayKey = $delayKey;
-        $this->retryMessageKey = $delayKey.':retry_delq_msg';
         if($option && !in_array(strtoupper($option), static::OPTIONS))
         {
             throw new QueueException('Redis Sort Score Number Option Error');
         }
+        $this->redis = $redis;
+        $this->delayKey = $delayKey;
+        $this->retryMessageKey = $delayKey.':retry_delq_msg';
         $this->option = $option;
     }
 

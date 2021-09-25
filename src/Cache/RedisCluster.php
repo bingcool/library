@@ -48,6 +48,11 @@ class RedisCluster extends RedisConnection {
     protected $persistent;
 
     /**
+     * @var string
+     */
+    protected $auth;
+
+    /**
      * @var array
      */
     private $constructParams = [];
@@ -66,7 +71,8 @@ class RedisCluster extends RedisConnection {
         $seeds,
         float $timeout = 1.5,
         float $readTimeout = 1.5,
-        bool $persistent = false
+        bool $persistent = false,
+        ?string $auth = null
     )
     {
         $this->name = $name;
@@ -74,6 +80,7 @@ class RedisCluster extends RedisConnection {
         $this->timeout = $timeout;
         $this->readTimeout = $readTimeout;
         $this->persistent = $persistent;
+        $this->auth = $auth;
         $this->constructParams = func_get_args();
         $this->buildRedisCluster();
     }
@@ -85,7 +92,7 @@ class RedisCluster extends RedisConnection {
     protected function buildRedisCluster()
     {
         try {
-            $this->redisCluster = new \RedisCluster($this->name, $this->seeds, $this->timeout, $this->readTimeout, $this->persistent);
+            $this->redisCluster = new \RedisCluster($this->name, $this->seeds, $this->timeout, $this->readTimeout, $this->persistent, $this->auth);
         }catch (\RedisClusterException $exception)
         {
             $this->log(__METHOD__, $this->constructParams, $exception->getMessage());

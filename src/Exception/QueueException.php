@@ -11,7 +11,7 @@
 
 namespace Common\Library\Exception;
 
-class QueueException extends \Exception
+class QueueException extends CommonException
 {
 
 }

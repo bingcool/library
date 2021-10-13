@@ -11,7 +11,7 @@
 
 namespace Common\Library\Exception;
 
-class ValidationException extends \Exception
+class ValidationException extends CommonException
 {
 
 }

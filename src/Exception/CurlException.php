@@ -11,7 +11,7 @@
 
 namespace Common\Library\Exception;
 
-class CurlException extends \Exception
+class CurlException extends CommonException
 {
 
 }

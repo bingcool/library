@@ -11,7 +11,7 @@
 
 namespace Common\Library\Exception;
 
-class DbException extends \Exception
+class DbException extends CommonException
 {
 
 }

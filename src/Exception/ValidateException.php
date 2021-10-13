@@ -11,7 +11,7 @@
 
 namespace Common\Library\Exception;
 
-class UuidException extends CommonException
+class ValidateException extends CommonException
 {
 
 }

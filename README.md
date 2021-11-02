@@ -14,5 +14,6 @@
 - [x] UUid 自增id组件  
 - [x] Curl基础组件    
 - [x] Protobuf 组件   
+- [x] Validate 组件    
 
 Example: https://github.com/bingcool/library/tree/master/tests

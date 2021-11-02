@@ -852,6 +852,14 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * @return array
+     */
+    public function toArray()
+    {
+        return $this->_data;
+    }
+
+    /**
      * @return string
      */
     public function __toString()

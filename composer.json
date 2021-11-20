@@ -23,11 +23,13 @@
     "ext-curl": "*",
     "ext-json": "*",
     "predis/predis": "~1.1.7",
-    "malkusch/lock": "dev-master"
+    "malkusch/lock": "dev-master",
+    "php-amqplib/php-amqplib": "^3.0@dev"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",
-    "swoole/ide-helper": "@dev"
+    "swoole/ide-helper": "@dev",
+    "phpunit/phpunit": "^7.0"
   },
   "autoload": {
     "psr-4": {

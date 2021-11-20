@@ -47,24 +47,34 @@ class RedisIncrement
     protected $isPredisDriver;
 
     /**
+     * when master redis return empty|null value, report to record log
+     *
+     * @var \Closure
+     */
+    protected $errorReportClosure = null;
+
+    /**
      * RedisIncr constructor.
      * @param RedisConnection $redis
      * @param string $incrKey
      * @param integer $ttl
      * @param array $followConnections
+     * @param \Closure $errorReportClosure
      * @return void
      */
     public function __construct(
         RedisConnection $redis,
         string $incrKey,
         int $ttl = 15,
-        array $followConnections = []
+        array $followConnections = [],
+        \Closure $errorReportClosure = null
     )
     {
         $this->redis = $redis;
         $this->incrKey = $incrKey;
         $this->ttl = $ttl;
         $this->followConnections = $followConnections;
+        $this->errorReportClosure = $errorReportClosure;
         $this->isPredisDriver();
     }
 
@@ -91,6 +101,15 @@ class RedisIncrement
 
         if(empty($dataArr))
         {
+            if($this->errorReportClosure instanceof \Closure) {
+                try {
+                    call_user_func($this->errorReportClosure);
+                }catch (\Throwable $e)
+                {
+
+                }
+            }
+
             if(count($this->followConnections) > 0)
             {
                 foreach($this->followConnections as $connection)

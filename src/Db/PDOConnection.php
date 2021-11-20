@@ -123,6 +123,11 @@ abstract class PDOConnection implements ConnectionInterface {
     protected $lastLogs = [];
 
     /**
+     * @var array
+     */
+    protected $excelSqlArr = [];
+
+    /**
      * @var int
      */
     protected $debug = 1;
@@ -292,6 +297,12 @@ abstract class PDOConnection implements ConnectionInterface {
         {
             $this->log('Execute sql error', $t->getMessage());
             throw $t;
+        } finally {
+            if($this->debug) {
+                if(count($this->excelSqlArr) <= 500) {
+                    $this->excelSqlArr[] = $this->getRealSql($this->queryStr, $this->bind);
+                }
+            }
         }
     }
 
@@ -1084,6 +1095,16 @@ abstract class PDOConnection implements ConnectionInterface {
     public function getLastLogs(): array
     {
         return $this->lastLogs;
+    }
+
+    /**
+     * 获取执行的sql，最大限制500条，有些循环执行的数量可能会很大，后面就忽略，防止oom，主要调试用
+     *
+     * @return array
+     */
+    public function getExcelSqls()
+    {
+        return $this->excelSqlArr;
     }
 
     /**

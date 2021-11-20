@@ -286,6 +286,20 @@ class SqlBuilder
     }
 
     /**
+     * 组合key where查询 eg: where (`user_id`,`order_amount`,`sku`) in ((10000,105,'mi4'),(10000,123.5,'mi5'));
+     *
+     * @param string $alias
+     * @param string $groupField
+     * @param array $groupValue
+     * @param string $sql
+     * @param array $params
+     */
+    public static function buildGroupFieldWhere(string $alias, string $groupField, array $groupValue, string &$sql, array &$params)
+    {
+        self::buildStringWhere($alias, $groupField, $groupValue, $sql, $params);
+    }
+
+    /**
      * @param string $alias
      * @param string $field
      * @param string $keyword
@@ -357,9 +371,9 @@ class SqlBuilder
      * @param $data
      * @return array
      */
-    public static function buildInsert(string $table, $data)
+    public static function buildInsertSql(string $table, array $data)
     {
-        return self::buildMultiInsert($table, [$data]);
+        return self::buildBatchInsertSql($table, [$data]);
     }
 
     /**
@@ -367,7 +381,7 @@ class SqlBuilder
      * @param array $dataSet
      * @return array
      */
-    public static function buildMultiInsert(string $table, array $dataSet)
+    public static function buildBatchInsertSql(string $table, array $dataSet)
     {
         $fields = [];
         $paramsKeys = [];

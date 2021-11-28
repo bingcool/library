@@ -77,7 +77,7 @@ class SqlBuilder
      * @param array $params
      * @param string $operator
      */
-    public static function buildEqual(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
+    public static function buildEqualWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
     {
         if(is_array($value) || is_object($value))
         {
@@ -309,33 +309,72 @@ class SqlBuilder
      */
     public static function buildLike(string $alias, string $field, string $keyword, string &$sql, &$params, string $operator = 'AND')
     {
-        $sql .= " $operator {$alias}.{$field} like {$keyword}";
+        $sql .= " $operator {$alias}.{$field} like '{$keyword}'";
     }
 
     /**
+     *buildOrderBy('a', ['sex'=>'asc, 'score'=>'desc'], $sql, $params)
+     *
      * @param string $alias
-     * @param string $field
-     * @param string $rank
+     * @param array $orderFieldRankMap
      * @param string $sql
      * @param $params
      */
-    public static function buildOrderBy(string $alias, string $field, string $rank, string &$sql, &$params)
+    public static function buildOrderBy(string $alias, array $orderFieldRankMap, string &$sql, &$params)
     {
-        if(in_array(strtolower($rank),['asc', 'desc']))
-        {
-            $sql .= " order by {$alias}.{$field} {$rank}";
+        $sortField = [];
+        foreach($orderFieldRankMap as $field=>$rank) {
+            if(in_array(strtolower($rank),['asc', 'desc']))
+            {
+                if(strpos($field,'.') === false) {
+                    $sortField[] = "{$alias}.{$field} {$rank}";
+                }else {
+                    $sortField[] = "{$field} {$rank}";
+                }
+            }
+        }
+
+        if($sortField) {
+            $sortFieldStr = implode(',', $sortField);
+            $sql .= " order by {$sortFieldStr}";
+        }
+
+    }
+
+    /**
+     * buildGroupBy('a', ['wid','product_id'], $sql, $params)
+     * @param string $alias
+     * @param array $groupFields
+     * @param string $sql
+     * @param $params
+     */
+    public static function buildGroupBy(string $alias, array $groupFields, string &$sql, &$params)
+    {
+        $groupFieldItem = [];
+        foreach($groupFields as $field) {
+            if(strpos($field,'.') === false) {
+                $groupFieldItem[] = "{$alias}.{$field}";
+            }else {
+                $groupFieldItem[] = "{$field}";
+            }
+        }
+
+        if($groupFieldItem) {
+            $groupFieldStr = implode(',', $groupFieldItem);
+            $sql .= " group by $groupFieldStr";
         }
     }
 
+
     /**
      * @param string $alias
-     * @param string $field
+     * @param string $having
      * @param string $sql
      * @param $params
      */
-    public static function buildGroupBy(string $alias, string $field, string &$sql, &$params)
+    public static function buildHaving(string $alias, string $having, string &$sql, &$params)
     {
-        $sql .= " group by {$alias}.{$field}";
+        $sql .= " having {$having}";
     }
 
     /**
@@ -364,6 +403,25 @@ class SqlBuilder
         $key = static::$preparePrefix.'_'.$field.'_'.static::$paramCount;
         static::$paramCount++;
         return $key;
+    }
+
+
+    /**
+     * 查找in string. eg: where FIND_IN_SET('aa@gmail.com', emails);
+     *
+     * @param string $alias
+     * @param string $searchField
+     * @param $searchValue
+     * @param string $sql
+     * @param array $params
+     */
+    public function buildFindInSet(string $alias, string $searchField, $searchValue, string &$sql, array &$params)
+    {
+        if(is_numeric($searchValue)) {
+            $searchValue = (string)$searchValue;
+        }
+
+        $sql .= "find_in_set('{$searchValue}', {$alias}.{$searchField})";
     }
 
     /**

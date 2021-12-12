@@ -86,9 +86,6 @@ class Order extends ActiveRecord
     public function onBeforeUpdateTransaction()
     {
         var_dump('onBeforeUpdateTransaction');
-        $user = new User(1632412243);
-        var_dump($user->isExists());
-        $user->delete(true);
     }
 
     public function onAfterUpdateTransaction()

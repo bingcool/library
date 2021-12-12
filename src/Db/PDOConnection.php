@@ -639,6 +639,24 @@ abstract class PDOConnection implements ConnectionInterface {
     }
 
     /**
+     * 获取数据表字段类型
+     * @access public
+     * @param mixed  $tableName 数据表名
+     * @param string $field     字段名
+     * @return string
+     */
+    public function getFieldType($tableName, string $field)
+    {
+        $result = $this->getTableInfo($tableName, 'type');
+
+        if ($field && isset($result[$field])) {
+            return $result[$field];
+        }
+
+        return $result;
+    }
+
+    /**
      * @param string $string
      * @param int $parameterType
      * @return string
@@ -664,6 +682,8 @@ abstract class PDOConnection implements ConnectionInterface {
     }
 
     /**
+     * Schema
+     *
      * @param string $tableName 数据表名称
      * @param bool $force 强制从数据库获取
      * @return array
@@ -711,7 +731,7 @@ abstract class PDOConnection implements ConnectionInterface {
 
         foreach ($fields as $key => $val) {
             // 记录字段类型
-            $info[$key] = $this->getFieldType($val['type']);
+            $info[$key] = $this->parseFieldType($val['type']);
 
             if (!empty($val['primary'])) {
                 $pk[] = $key;
@@ -740,7 +760,7 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param string $type 字段类型
      * @return string
      */
-    protected function getFieldType(string $type): string
+    protected function parseFieldType(string $type): string
     {
         if (0 === strpos($type, 'set') || 0 === strpos($type, 'enum')) {
             $result = 'string';
@@ -1029,7 +1049,7 @@ abstract class PDOConnection implements ConnectionInterface {
         if(is_numeric($insertId)) {
             $insertId = (int)$insertId;
         }
-        return $insertId;
+        return $insertId ?? null;
     }
 
     /**

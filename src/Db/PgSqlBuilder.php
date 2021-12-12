@@ -30,6 +30,6 @@ class PgSqlBuilder extends SqlBuilder
             $searchValue = (string)$searchValue;
         }
 
-        $sql .= "'{$searchValue}' = ANY(string_to_array({$alias}.{$searchField},','))";
+        $sql .= " '{$searchValue}' = ANY(string_to_array({$alias}.{$searchField},',')) ";
     }
 }

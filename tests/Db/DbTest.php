@@ -48,14 +48,14 @@ class DbTest extends TestCase
 
     public function testFindObject()
     {
-        $orderId = 1623132269;
+        $orderId = 1639369444;
         $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
         var_dump($order->getOldAttributeValue('remark', true));
     }
 
     public function testUpdateObject()
     {
-        $orderId = 1632234455;
+        $orderId = 1639369444;
         $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
         $order->order_product_ids = [1,2,3,4,5,6,7,8];
         $order->remark = '中国小米（mi）'.rand(1,1000);

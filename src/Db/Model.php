@@ -24,6 +24,7 @@ abstract class Model implements ArrayAccess
     use Concern\Attribute;
     use Concern\ModelEvent;
     use Concern\ParseSql;
+    use Concern\TableFieldInfo;
     use Concern\TimeStamp;
     use Concern\Util;
 
@@ -31,10 +32,12 @@ abstract class Model implements ArrayAccess
     const BEFORE_INSERT_TRANSACTION = 'BeforeInsertTransaction';
     const AFTER_INSERT_TRANSACTION = 'AfterInsertTransaction';
     const AFTER_INSERT = 'AfterInsert';
+
     const BEFORE_UPDATE = 'BeforeUpdate';
     const BEFORE_UPDATE_TRANSACTION = 'BeforeUpdateTransaction';
     const AFTER_UPDATE_TRANSACTION = 'AfterUpdateTransaction';
     const AFTER_UPDATE = 'AfterUpdate';
+
     const BEFORE_DELETE = 'BeforeDelete';
     const AFTER_DELETE = 'AfterDelete';
 
@@ -423,30 +426,6 @@ abstract class Model implements ArrayAccess
         }
 
         return $this->_tableFields;
-    }
-
-    /**
-     * @return array|mixed
-     */
-    protected function getFieldType(): array
-    {
-        $schemaInfo = $this->getSchemaInfo();
-        return $schemaInfo['type'] ?? [];
-    }
-
-    /**
-     * @return array
-     */
-    protected function getSchemaInfo(): array
-    {
-        if(empty($this->_schemaInfo))
-        {
-            $table = $this->table ? $this->table . $this->_suffix : $this->table;
-            $schemaInfo = $this->getConnection()->getSchemaInfo($table);
-            $this->_schemaInfo = $schemaInfo;
-        }
-
-        return $this->_schemaInfo;
     }
 
     /**

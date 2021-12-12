@@ -119,7 +119,7 @@ class SqlBuilder
             $value = current($value);
         }
 
-        $sql .= " {$operator} {$alias}.{$field}={$prepareField}";
+        $sql .= " {$operator} {$alias}.{$field}={$prepareField} ";
         $params["{$prepareField}"] = $value;
     }
 
@@ -190,7 +190,7 @@ class SqlBuilder
             $value = current($value);
         }
 
-        $sql .= " {$operator} {$alias}.{$field}={$prepareField}";
+        $sql .= " {$operator} {$alias}.{$field}={$prepareField} ";
         $params["{$prepareField}"] = $value;
     }
 
@@ -206,11 +206,11 @@ class SqlBuilder
     public static function buildDateRange(string $alias, string $field, $startTime, $endTime, string &$sql, array &$params)
     {
         if ($startTime) {
-            $sql .= " and {$alias}.{$field} >= :begin_{$field}";
+            $sql .= " and {$alias}.{$field} >= :begin_{$field} ";
             $params[":begin_{$field}"] = strlen($startTime) == 10 ? $startTime . ' 00:00:00' : $startTime;
         }
         if ($endTime) {
-            $sql .= " and {$alias}.{$field} <= :end_{$field}";
+            $sql .= " and {$alias}.{$field} <= :end_{$field} ";
             $params[":end_{$field}"] = strlen($endTime) == 10 ? $endTime . ' 23:59:59' : $endTime;
         }
     }
@@ -233,10 +233,10 @@ class SqlBuilder
 
         if($include)
         {
-            $sql .= " and {$alias}.{$field} >= :min_{$field}";
+            $sql .= " and {$alias}.{$field} >= :min_{$field} ";
         }else
         {
-            $sql .= " and {$alias}.{$field} > :min_{$field}";
+            $sql .= " and {$alias}.{$field} > :min_{$field} ";
         }
 
         $params[":min_{$field}"] = $min;
@@ -260,10 +260,10 @@ class SqlBuilder
 
         if($include)
         {
-            $sql .= " and {$alias}.{$field} <= :max_{$field}";
+            $sql .= " and {$alias}.{$field} <= :max_{$field} ";
         }else
         {
-            $sql .= " and {$alias}.{$field} < :max_{$field}";
+            $sql .= " and {$alias}.{$field} < :max_{$field} ";
         }
 
         $params[":max_{$field}"] = $max;
@@ -309,7 +309,7 @@ class SqlBuilder
      */
     public static function buildLike(string $alias, string $field, string $keyword, string &$sql, &$params, string $operator = 'AND')
     {
-        $sql .= " $operator {$alias}.{$field} like '{$keyword}'";
+        $sql .= " $operator {$alias}.{$field} like '{$keyword}' ";
     }
 
     /**
@@ -336,7 +336,7 @@ class SqlBuilder
 
         if($sortField) {
             $sortFieldStr = implode(',', $sortField);
-            $sql .= " order by {$sortFieldStr}";
+            $sql .= " order by {$sortFieldStr} ";
         }
 
     }
@@ -361,7 +361,7 @@ class SqlBuilder
 
         if($groupFieldItem) {
             $groupFieldStr = implode(',', $groupFieldItem);
-            $sql .= " group by $groupFieldStr";
+            $sql .= " group by $groupFieldStr ";
         }
     }
 
@@ -374,7 +374,7 @@ class SqlBuilder
      */
     public static function buildHaving(string $alias, string $having, string &$sql, &$params)
     {
-        $sql .= " having {$having}";
+        $sql .= " having {$having} ";
     }
 
     /**
@@ -421,7 +421,7 @@ class SqlBuilder
             $searchValue = (string)$searchValue;
         }
 
-        $sql .= "find_in_set('{$searchValue}', {$alias}.{$searchField})";
+        $sql .= " find_in_set('{$searchValue}', {$alias}.{$searchField}) ";
     }
 
     /**

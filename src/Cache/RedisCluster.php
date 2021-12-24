@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Cache;
@@ -15,8 +15,8 @@ namespace Common\Library\Cache;
  * @see \RedisCluster
  * @mixin \RedisCluster
  */
-
-class RedisCluster extends RedisConnection {
+class RedisCluster extends RedisConnection
+{
     /**
      * @var \RedisCluster
      */
@@ -93,8 +93,7 @@ class RedisCluster extends RedisConnection {
     {
         try {
             $this->redisCluster = new \RedisCluster($this->name, $this->seeds, $this->timeout, $this->readTimeout, $this->persistent, $this->auth);
-        }catch (\RedisClusterException $exception)
-        {
+        } catch (\RedisClusterException $exception) {
             $this->log(__METHOD__, $this->constructParams, $exception->getMessage());
             throw $exception;
         }
@@ -110,11 +109,11 @@ class RedisCluster extends RedisConnection {
     public function __call(string $method, array $arguments)
     {
         try {
-            $this->log($method, $arguments,"redisCluster start to exec method={$method}");
+            $this->log($method, $arguments, "redisCluster start to exec method={$method}");
             $result = $this->redisCluster->{$method}(...$arguments);
             $this->log($method, $arguments);
             return $result;
-        }catch(\RedisClusterException|\Exception $e) {
+        } catch (\RedisClusterException|\Exception $e) {
             $this->log($method, $arguments, $e->getMessage());
             $this->log($method, $arguments, 'redisCluster start to reBuild instance');
             $this->sleep(0.5);
@@ -123,10 +122,10 @@ class RedisCluster extends RedisConnection {
             $this->buildRedisCluster();
             $this->log($method, $arguments, "RedisCluster rebuild instance successful, start to try exec method={$method} again");
             $result = $this->redisCluster->{$method}(...$arguments);
-            $this->log($method, $arguments,'RedisCluster exec retry ok');
+            $this->log($method, $arguments, 'RedisCluster exec retry ok');
             return $result;
-        }catch(\Throwable $t) {
-            $this->log($method, $arguments, 'RedisCluster retry exec failed,errorMsg='.$t->getMessage());
+        } catch (\Throwable $t) {
+            $this->log($method, $arguments, 'RedisCluster retry exec failed,errorMsg=' . $t->getMessage());
             throw $t;
         }
     }
@@ -164,8 +163,7 @@ class RedisCluster extends RedisConnection {
     public function __destruct()
     {
         parent::__destruct();
-        if(!$this->persistent)
-        {
+        if (!$this->persistent) {
             @$this->redisCluster->close();
         }
     }

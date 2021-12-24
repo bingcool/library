@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db;
@@ -18,7 +18,6 @@ use Common\Library\Exception\DbException;
  * Class Model
  * @package Common\Library\Db
  */
-
 abstract class Model implements ArrayAccess
 {
     use Concern\Attribute;
@@ -133,13 +132,17 @@ abstract class Model implements ArrayAccess
      * 自定义创建primary key的值.数据库自增的则忽略该函数处理
      * @return mixed
      */
-    public function createPkValue() {}
+    public function createPkValue()
+    {
+    }
 
     /**
      * @param $pk
      * @param mixed ...$params
      */
-    public function loadByPk($pk, ...$params) {}
+    public function loadByPk($pk, ...$params)
+    {
+    }
 
     /**
      * @return bool
@@ -152,7 +155,9 @@ abstract class Model implements ArrayAccess
     /**
      * return void
      */
-    protected function onAfterInsert() {}
+    protected function onAfterInsert()
+    {
+    }
 
     /**
      * @return bool
@@ -165,7 +170,9 @@ abstract class Model implements ArrayAccess
     /**
      * @return void
      */
-    protected function onAfterUpdate() {}
+    protected function onAfterUpdate()
+    {
+    }
 
     /**
      * @return bool
@@ -178,13 +185,21 @@ abstract class Model implements ArrayAccess
     /**
      * @return void
      */
-    protected function onAfterDelete() {}
+    protected function onAfterDelete()
+    {
+    }
 
-    protected function init() {}
+    protected function init()
+    {
+    }
 
-    protected function checkData() {}
+    protected function checkData()
+    {
+    }
 
-    protected function checkResult($result) {}
+    protected function checkResult($result)
+    {
+    }
 
     /**
      * 设置数据是否存在
@@ -259,8 +274,8 @@ abstract class Model implements ArrayAccess
 
     /**
      * 修改器 设置数据对象的值处理
-     * @param string $name  名称
-     * @param mixed  $value 值
+     * @param string $name 名称
+     * @param mixed $value 值
      * @return void
      */
     public function __set(string $name, $value): void
@@ -275,29 +290,25 @@ abstract class Model implements ArrayAccess
      */
     public function setAttribute(string $name, $value): void
     {
-        if($this->isExists() && $name == $this->getPk()) {
+        if ($this->isExists() && $name == $this->getPk()) {
             return;
         }
 
         $method = 'set' . self::studly($name) . 'Attr';
 
-        if(method_exists($this, $method))
-        {
+        if (method_exists($this, $method)) {
             // 返回修改器处理过的数据
             $value = $this->$method($value);
             $this->_set[$name] = true;
-            if(is_null($value))
-            {
+            if (is_null($value)) {
                 return;
             }
-        }else if(isset($this->_fieldTypeMap[$name]))
-        {
+        } else if (isset($this->_fieldTypeMap[$name])) {
             //类型转换
             $value = $this->writeTransform($value, $this->_fieldTypeMap[$name]);
         }
         // 源数据
-        if(!$this->isExists())
-        {
+        if (!$this->isExists()) {
             $this->_origin[$name] = $value;
         }
 
@@ -307,19 +318,18 @@ abstract class Model implements ArrayAccess
 
     /**
      * 保存当前数据对象
-     * @param array  $data 数据
+     * @param array $data 数据
      * @return bool
      */
     public function save(): bool
     {
         $result = $this->isExists() ? $this->updateData() : $this->insertData();
-        if(false === $result)
-        {
+        if (false === $result) {
             return false;
         }
         // 重新记录原始数据
-        $this->_origin   = $this->_data;
-        $this->_set      = [];
+        $this->_origin = $this->_data;
+        $this->_set = [];
         return true;
     }
 
@@ -333,8 +343,7 @@ abstract class Model implements ArrayAccess
         // new flag
         $this->setIsNew(true);
 
-        if(false === $this->trigger('BeforeInsert'))
-        {
+        if (false === $this->trigger('BeforeInsert')) {
             return false;
         }
 
@@ -344,50 +353,46 @@ abstract class Model implements ArrayAccess
             $allowFields = $this->getAllowFields();
             $pk = $this->getPk();
             // define increment primary key
-            if(!isset($this->_data[$pk]))
-            {
+            if (!isset($this->_data[$pk])) {
                 $pkValue = $this->createPkValue();
                 $pkValue && $this->_data[$pk] = $pkValue;
-            }else
-            {
+            } else {
                 // 数据表设置自增pk的，则不需要设置允许字段
                 $allowFields = array_diff($allowFields, [$pk]);
             }
 
             list($sql, $bindParams) = $this->parseInsertSql($allowFields);
             try {
-                $hasBeforeInsertTransaction =  method_exists($this,'onBeforeInsertTransaction');
-                $hasAfterInsertTransaction = method_exists($this,'onAfterInsertTransaction');
-                if($hasBeforeInsertTransaction && $hasAfterInsertTransaction) {
-                    $this->transaction(function () use($sql, $bindParams) {
+                $hasBeforeInsertTransaction = method_exists($this, 'onBeforeInsertTransaction');
+                $hasAfterInsertTransaction = method_exists($this, 'onAfterInsertTransaction');
+                if ($hasBeforeInsertTransaction && $hasAfterInsertTransaction) {
+                    $this->transaction(function () use ($sql, $bindParams) {
                         $this->onBeforeInsertTransaction();
                         $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
                         $this->onAfterInsertTransaction();
                     });
-                }else if($hasBeforeInsertTransaction) {
-                    $this->transaction(function () use($sql, $bindParams) {
+                } else if ($hasBeforeInsertTransaction) {
+                    $this->transaction(function () use ($sql, $bindParams) {
                         $this->onBeforeInsertTransaction();
                         $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
                     });
-                }else if($hasAfterInsertTransaction) {
-                    $this->transaction(function () use($sql, $bindParams) {
+                } else if ($hasAfterInsertTransaction) {
+                    $this->transaction(function () use ($sql, $bindParams) {
                         $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
                         $this->onAfterInsertTransaction();
                     });
-                }else {
+                } else {
                     $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
                 }
-            }catch (\Throwable $e)
-            {
+            } catch (\Throwable $e) {
                 $this->_numRows = 0;
                 throw $e;
             }
             // if increment primary key insert successful set primary key to data array
-            if(!isset($this->_data[$pk]) || is_null($this->_data[$pk]) || $this->_data[$pk] == '')
-            {
+            if (!isset($this->_data[$pk]) || is_null($this->_data[$pk]) || $this->_data[$pk] == '') {
                 $this->_data[$pk] = $this->getConnection()->getLastInsID($pk);
             }
-        }catch (\Exception|\Throwable $e) {
+        } catch (\Exception|\Throwable $e) {
             throw $e;
         }
         // set exist
@@ -403,7 +408,7 @@ abstract class Model implements ArrayAccess
      */
     public function getLastInsertId(): ?int
     {
-        if($this->isNew() && $this->isExists()) {
+        if ($this->isNew() && $this->isExists()) {
             return $this->getPkValue();
         }
     }
@@ -414,11 +419,10 @@ abstract class Model implements ArrayAccess
      */
     protected function getAllowFields(): array
     {
-        if(empty($this->_tableFields))
-        {
+        if (empty($this->_tableFields)) {
             $schemaInfo = $this->getSchemaInfo();
             $fields = $schemaInfo['fields'];
-            if(!empty($this->_disuseFields)) {
+            if (!empty($this->_disuseFields)) {
                 // 废弃字段
                 $fields = array_diff($fields, $this->_disuseFields);
             }
@@ -436,8 +440,7 @@ abstract class Model implements ArrayAccess
     {
         list($sql, $bindParams) = $this->parseFindSqlByPk();
         $attributes = $this->getConnection()->createCommand($sql)->findOne($bindParams);
-        if($attributes)
-        {
+        if ($attributes) {
             $this->parseOrigin($attributes);
             return $this;
         }
@@ -452,48 +455,46 @@ abstract class Model implements ArrayAccess
     protected function updateData(array $attributes = []): bool
     {
         $this->setIsNew(false);
-        if(false === $this->trigger('BeforeUpdate')) {
+        if (false === $this->trigger('BeforeUpdate')) {
             return false;
         }
 
         $this->checkData();
-        if(!$attributes)
-        {
+        if (!$attributes) {
             // auto get change fields
             $diffData = $this->getChangeData();
-        }else {
+        } else {
             // specify update fields
             $diffData = $this->getCustomData($attributes);
         }
 
         $allowFields = $this->getAllowFields();
-        if($diffData)
-        {
+        if ($diffData) {
             list($sql, $bindParams) = $this->parseUpdateSql($diffData, $allowFields);
-            $hasBeforeUpdateTransaction = method_exists($this,'onBeforeUpdateTransaction');
-            $hasAfterUpdateTransaction = method_exists($this,'onAfterUpdateTransaction');
+            $hasBeforeUpdateTransaction = method_exists($this, 'onBeforeUpdateTransaction');
+            $hasAfterUpdateTransaction = method_exists($this, 'onAfterUpdateTransaction');
             try {
-                if($hasBeforeUpdateTransaction && $hasAfterUpdateTransaction) {
-                    $this->transaction(function () use($sql, $bindParams) {
+                if ($hasBeforeUpdateTransaction && $hasAfterUpdateTransaction) {
+                    $this->transaction(function () use ($sql, $bindParams) {
                         $this->onBeforeUpdateTransaction();
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                         $this->onAfterUpdateTransaction();
                     });
-                }else if($hasBeforeUpdateTransaction) {
-                    $this->transaction(function () use($sql, $bindParams) {
+                } else if ($hasBeforeUpdateTransaction) {
+                    $this->transaction(function () use ($sql, $bindParams) {
                         $this->onBeforeUpdateTransaction();
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                     });
-                }else if($hasAfterUpdateTransaction) {
-                    $this->transaction(function () use($sql, $bindParams) {
+                } else if ($hasAfterUpdateTransaction) {
+                    $this->transaction(function () use ($sql, $bindParams) {
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                         $this->onAfterUpdateTransaction();
                     });
-                }else {
+                } else {
                     $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                 }
 
-            }catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                 $this->_numRows = 0;
                 throw $e;
             }
@@ -522,25 +523,21 @@ abstract class Model implements ArrayAccess
      */
     public function delete(bool $force = false): bool
     {
-        if(!$this->isExists()) {
+        if (!$this->isExists()) {
             throw new DbException('Active object is not exist');
         }
 
         $this->setIsNew(false);
 
-        if(!$this->isExists || false === $this->trigger('BeforeDelete'))
-        {
+        if (!$this->isExists || false === $this->trigger('BeforeDelete')) {
             return false;
         }
 
-        if($force)
-        {
+        if ($force) {
             list($sql, $bindParams) = $this->parseDeleteSql();
             $this->_numRows = $this->getConnection()->createCommand($sql)->delete($bindParams);
-        }else
-        {
-            if($this->processDelete() === false)
-            {
+        } else {
+            if ($this->processDelete() === false) {
                 throw new DbException('ProcessDelete Failed');
             }
         }
@@ -610,7 +607,7 @@ abstract class Model implements ArrayAccess
 
     /**
      * 获取器 获取当前数据对象的值
-     * @param  string $fieldName
+     * @param string $fieldName
      * @return mixed
      * @throws Exception
      */
@@ -628,19 +625,15 @@ abstract class Model implements ArrayAccess
      */
     public function getOldAttributeValue(string $fieldName, bool $format = false)
     {
-        if(!$this->isNew())
-        {
-             if($format)
-             {
-                 $value = $this->getOrigin($fieldName);
-                 if(!is_null($value))
-                 {
-                     $value = $this->getValue($fieldName, $value);
-                 }
-             }else
-             {
-                 $value = $this->_origin[$fieldName] ?? null;
-             }
+        if (!$this->isNew()) {
+            if ($format) {
+                $value = $this->getOrigin($fieldName);
+                if (!is_null($value)) {
+                    $value = $this->getValue($fieldName, $value);
+                }
+            } else {
+                $value = $this->_origin[$fieldName] ?? null;
+            }
         }
 
         return $value ?? null;
@@ -654,8 +647,7 @@ abstract class Model implements ArrayAccess
      */
     public function getNewAttributeValue(string $fieldName, bool $format = false)
     {
-        if($format)
-        {
+        if ($format) {
             return $this->getAttribute($fieldName);
         }
         return $this->_data[$fieldName] ?? null;
@@ -668,10 +660,8 @@ abstract class Model implements ArrayAccess
      */
     public function isDirty(string $fieldName): bool
     {
-        if(in_array($fieldName, $this->getAllowFields()))
-        {
-            if($this->getOldAttributeValue($fieldName) != $this->getNewAttributeValue($fieldName))
-            {
+        if (in_array($fieldName, $this->getAllowFields())) {
+            if ($this->getOldAttributeValue($fieldName) != $this->getNewAttributeValue($fieldName)) {
                 return true;
             }
         }
@@ -686,11 +676,9 @@ abstract class Model implements ArrayAccess
     protected function getValue(string $fieldName, $value)
     {
         $method = 'get' . self::studly($fieldName) . 'Attr';
-        if(method_exists($this, $method))
-        {
+        if (method_exists($this, $method)) {
             $value = $this->$method($value);
-        }else if(isset($this->_fieldTypeMap[$fieldName]))
-        {
+        } else if (isset($this->_fieldTypeMap[$fieldName])) {
             $value = $this->readTransform($value, $this->_fieldTypeMap[$fieldName]);
         }
         return $value;
@@ -700,14 +688,13 @@ abstract class Model implements ArrayAccess
      * 获取当前对象经过属性的getter函数处理后的业务目标数据
      * @return array|null
      */
-    public function getAttributes() {
-        if($this->_data)
-        {
-            foreach($this->_data as $fieldName=>$value) {
-                if(in_array($fieldName, $this->getAllowFields()))
-                {
+    public function getAttributes()
+    {
+        if ($this->_data) {
+            foreach ($this->_data as $fieldName => $value) {
+                if (in_array($fieldName, $this->getAllowFields())) {
                     $attributes[$fieldName] = $this->getValue($fieldName, $value);
-                }else {
+                } else {
                     unset($this->_data[$fieldName]);
                 }
             }
@@ -723,13 +710,11 @@ abstract class Model implements ArrayAccess
      */
     public function getOldAttributes()
     {
-        if($this->isExists() && $this->_origin)
-        {
-            foreach($this->_origin as $fieldName=>$value) {
-                if(in_array($fieldName, $this->getAllowFields()))
-                {
+        if ($this->isExists() && $this->_origin) {
+            foreach ($this->_origin as $fieldName => $value) {
+                if (in_array($fieldName, $this->getAllowFields())) {
                     $attributes[$fieldName] = $this->getValue($fieldName, $value);
-                }else {
+                } else {
                     unset($this->_origin[$fieldName]);
                 }
             }
@@ -822,7 +807,7 @@ abstract class Model implements ArrayAccess
 
     /**
      * 转换当前模型对象源数据转为JSON字符串
-     * @param  integer $options json参数
+     * @param integer $options json参数
      * @return string
      */
     public function toJson(int $options = JSON_UNESCAPED_UNICODE): string

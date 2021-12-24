@@ -16,7 +16,6 @@ namespace Common\Library\ArrayHelper;
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
  */
-
 class ArrayUtil extends BaseArrayHelper
 {
     /**
@@ -59,8 +58,7 @@ class ArrayUtil extends BaseArrayHelper
         uasort($data, function ($a, $b) use ($sort_field, $sort_order) {
             $aValue = $a[$sort_field] ?? 0;
             $bValue = $b[$sort_field] ?? 0;
-            if(!is_numeric($aValue) || !is_numeric($bValue))
-            {
+            if (!is_numeric($aValue) || !is_numeric($bValue)) {
                 throw new \Exception("field={$sort_field} of value must be number");
             }
             return strtoupper($sort_order) == 'ASC' ? $aValue <=> $bValue : $bValue <=> $aValue;
@@ -69,9 +67,8 @@ class ArrayUtil extends BaseArrayHelper
             $data = array_slice($data, $start, $length);
         }
 
-        if($preserve_key === false)
-        {
-           return  array_values($data);
+        if ($preserve_key === false) {
+            return array_values($data);
         }
         return $data;
     }

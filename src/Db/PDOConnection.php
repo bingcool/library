@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db;
@@ -19,8 +19,8 @@ use PDOStatement;
  * Class PDOConnection
  * @package Common\Library\Db
  */
-
-abstract class PDOConnection implements ConnectionInterface {
+abstract class PDOConnection implements ConnectionInterface
+{
 
     const PARAM_FLOAT = 21;
 
@@ -30,23 +30,23 @@ abstract class PDOConnection implements ConnectionInterface {
      */
     protected $config = [
         // 服务器地址
-        'hostname'        => '',
+        'hostname' => '',
         // 数据库名
-        'database'        => '',
+        'database' => '',
         // 用户名
-        'username'        => '',
+        'username' => '',
         // 密码
-        'password'        => '',
+        'password' => '',
         // 端口
-        'hostport'        => '',
+        'hostport' => '',
         // 连接dsn
-        'dsn'             => '',
+        'dsn' => '',
         // 数据库连接参数
-        'params'          => [],
+        'params' => [],
         // 数据库编码默认采用utf8
-        'charset'         => 'utf8mb4',
+        'charset' => 'utf8mb4',
         // 数据库表前缀
-        'prefix'          => '',
+        'prefix' => '',
         // fetchType
         'fetch_type' => PDO::FETCH_ASSOC,
         // 是否需要断线重连
@@ -137,12 +137,12 @@ abstract class PDOConnection implements ConnectionInterface {
      * @var array
      */
     protected $params = [
-        PDO::ATTR_CASE              => PDO::CASE_NATURAL,
-        PDO::ATTR_ERRMODE           => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_ORACLE_NULLS      => PDO::NULL_NATURAL,
+        PDO::ATTR_CASE => PDO::CASE_NATURAL,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_ORACLE_NULLS => PDO::NULL_NATURAL,
         PDO::ATTR_STRINGIFY_FETCHES => false,
-        PDO::ATTR_EMULATE_PREPARES  => false,
-        PDO::ATTR_AUTOCOMMIT        => 1 //必须设置为1，否则在事务commit后,后面insert将无法进行
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_AUTOCOMMIT => 1 //必须设置为1，否则在事务commit后,后面insert将无法进行
     ];
 
     /**
@@ -150,14 +150,14 @@ abstract class PDOConnection implements ConnectionInterface {
      * @var array
      */
     protected $bindType = [
-        'string'    => PDO::PARAM_STR,
-        'str'       => PDO::PARAM_STR,
-        'integer'   => PDO::PARAM_INT,
-        'int'       => PDO::PARAM_INT,
-        'boolean'   => PDO::PARAM_BOOL,
-        'bool'      => PDO::PARAM_BOOL,
-        'float'     => self::PARAM_FLOAT,
-        'datetime'  => PDO::PARAM_STR,
+        'string' => PDO::PARAM_STR,
+        'str' => PDO::PARAM_STR,
+        'integer' => PDO::PARAM_INT,
+        'int' => PDO::PARAM_INT,
+        'boolean' => PDO::PARAM_BOOL,
+        'bool' => PDO::PARAM_BOOL,
+        'float' => self::PARAM_FLOAT,
+        'datetime' => PDO::PARAM_STR,
         'timestamp' => PDO::PARAM_STR,
     ];
 
@@ -182,7 +182,8 @@ abstract class PDOConnection implements ConnectionInterface {
     /**
      * @param array $config 数据库配置数组
      */
-    public function __construct(array $config = []) {
+    public function __construct(array $config = [])
+    {
         $this->config = array_merge($this->config, $config);
         $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
         $this->debug = (int)$this->config['debug'] ?? 1;
@@ -197,33 +198,33 @@ abstract class PDOConnection implements ConnectionInterface {
      */
     public function connect(array $config = [], bool $autoConnection = true, bool $force = false)
     {
-        if(!$force) {
-            if($this->PDOInstance) return $this->PDOInstance;
+        if (!$force) {
+            if ($this->PDOInstance) return $this->PDOInstance;
         }
 
         $this->config = array_merge($this->config, $config);
         $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
         $this->debug = (int)$this->config['debug'] ?? 1;
-        if(isset($this->config['params']) && is_array($this->config['params'])) {
+        if (isset($this->config['params']) && is_array($this->config['params'])) {
             $params = $this->config['params'] + $this->params;
         } else {
             $params = $this->params;
         }
 
         try {
-            if(empty($this->config['dsn'])) {
+            if (empty($this->config['dsn'])) {
                 $this->config['dsn'] = $this->parseDsn();
             }
             $startTime = $this->debug ? microtime(true) : 0;
             $this->PDOInstance = $this->createPdo($this->config['dsn'], $this->config['username'], $this->config['password'], $params);
             $endTime = $this->debug ? microtime(true) : 0;
-            $this->log('Connect start', 'Connect successful, Spend Time='.($endTime - $startTime));
+            $this->log('Connect start', 'Connect successful, Spend Time=' . ($endTime - $startTime));
             return $this->PDOInstance;
         } catch (\PDOException|\Exception|\Throwable $e) {
-            if($autoConnection) {
-                $this->log('Connect failed, try to connect once again', 'Connect failed, errorMsg='.$e->getMessage());
+            if ($autoConnection) {
+                $this->log('Connect failed, try to connect once again', 'Connect failed, errorMsg=' . $e->getMessage());
                 return $this->connect([], false, true);
-            }else {
+            } else {
                 throw $e;
             }
         }
@@ -267,10 +268,9 @@ abstract class PDOConnection implements ConnectionInterface {
         $this->bind = $bindParams;
 
         try {
-            if($this->debug)
-            {
+            if ($this->debug) {
                 $queryStartTime = microtime(true);
-                $this->log('Execute sql start',"sql={$this->queryStr},bindParams=".json_encode($bindParams, JSON_UNESCAPED_UNICODE));
+                $this->log('Execute sql start', "sql={$this->queryStr},bindParams=" . json_encode($bindParams, JSON_UNESCAPED_UNICODE));
             }
             // 预处理
             $this->PDOStatement = $this->PDOInstance->prepare($sql);
@@ -279,27 +279,25 @@ abstract class PDOConnection implements ConnectionInterface {
             // 执行查询
             $this->PDOStatement->execute();
 
-            if($this->debug)
-            {
+            if ($this->debug) {
                 $queryEndTime = microtime(true);
-                $this->log('Execute sql end','Execute successful, Execute time='.($queryEndTime - $queryStartTime));
+                $this->log('Execute sql end', 'Execute successful, Execute time=' . ($queryEndTime - $queryStartTime));
             }
 
             $this->reConnectTimes = 0;
             return $this->PDOStatement;
         } catch (\PDOException $e) {
-            if($this->reConnectTimes < 4 && ($this->isBreak($e) || $e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) ) {
+            if ($this->reConnectTimes < 4 && ($this->isBreak($e) || $e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013)) {
                 ++$this->reConnectTimes;
                 return $this->close()->PDOStatementHandle($sql, $bindParams);
             }
             throw $e;
-        }catch (\Exception|\Throwable $t)
-        {
+        } catch (\Exception|\Throwable $t) {
             $this->log('Execute sql error', $t->getMessage());
             throw $t;
         } finally {
-            if($this->debug) {
-                if(count($this->excelSqlArr) <= 500) {
+            if ($this->debug) {
+                if (count($this->excelSqlArr) <= 500) {
                     $this->excelSqlArr[] = $this->getRealSql($this->queryStr, $this->bind);
                 }
             }
@@ -321,7 +319,7 @@ abstract class PDOConnection implements ConnectionInterface {
      */
     public function getPdo(): PDo
     {
-        if(!$this->PDOInstance) {
+        if (!$this->PDOInstance) {
             return false;
         }
         return $this->PDOInstance;
@@ -344,7 +342,7 @@ abstract class PDOConnection implements ConnectionInterface {
                 if (PDO::PARAM_INT == $val[1] && '' === $val[0]) {
                     $val[0] = 0;
                 } elseif (self::PARAM_FLOAT == $val[1]) {
-                    $val[0] = is_string($val[0]) ? (float) $val[0] : $val[0];
+                    $val[0] = is_string($val[0]) ? (float)$val[0] : $val[0];
                     $val[1] = PDO::PARAM_STR;
                 }
                 $result = $this->PDOStatement->bindValue($param, $val[0], $val[1]);
@@ -352,8 +350,8 @@ abstract class PDOConnection implements ConnectionInterface {
                 $result = $this->PDOStatement->bindValue($param, $val);
             }
 
-            if(!$result) {
-                throw new DbException("Error occurred  when binding parameters '{$param}',lastSql=".$this->getRealSql($this->queryStr, $bindParams));
+            if (!$result) {
+                throw new DbException("Error occurred  when binding parameters '{$param}',lastSql=" . $this->getRealSql($this->queryStr, $bindParams));
             }
         }
     }
@@ -412,7 +410,8 @@ abstract class PDOConnection implements ConnectionInterface {
     /**
      * @param string $sql
      */
-    public function createCommand(string $sql) {
+    public function createCommand(string $sql)
+    {
         $this->queryStr = $sql;
         return $this;
     }
@@ -423,15 +422,16 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param array $dataSet
      * @return integer
      */
-    public function batchInsert(string $table, array $fields, array $dataSet) {
+    public function batchInsert(string $table, array $fields, array $dataSet)
+    {
         $fieldStr = implode(',', $fields);
         $sql = "INSERT INTO {$table} ($fieldStr) VALUES ";
         $sqlArr = [];
         $tableFieldInfo = $this->getTableFieldsInfo($table);
-        foreach($dataSet as $row) {
+        foreach ($dataSet as $row) {
             $row = array_values($row);
-            foreach($row as $i=>&$value) {
-                if(isset($fields[$i])) {
+            foreach ($row as $i => &$value) {
+                if (isset($fields[$i])) {
                     $fieldName = $fields[$i];
                     $type = $tableFieldInfo[$fieldName] ?? 'string';
                     switch ($type) {
@@ -454,7 +454,7 @@ abstract class PDOConnection implements ConnectionInterface {
                     }
                 }
             }
-            $sqlArr[] = '('.implode(',', $row).')';
+            $sqlArr[] = '(' . implode(',', $row) . ')';
         }
 
         $sql .= implode(',', $sqlArr);
@@ -492,7 +492,7 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param int $fetchType
      * @return array|mixed
      */
-    public function findOne(array $bindParams =[], int $fetchType = PDO::FETCH_ASSOC)
+    public function findOne(array $bindParams = [], int $fetchType = PDO::FETCH_ASSOC)
     {
         return $this->queryOne($bindParams, $fetchType);
     }
@@ -502,7 +502,8 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param int $fetchType
      * @return array|mixed
      */
-    public function queryOne(array $bindParams =[], int $fetchType = PDO::FETCH_ASSOC) {
+    public function queryOne(array $bindParams = [], int $fetchType = PDO::FETCH_ASSOC)
+    {
         $this->PDOStatementHandle($this->queryStr, $bindParams);
         $result = $this->PDOStatement->fetch($fetchType);
         $this->PDOStatement->closeCursor();
@@ -514,8 +515,9 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param bool $one
      * @return array
      */
-    public function queryAll(array $bindParams =[], bool $one = false) {
-        $sql = $one ? $this->queryStr.' LIMIT 1' : $this->queryStr;
+    public function queryAll(array $bindParams = [], bool $one = false)
+    {
+        $sql = $one ? $this->queryStr . ' LIMIT 1' : $this->queryStr;
         return $this->query($sql, $bindParams);
     }
 
@@ -523,7 +525,8 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param array $bindParams
      * @return mixed
      */
-    public function queryColumn(array $bindParams =[]) {
+    public function queryColumn(array $bindParams = [])
+    {
         $this->PDOStatementHandle($this->queryStr, $bindParams);
         $result = $this->PDOStatement->fetchAll(PDO::FETCH_COLUMN);
         $this->PDOStatement->closeCursor();
@@ -534,7 +537,8 @@ abstract class PDOConnection implements ConnectionInterface {
      * 获取某个标量
      * @param array $bindParams
      */
-    public function queryScalar(array $bindParams =[]) {
+    public function queryScalar(array $bindParams = [])
+    {
         $this->PDOStatementHandle($this->queryStr, $bindParams);
         return $this->PDOStatement->fetchColumn(0);
     }
@@ -542,7 +546,8 @@ abstract class PDOConnection implements ConnectionInterface {
     /**
      * @param array $bindParams
      */
-    public function count(array $bindParams =[]) {
+    public function count(array $bindParams = [])
+    {
         return $this->queryScalar($bindParams);
     }
 
@@ -550,7 +555,8 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param array $bindParams
      * @return array
      */
-    public function max(array $bindParams =[]) {
+    public function max(array $bindParams = [])
+    {
         return $this->queryScalar($bindParams);
     }
 
@@ -558,7 +564,8 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param array $bindParams
      * @return array
      */
-    public function min(array $bindParams =[]) {
+    public function min(array $bindParams = [])
+    {
         return $this->queryScalar($bindParams);
     }
 
@@ -566,7 +573,8 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param array $bindParams
      * @return array
      */
-    public function avg(array $bindParams =[]) {
+    public function avg(array $bindParams = [])
+    {
         return $this->queryScalar($bindParams);
     }
 
@@ -574,7 +582,8 @@ abstract class PDOConnection implements ConnectionInterface {
      * @param array $bindParams
      * @return array
      */
-    public function sum(array $bindParams =[]) {
+    public function sum(array $bindParams = [])
+    {
         return $this->queryScalar($bindParams);
     }
 
@@ -619,7 +628,7 @@ abstract class PDOConnection implements ConnectionInterface {
      */
     public function getConfig(string $name = '')
     {
-        if($name) {
+        if ($name) {
             return $this->config[$name] ?? '';
         }
 
@@ -629,7 +638,7 @@ abstract class PDOConnection implements ConnectionInterface {
     /**
      * 获取数据表信息
      * @param string $tableName 数据表名
-     * @param string $fetch  获取信息类型 值包括 fields type bind pk
+     * @param string $fetch 获取信息类型 值包括 fields type bind pk
      * @return mixed
      */
     public function getTableInfo(string $tableName, string $fetch = '')
@@ -641,8 +650,8 @@ abstract class PDOConnection implements ConnectionInterface {
     /**
      * 获取数据表字段类型
      * @access public
-     * @param mixed  $tableName 数据表名
-     * @param string $field     字段名
+     * @param mixed $tableName 数据表名
+     * @param string $field 字段名
      * @return string
      */
     public function getFieldType($tableName, string $field)
@@ -663,12 +672,12 @@ abstract class PDOConnection implements ConnectionInterface {
      */
     public function quote(string $string, $parameterType = PDO::PARAM_STR): string
     {
-         $quoteString = $this->PDOInstance->quote($string, $parameterType);
-         if($quoteString === false) {
-             $quoteString = addcslashes(str_replace("'", "''", $string), "\000\n\r\\\032");
-         }
+        $quoteString = $this->PDOInstance->quote($string, $parameterType);
+        if ($quoteString === false) {
+            $quoteString = addcslashes(str_replace("'", "''", $string), "\000\n\r\\\032");
+        }
 
-         return $quoteString;
+        return $quoteString;
     }
 
     /**
@@ -698,7 +707,7 @@ abstract class PDOConnection implements ConnectionInterface {
 
         if (!isset($this->info[$schema]) || $force || isset($this->objExpireTime)) {
             $info = $this->getTableFieldsInfo($tableName);
-            $pk      = $info['_pk'] ?? null;
+            $pk = $info['_pk'] ?? null;
             $autoinc = $info['_autoinc'] ?? null;
             unset($info['_pk'], $info['_autoinc']);
 
@@ -708,10 +717,10 @@ abstract class PDOConnection implements ConnectionInterface {
             }
 
             $this->info[$schema] = [
-                'fields'  => array_keys($info),
-                'type'    => $info,
-                'bind'    => $bind,
-                'pk'      => $pk,
+                'fields' => array_keys($info),
+                'type' => $info,
+                'bind' => $bind,
+                'pk' => $pk,
                 'autoinc' => $autoinc,
             ];
         }
@@ -727,7 +736,7 @@ abstract class PDOConnection implements ConnectionInterface {
     public function getTableFieldsInfo(string $tableName): array
     {
         $fields = $this->getFields($tableName);
-        $info   = [];
+        $info = [];
 
         foreach ($fields as $key => $val) {
             // 记录字段类型
@@ -744,7 +753,7 @@ abstract class PDOConnection implements ConnectionInterface {
 
         if (isset($pk)) {
             // 设置主键
-            $pk          = count($pk) > 1 ? $pk : $pk[0];
+            $pk = count($pk) > 1 ? $pk : $pk[0];
             $info['_pk'] = $pk;
         }
 
@@ -850,13 +859,13 @@ abstract class PDOConnection implements ConnectionInterface {
                 );
             }
             $this->reConnectTimes = 0;
-            $this->log('Start transaction','reConnectTimes='.$this->reConnectTimes);
+            $this->log('Start transaction', 'reConnectTimes=' . $this->reConnectTimes);
         } catch (\PDOException|\Exception|\Throwable $exception) {
             if ($this->reConnectTimes < 4 && $this->isBreak($exception)) {
                 --$this->transTimes;
                 ++$this->reConnectTimes;
                 $this->close()->beginTransaction();
-                $this->log( 'Start transaction failed, try to start again','reConnectTimes='.$this->reConnectTimes);
+                $this->log('Start transaction failed, try to start again', 'reConnectTimes=' . $this->reConnectTimes);
             }
             throw $exception;
         }
@@ -899,14 +908,14 @@ abstract class PDOConnection implements ConnectionInterface {
     {
         $this->initConnect();
 
-        $this->log('Transaction commit start','transaction commit start');
+        $this->log('Transaction commit start', 'transaction commit start');
 
         // 不管多少层内嵌事务，最外层一次commit时候才真正一次性提交commit
         if (1 == $this->transTimes) {
             $this->PDOInstance->commit();
         }
         --$this->transTimes;
-        $this->log('Transaction commit finish','transaction commit ok');
+        $this->log('Transaction commit finish', 'transaction commit ok');
     }
 
 
@@ -918,9 +927,9 @@ abstract class PDOConnection implements ConnectionInterface {
     public function rollback()
     {
         $this->initConnect();
-        $this->log('Transaction commit','transaction commit failed');
+        $this->log('Transaction commit', 'transaction commit failed');
 
-        $this->log('Transaction rollback start','transaction rollback start');
+        $this->log('Transaction rollback start', 'transaction rollback start');
 
         if ($this->transTimes == 1) {
             $this->PDOInstance->rollBack();
@@ -931,37 +940,45 @@ abstract class PDOConnection implements ConnectionInterface {
         }
 
         $this->transTimes = max(0, $this->transTimes - 1);
-        $this->log('Transaction rollback finish','transaction rollback ok');
+        $this->log('Transaction rollback finish', 'transaction rollback ok');
 
     }
 
     /**
      * 启动XA事务
-     * @param  string $xid XA事务id
+     * @param string $xid XA事务id
      * @return void
      */
-    public function startTransXa(string $xid) {}
+    public function startTransXa(string $xid)
+    {
+    }
 
     /**
      * 预编译XA事务
-     * @param  string $xid XA事务id
+     * @param string $xid XA事务id
      * @return void
      */
-    public function prepareXa(string $xid) {}
+    public function prepareXa(string $xid)
+    {
+    }
 
     /**
      * 提交XA事务
-     * @param  string $xid XA事务id
+     * @param string $xid XA事务id
      * @return void
      */
-    public function commitXa(string $xid) {}
+    public function commitXa(string $xid)
+    {
+    }
 
     /**
      * 回滚XA事务
-     * @param  string $xid XA事务id
+     * @param string $xid XA事务id
      * @return void
      */
-    public function rollbackXa(string $xid) {}
+    public function rollbackXa(string $xid)
+    {
+    }
 
     /**
      * 关闭数据库（或者重新连接）
@@ -1006,15 +1023,15 @@ abstract class PDOConnection implements ConnectionInterface {
 
     /**
      * 根据参数绑定组装最终的SQL语句 便于调试
-     * @param string $sql  带参数绑定的sql语句
-     * @param array  $bind 参数绑定列表
+     * @param string $sql 带参数绑定的sql语句
+     * @param array $bind 参数绑定列表
      * @return string
      */
     public function getRealSql(string $sql, array $bind = []): string
     {
         foreach ($bind as $key => $val) {
             $value = is_array($val) ? $val[0] : $val;
-            $type  = is_array($val) ? $val[1] : PDO::PARAM_STR;
+            $type = is_array($val) ? $val[1] : PDO::PARAM_STR;
 
             if ((self::PARAM_FLOAT == $type || PDO::PARAM_STR == $type) && is_string($value)) {
                 $value = '\'' . addslashes($value) . '\'';
@@ -1025,7 +1042,7 @@ abstract class PDOConnection implements ConnectionInterface {
             // 判断占位符
             $sql = is_numeric($key) ?
                 substr_replace($sql, $value, strpos($sql, '?'), 1) :
-                substr_replace($sql, $value, strpos($sql,  $key), strlen($key));
+                substr_replace($sql, $value, strpos($sql, $key), strlen($key));
         }
 
         return rtrim($sql);
@@ -1033,7 +1050,7 @@ abstract class PDOConnection implements ConnectionInterface {
 
     /**
      * 获取最近插入的ID
-     * @param string  $sequence 自增序列名
+     * @param string $sequence 自增序列名
      * @return mixed
      * @throws Throwable
      */
@@ -1043,10 +1060,10 @@ abstract class PDOConnection implements ConnectionInterface {
             $insertId = $this->PDOInstance->lastInsertId($sequence);
         } catch (\Exception $e) {
             $insertId = $this->PDOInstance->lastInsertId();
-        }catch (\Throwable $t) {
+        } catch (\Throwable $t) {
             throw $t;
         }
-        if(is_numeric($insertId)) {
+        if (is_numeric($insertId)) {
             $insertId = (int)$insertId;
         }
         return $insertId ?? null;
@@ -1087,15 +1104,14 @@ abstract class PDOConnection implements ConnectionInterface {
      */
     protected function log(string $action, string $msg = ''): void
     {
-        if($this->debug)
-        {
+        if ($this->debug) {
             $spendLogLimit = $this->config['spend_log_limit'] ?? 0;
             //使用连接池的话，可能会将多次的执行sql流程存在log中，没有释放，此时看到的sql流程就不准确了,或者清空了前面的
-            if($spendLogLimit) {
-                if(count($this->lastLogs) > $spendLogLimit) {
+            if ($spendLogLimit) {
+                if (count($this->lastLogs) > $spendLogLimit) {
                     $this->lastLogs = [];
                 }
-                $this->lastLogs[] = ['time'=>date('Y-m-d, H:i:s'),'action'=>$action, 'msg'=>$msg];
+                $this->lastLogs[] = ['time' => date('Y-m-d, H:i:s'), 'action' => $action, 'msg' => $msg];
             }
         }
     }

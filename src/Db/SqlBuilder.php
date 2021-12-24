@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db;
@@ -17,7 +17,6 @@ use Common\Library\Exception\DbException;
  * Class SqlBuilder
  * @package Common\Library\Db
  */
-
 class SqlBuilder
 {
     static $preparePrefix = ':SW_PREPARE';
@@ -53,8 +52,8 @@ class SqlBuilder
             if (is_array($value)) {
                 if (count($value) > 0) {
                     if (count($value) > 1) {
-                        $prepareParams = self::buildInWhere($value,$params);
-                        $sql .= " {$operator} {$alias}.{$field} IN (".implode(',',$prepareParams).")";
+                        $prepareParams = self::buildInWhere($value, $params);
+                        $sql .= " {$operator} {$alias}.{$field} IN (" . implode(',', $prepareParams) . ")";
                         return;
                     } else {
                         $sql .= " {$operator} {$alias}.{$field}={$prepareField}";
@@ -79,8 +78,7 @@ class SqlBuilder
      */
     public static function buildEqualWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
     {
-        if(is_array($value) || is_object($value))
-        {
+        if (is_array($value) || is_object($value)) {
             throw new DbException('Params item of value must string or int');
         }
 
@@ -99,19 +97,17 @@ class SqlBuilder
     public static function buildIntWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
     {
         $prepareField = static::getPrepareField($field);
-        if(is_null($value))
-            return ;
+        if (is_null($value))
+            return;
 
-        if(is_array($value))
-        {
+        if (is_array($value)) {
             $count = count($value);
-            if( $count ==0)
+            if ($count == 0)
                 return;
 
-            if($count >1)
-            {
-                $prepareParams= self::buildInWhere($value,$params);
-                $sql .= " {$operator} {$alias}.{$field} IN (".implode(',',$prepareParams).")";
+            if ($count > 1) {
+                $prepareParams = self::buildInWhere($value, $params);
+                $sql .= " {$operator} {$alias}.{$field} IN (" . implode(',', $prepareParams) . ")";
 
                 return;
             }
@@ -135,19 +131,17 @@ class SqlBuilder
     public static function buildNotIntWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
     {
         $prepareField = static::getPrepareField($field);
-        if(is_null($value))
-            return ;
+        if (is_null($value))
+            return;
 
-        if(is_array($value))
-        {
+        if (is_array($value)) {
             $count = count($value);
-            if($count ==0)
+            if ($count == 0)
                 return;
 
-            if($count >1)
-            {
-                $prepareParams= self::buildInWhere($value,$params);
-                $sql .= " {$operator} {$alias}.{$field} NOT IN (".implode(',',$prepareParams).")";
+            if ($count > 1) {
+                $prepareParams = self::buildInWhere($value, $params);
+                $sql .= " {$operator} {$alias}.{$field} NOT IN (" . implode(',', $prepareParams) . ")";
 
                 return;
             }
@@ -171,19 +165,17 @@ class SqlBuilder
     public static function buildStringWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
     {
         $prepareField = static::getPrepareField($field);
-        if(is_null($value))
-            return ;
+        if (is_null($value))
+            return;
 
-        if(is_array($value))
-        {
+        if (is_array($value)) {
             $count = count($value);
-            if($count ==0)
+            if ($count == 0)
                 return;
 
-            if($count >1)
-            {
-                $prepareParams= self::buildInWhere($value,$params);
-                $sql .= " {$operator} {$alias}.{$field} IN (".implode(',',$prepareParams).")";
+            if ($count > 1) {
+                $prepareParams = self::buildInWhere($value, $params);
+                $sql .= " {$operator} {$alias}.{$field} IN (" . implode(',', $prepareParams) . ")";
                 return;
             }
 
@@ -226,16 +218,13 @@ class SqlBuilder
      */
     public static function buildMinRange(string $alias, string $field, $min, string &$sql, array &$params, bool $include = true)
     {
-        if(is_null($min) || $min === '')
-        {
+        if (is_null($min) || $min === '') {
             $min = 0;
         }
 
-        if($include)
-        {
+        if ($include) {
             $sql .= " and {$alias}.{$field} >= :min_{$field} ";
-        }else
-        {
+        } else {
             $sql .= " and {$alias}.{$field} > :min_{$field} ";
         }
 
@@ -253,16 +242,13 @@ class SqlBuilder
      */
     public static function buildMaxRange(string $alias, string $field, $max, string &$sql, array &$params, bool $include = true)
     {
-        if(is_null($max) || $max === '')
-        {
+        if (is_null($max) || $max === '') {
             $max = 0;
         }
 
-        if($include)
-        {
+        if ($include) {
             $sql .= " and {$alias}.{$field} <= :max_{$field} ";
-        }else
-        {
+        } else {
             $sql .= " and {$alias}.{$field} < :max_{$field} ";
         }
 
@@ -323,18 +309,17 @@ class SqlBuilder
     public static function buildOrderBy(string $alias, array $orderFieldRankMap, string &$sql, &$params)
     {
         $sortField = [];
-        foreach($orderFieldRankMap as $field=>$rank) {
-            if(in_array(strtolower($rank),['asc', 'desc']))
-            {
-                if(strpos($field,'.') === false) {
+        foreach ($orderFieldRankMap as $field => $rank) {
+            if (in_array(strtolower($rank), ['asc', 'desc'])) {
+                if (strpos($field, '.') === false) {
                     $sortField[] = "{$alias}.{$field} {$rank}";
-                }else {
+                } else {
                     $sortField[] = "{$field} {$rank}";
                 }
             }
         }
 
-        if($sortField) {
+        if ($sortField) {
             $sortFieldStr = implode(',', $sortField);
             $sql .= " order by {$sortFieldStr} ";
         }
@@ -351,15 +336,15 @@ class SqlBuilder
     public static function buildGroupBy(string $alias, array $groupFields, string &$sql, &$params)
     {
         $groupFieldItem = [];
-        foreach($groupFields as $field) {
-            if(strpos($field,'.') === false) {
+        foreach ($groupFields as $field) {
+            if (strpos($field, '.') === false) {
                 $groupFieldItem[] = "{$alias}.{$field}";
-            }else {
+            } else {
                 $groupFieldItem[] = "{$field}";
             }
         }
 
-        if($groupFieldItem) {
+        if ($groupFieldItem) {
             $groupFieldStr = implode(',', $groupFieldItem);
             $sql .= " group by $groupFieldStr ";
         }
@@ -386,7 +371,7 @@ class SqlBuilder
     {
         $prepareParams = [];
         foreach ($values as $item) {
-            $key = static::$preparePrefix.'_'.static::$paramCount;
+            $key = static::$preparePrefix . '_' . static::$paramCount;
             $prepareParams[] = $key;
             $params[$key] = $item;
             static::$paramCount++;
@@ -400,7 +385,7 @@ class SqlBuilder
      */
     private static function getPrepareField(string $field)
     {
-        $key = static::$preparePrefix.'_'.$field.'_'.static::$paramCount;
+        $key = static::$preparePrefix . '_' . $field . '_' . static::$paramCount;
         static::$paramCount++;
         return $key;
     }
@@ -417,7 +402,7 @@ class SqlBuilder
      */
     public function buildFindInSet(string $alias, string $searchField, $searchValue, string &$sql, array &$params)
     {
-        if(is_numeric($searchValue)) {
+        if (is_numeric($searchValue)) {
             $searchValue = (string)$searchValue;
         }
 

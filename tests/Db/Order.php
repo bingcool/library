@@ -3,17 +3,16 @@
 namespace Common\Library\Tests\Db;
 
 /**
-* @property integer $order_id
-* @property integer $user_id
-* @property float $order_amount
-* @property string $order_product_ids
-* @property string $json_data
-* @property integer $order_status
-* @property string $remark
-* @property string $create_time
-* @property string $update_time
-*/
-
+ * @property integer $order_id
+ * @property integer $user_id
+ * @property float $order_amount
+ * @property string $order_product_ids
+ * @property string $json_data
+ * @property integer $order_status
+ * @property string $remark
+ * @property string $create_time
+ * @property string $update_time
+ */
 class Order extends ActiveRecord
 {
     use PropertyFormat;
@@ -35,15 +34,14 @@ class Order extends ActiveRecord
     public function __construct($userId, $id = 0)
     {
         parent::__construct($userId);
-        if($id)
-        {
+        if ($id) {
             $this->loadByPk($id);
         }
     }
 
     public function loadByPk($id, ...$params)
     {
-        $this->findOne('order_id=:order_id',[
+        $this->findOne('order_id=:order_id', [
 
             ':order_id' => $id
         ]);
@@ -58,7 +56,7 @@ class Order extends ActiveRecord
     public function onAfterInsertTransaction()
     {
         $user = new User();
-        $user->user_name = 'bingcool'.rand(1,1000);
+        $user->user_name = 'bingcool' . rand(1, 1000);
         $user->birth_day = '1991-05-05';
         $user->sex = 1;
         $user->phone = '12345678';
@@ -73,11 +71,9 @@ class Order extends ActiveRecord
     }
 
 
-
     public function onBeforeUpdate(): bool
     {
-        if($this->isDirty('remark'))
-        {
+        if ($this->isDirty('remark')) {
             var_dump('remark change');
         }
         return parent::onBeforeUpdate();
@@ -91,7 +87,7 @@ class Order extends ActiveRecord
     public function onAfterUpdateTransaction()
     {
         $user = new User();
-        $user->user_name = 'bingcool'.rand(1,1000);
+        $user->user_name = 'bingcool' . rand(1, 1000);
         $user->birth_day = '1991-05-05';
         $user->sex = 1;
         $user->phone = '12345678';
@@ -100,24 +96,19 @@ class Order extends ActiveRecord
 
     public function onAfterUpdate()
     {
-        if($this->isDirty('order_product_ids'))
-        {
+        if ($this->isDirty('order_product_ids')) {
             var_dump('change');
         }
         var_dump($this->getDiffAttributes());
-        if($this->isNew())
-        {
+        if ($this->isNew()) {
             var_dump('isNew');
-        }else
-        {
+        } else {
             var_dump('noNew');
         }
 
-        if($this->isExists())
-        {
+        if ($this->isExists()) {
             var_dump('isExists');
-        }else
-        {
+        } else {
             var_dump('no isExists');
         }
         parent::onAfterUpdate();
@@ -132,7 +123,7 @@ class Order extends ActiveRecord
     protected function onAfterDelete()
     {
 
-        var_dump($this->remark,'afterDelete');
+        var_dump($this->remark, 'afterDelete');
         parent::onAfterDelete();
     }
 }

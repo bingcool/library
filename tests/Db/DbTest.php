@@ -14,21 +14,20 @@ class DbTest extends TestCase
     public function testInsert()
     {
         try {
-            $order = new \Common\Library\Tests\Db\Order($this->userId,0);
+            $order = new \Common\Library\Tests\Db\Order($this->userId, 0);
             $order->user_id = $this->userId;
             $order->order_amount = 100.50;
-            $order->order_product_ids = [1234455,4567888];
+            $order->order_product_ids = [1234455, 4567888];
             $order->order_status = 1;
             $order->remark = '尽快发货-nnn';
             //$order->json_data = ['go','php','java','swoole'];
-            $order->json_data = ['1234455','4567888'];
+            $order->json_data = ['1234455', '4567888'];
             $order->nnnn = 'njnnnj';
             //var_dump($order->getData());
             $order->save();
             var_dump($order->order_id, $order->getNumRows());
 
-        }catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             var_dump($e->getMessage());
         }
 
@@ -57,8 +56,8 @@ class DbTest extends TestCase
     {
         $orderId = 1639369444;
         $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
-        $order->order_product_ids = [1,2,3,4,5,6,7,8];
-        $order->remark = '中国小米（mi）'.rand(1,1000);
+        $order->order_product_ids = [1, 2, 3, 4, 5, 6, 7, 8];
+        $order->remark = '中国小米（mi）' . rand(1, 1000);
         $order->save();
 
         $diff = $order->getDirtyAttributeFields();
@@ -87,40 +86,39 @@ class DbTest extends TestCase
         // 启动事务，底层将关闭自动提交
         $connection->beginTransaction();
 
-        try{
+        try {
 
             $this->testUpdateObject();
 
-            $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)" )->insert([
+            $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)")->insert([
                 ':order_id' => time(),
                 ':user_id' => $this->userId,
                 ':order_amount' => 100,
-                ':order_product_ids' => json_encode([1,2,3]),
+                ':order_product_ids' => json_encode([1, 2, 3]),
                 ':order_status' => 1
             ]);
 
-            $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)" )->insert([
+            $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)")->insert([
                 ':order_id' => time() + 1,
                 ':user_id' => $this->userId,
                 ':order_amount' => 101,
-                ':order_product_ids' => json_encode([1,2,3]),
+                ':order_product_ids' => json_encode([1, 2, 3]),
                 ':order_status' => 1
             ]);
 
             // 多层嵌套事务
-            try{
-                $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)" )->insert([
+            try {
+                $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)")->insert([
                     ':order_id' => time() + 5,
                     ':user_id' => $this->userId,
                     ':order_amount' => 105,
-                    ':order_product_ids' => json_encode([1,2,3]),
+                    ':order_product_ids' => json_encode([1, 2, 3]),
                     ':order_status' => 1
                 ]);
 
                 $connection->commit();
 
-            }catch (\PDOException $e)
-            {
+            } catch (\PDOException $e) {
                 $connection->rollback();
                 var_dump($e->getMessage());
             }
@@ -128,18 +126,17 @@ class DbTest extends TestCase
             // 提交后，底层将恢复原来的自动提交属性
             $connection->commit();
 
-        }catch (\PDOException $e)
-        {
+        } catch (\PDOException $e) {
             $connection->rollback();
             var_dump($e->getMessage());
         }
 
         // 后续继续执行各种curd操作
-        $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)" )->insert([
+        $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)")->insert([
             ':order_id' => time() + 2,
             ':user_id' => $this->userId,
             ':order_amount' => 102,
-            ':order_product_ids' => json_encode([1,2,3]),
+            ':order_product_ids' => json_encode([1, 2, 3]),
             ':order_status' => 1
         ]);
 
@@ -153,7 +150,7 @@ class DbTest extends TestCase
         $connection = $order->getConnection();
 
         $id = '"1234455"';
-        $result = $connection->createCommand("select * from tbl_order where JSON_CONTAINS(order_product_ids, '1234455') or JSON_CONTAINS(order_product_ids, '{$id}')" )->queryAll();
+        $result = $connection->createCommand("select * from tbl_order where JSON_CONTAINS(order_product_ids, '1234455') or JSON_CONTAINS(order_product_ids, '{$id}')")->queryAll();
 
         var_dump($result);
 

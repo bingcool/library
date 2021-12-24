@@ -1,4 +1,5 @@
 <?php
+
 namespace Common\Library\Lock;
 
 use Common\Library\Db\PDOConnection;
@@ -10,14 +11,13 @@ use PDOException;
 
 /**
  * +----------------------------------------------------------------------
-* | Common library of swoole
-* +----------------------------------------------------------------------
-* | Licensed ( https://opensource.org/licenses/MIT )
-* +----------------------------------------------------------------------
-* | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-* +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
-
 class TransactionalMutex extends \malkusch\lock\mutex\TransactionalMutex
 {
     /**
@@ -39,8 +39,8 @@ class TransactionalMutex extends \malkusch\lock\mutex\TransactionalMutex
      * As this implementation spans a transaction over a unit of work,
      * PDO::ATTR_AUTOCOMMIT SHOULD not be enabled.
      *
-     * @param PDOConnection $pdo     The PDO.
-     * @param int  $timeout The timeout in seconds, default is 3.
+     * @param PDOConnection $pdo The PDO.
+     * @param int $timeout The timeout in seconds, default is 3.
      *
      * @throws \LengthException The timeout must be greater than 0.
      */
@@ -98,10 +98,10 @@ class TransactionalMutex extends \malkusch\lock\mutex\TransactionalMutex
      * and won't  be replayed.
      *
      * @param callable $code The synchronized execution block.
-     * @throws \Exception The execution block threw an exception.
-     * @throws LockAcquireException The transaction was not commited.
      * @return mixed The return value of the execution block.
      * @SuppressWarnings(PHPMD)
+     * @throws LockAcquireException The transaction was not commited.
+     * @throws \Exception The execution block threw an exception.
      */
     public function synchronized(callable $code)
     {

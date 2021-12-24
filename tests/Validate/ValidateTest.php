@@ -13,13 +13,13 @@ class ValidateTest extends TestCase
         try {
 
             $data = [
-                'name'  => 'hhh',
+                'name' => 'hhh',
                 'email' => 'thinkphp@qq.com',
             ];
 
-            if(!$validate->scene('v1')->check($data)) {
+            if (!$validate->scene('v1')->check($data)) {
                 var_dump($validate->getError());
-            }else {
+            } else {
                 var_dump('success');
             }
         } catch (ValidateException $e) {

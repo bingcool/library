@@ -1,6 +1,6 @@
 <?php
 
-include_once dirname(dirname(__DIR__))."/vendor/autoload.php";
+include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 
 
 $metaBrokerList = '192.168.99.103:9092';
@@ -18,8 +18,7 @@ $topicConf = new \RdKafka\TopicConf();
 $topicConf->set('request.required.acks', 1);
 $producer->setTopicConf($topicConf);
 
-while (1)
-{
+while (1) {
     $producer->produce('hello word bingcool!', 5000, 123456);
 
     sleep(2);

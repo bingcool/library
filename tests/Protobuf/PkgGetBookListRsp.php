@@ -34,13 +34,14 @@ class PkgGetBookListRsp extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type int $ret
+     * @type int $ret
      *          响应
-     *     @type string $msg
-     *     @type \Common\Library\Tests\Protobuf\GetBookListData $data
+     * @type string $msg
+     * @type \Common\Library\Tests\Protobuf\GetBookListData $data
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = NULL)
+    {
         \Common\Library\Tests\Protobuf\Book::initOnce();
         parent::__construct($data);
     }

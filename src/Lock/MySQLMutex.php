@@ -1,18 +1,18 @@
 <?php
+
 namespace Common\Library\Lock;
 
 use Common\Library\Db\Mysql;
 
 /**
  * +----------------------------------------------------------------------
-* | Common library of swoole
-* +----------------------------------------------------------------------
-* | Licensed ( https://opensource.org/licenses/MIT )
-* +----------------------------------------------------------------------
-* | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-* +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
-
 class MySQLMutex extends \malkusch\lock\mutex\MySQLMutex
 {
     public function __construct(Mysql $mysql, string $name, int $timeout = 0)

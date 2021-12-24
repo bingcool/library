@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Queues;
@@ -27,8 +27,7 @@ class RedisDelayQueue extends BaseDelayQueue
      */
     public function __construct(RedisConnection $redis, string $delayKey, ?string $option = null)
     {
-        if($redis instanceof Predis)
-        {
+        if ($redis instanceof Predis) {
             throw new QueueException('RedisDelayQueue __construct first argument of redis can not use Common\Library\Cache\Predis');
         }
         parent::__construct($redis, $delayKey, $option);
@@ -41,10 +40,9 @@ class RedisDelayQueue extends BaseDelayQueue
      * @param array $options
      * @return array
      */
-    public function rangeByScore($start, $end, array $options = ['limit' =>[0,9]])
+    public function rangeByScore($start, $end, array $options = ['limit' => [0, 9]])
     {
-        if (isset($options['limit']))
-        {
+        if (isset($options['limit'])) {
             $offset = $options['limit'][0] ?? null;
             $limit = $options['limit'][1] ?? null;
         }

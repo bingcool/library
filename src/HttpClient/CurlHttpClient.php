@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\HttpClient;
@@ -17,7 +17,6 @@ use Common\Library\Exception\CurlException;
  * Class CurlHttpClient
  * @package Common\Library\HttpClient
  */
-
 class CurlHttpClient implements HttpClientInterface
 {
     /**
@@ -100,15 +99,15 @@ class CurlHttpClient implements HttpClientInterface
         $body = null,
         int $connectTimeOut = 10,
         int $timeOut = 10
-    ) {
+    )
+    {
         $method = strtoupper($method);
         $this->openConnection($url, $method, $body, $this->headers, $connectTimeOut, $timeOut);
         $this->sendRequest();
         $curlErrorCode = $this->baseCurl->errno();
         $this->curlErrorCode = $curlErrorCode;
         $curlErrorCode && $this->curlErrorMessage = $this->baseCurl->error();
-        if($curlErrorCode)
-        {
+        if ($curlErrorCode) {
             throw new CurlException($this->baseCurl->error(), $curlErrorCode);
         }
         // Separate the raw headers from the raw body
@@ -123,12 +122,12 @@ class CurlHttpClient implements HttpClientInterface
     /**
      * Opens a new curl connection.
      *
-     * @param string $url     The endpoint to send the request to.
-     * @param string $method  The request method.
-     * @param string $body    The body of the request.
-     * @param array  $headers The request headers.
-     * @param int    $connectTimeOut The timeout in seconds for the connect request.
-     * @param int    $readTimeOut The timeout in seconds for the request.
+     * @param string $url The endpoint to send the request to.
+     * @param string $method The request method.
+     * @param string $body The body of the request.
+     * @param array $headers The request headers.
+     * @param int $connectTimeOut The timeout in seconds for the connect request.
+     * @param int $readTimeOut The timeout in seconds for the request.
      */
     public function openConnection(
         string $url,
@@ -139,30 +138,24 @@ class CurlHttpClient implements HttpClientInterface
         int $readTimeOut = 10
     )
     {
-        if($url)
-        {
+        if ($url) {
             $this->options[CURLOPT_URL] = $url;
         }
 
-        if($headers)
-        {
+        if ($headers) {
             $this->options[CURLOPT_HTTPHEADER] = $this->compileRequestHeaders($headers);
         }
 
-        if($connectTimeOut)
-        {
+        if ($connectTimeOut) {
             $this->options[CURLOPT_CONNECTTIMEOUT] = $connectTimeOut;
         }
 
-        if($readTimeOut)
-        {
+        if ($readTimeOut) {
             $this->options[CURLOPT_TIMEOUT] = $readTimeOut;
         }
 
-        if($method !== 'GET')
-        {
-            if(empty($body))
-            {
+        if ($method !== 'GET') {
+            if (empty($body)) {
                 throw new CurlException('Post Curl Body empty');
             }
             $this->options[CURLOPT_POSTFIELDS] = $body;
@@ -172,8 +165,7 @@ class CurlHttpClient implements HttpClientInterface
 
         $options = $this->options + $this->getDefaultOptions();
 
-        if(isset($this->options[CURLOPT_NOBODY]) && (bool) $this->options[CURLOPT_NOBODY] === true)
-        {
+        if (isset($this->options[CURLOPT_NOBODY]) && (bool)$this->options[CURLOPT_NOBODY] === true) {
             $options[CURLOPT_HEADER] = $this->options[CURLOPT_HEADER] = true;
         }
 
@@ -235,7 +227,7 @@ class CurlHttpClient implements HttpClientInterface
     {
         $url = $this->parseUrl($url, $params);
         $this->options[CURLOPT_HTTPGET] = "GET";
-        return $this->send($url,'GET', '', $connectTimeOut, $timeOut);
+        return $this->send($url, 'GET', '', $connectTimeOut, $timeOut);
     }
 
     /**
@@ -250,13 +242,13 @@ class CurlHttpClient implements HttpClientInterface
         array $params,
         int $connectTimeOut = 10,
         int $timeOut = 10
-    ){
-        if(empty($params))
-        {
-            return  false;
+    )
+    {
+        if (empty($params)) {
+            return false;
         }
         $this->options[CURLOPT_POST] = 1;
-        return $this->send($url,'POST', $params, $connectTimeOut, $timeOut);
+        return $this->send($url, 'POST', $params, $connectTimeOut, $timeOut);
     }
 
     /**
@@ -267,43 +259,36 @@ class CurlHttpClient implements HttpClientInterface
     public function parseUrl(string $url, array $params = [])
     {
         $uri = parse_url($url);
-        if(is_array($params) && !empty($params))
-        {
+        if (is_array($params) && !empty($params)) {
             $queryString = http_build_query($params);
-            if(isset($uri['query']) && !empty($uri['query']))
-            {
-                $uri['query'] = $uri['query'].'&'.$queryString;
-            }else {
+            if (isset($uri['query']) && !empty($uri['query'])) {
+                $uri['query'] = $uri['query'] . '&' . $queryString;
+            } else {
                 $uri['query'] = $queryString;
             }
         }
 
-        if(isset($uri['user']))
-        {
-            $user = $uri['user'].':';
+        if (isset($uri['user'])) {
+            $user = $uri['user'] . ':';
         }
 
-        if(isset($uri['pass']))
-        {
-            $pass = $uri['pass'].'@';
+        if (isset($uri['pass'])) {
+            $pass = $uri['pass'] . '@';
         }
 
-        if(isset($uri['port']))
-        {
-            $port = ':'.$uri['port'];
+        if (isset($uri['port'])) {
+            $port = ':' . $uri['port'];
         }
 
-        if(isset($uri['query']))
-        {
-            $query = '?'.$uri['query'];
+        if (isset($uri['query'])) {
+            $query = '?' . $uri['query'];
         }
 
-        if(isset($uri['fragment']))
-        {
-            $fragment = '#'.$uri['fragment'];
+        if (isset($uri['fragment'])) {
+            $fragment = '#' . $uri['fragment'];
         }
 
-        $url = $uri['scheme'].'://'.($user ??'').($pass ?? '').$uri['host'].($port ?? '').($uri['path'] ?? '/').($query ?? '').($fragment ?? '');
+        $url = $uri['scheme'] . '://' . ($user ?? '') . ($pass ?? '') . $uri['host'] . ($port ?? '') . ($uri['path'] ?? '/') . ($query ?? '') . ($fragment ?? '');
 
         return $url;
     }

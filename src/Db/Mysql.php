@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db;
@@ -17,8 +17,8 @@ use PDO;
  * Class Mysql
  * @package Common\Library\Db
  */
-
-class Mysql extends PDOConnection {
+class Mysql extends PDOConnection
+{
 
     /**
      * 解析pdo连接的dsn信息
@@ -45,13 +45,13 @@ class Mysql extends PDOConnection {
 
     /**
      * 取得数据表的字段信息
-     * @param  string $tableName
+     * @param string $tableName
      * @return array
      */
     public function getFields(string $tableName): array
     {
         $sourceTableName = $tableName;
-        if(!isset($this->_tableFields[$tableName]) && empty($this->_tableFields[$tableName]) || isset($this->objExpireTime)) {
+        if (!isset($this->_tableFields[$tableName]) && empty($this->_tableFields[$tableName]) || isset($this->objExpireTime)) {
 
             [$tableName] = explode(' ', $tableName);
 
@@ -62,18 +62,18 @@ class Mysql extends PDOConnection {
                 $tableName = '`' . $tableName . '`';
             }
 
-            $sql    = 'SHOW FULL COLUMNS FROM ' . $tableName;
-            $pdo    = $this->PDOStatementHandle($sql);
+            $sql = 'SHOW FULL COLUMNS FROM ' . $tableName;
+            $pdo = $this->PDOStatementHandle($sql);
             $result = $pdo->fetchAll(PDO::FETCH_ASSOC);
-            $info   = [];
+            $info = [];
 
-            if(!empty($result)) {
+            if (!empty($result)) {
                 foreach ($result as $key => $val) {
                     $val = array_change_key_case($val);
 
                     $info[$val['field']] = [
-                        'name'    => $val['field'],
-                        'type'    => $val['type'],
+                        'name' => $val['field'],
+                        'type' => $val['type'],
                         'notnull' => 'NO' == $val['null'],
                         'default' => $val['default'],
                         'primary' => strtolower($val['key']) == 'pri',
@@ -86,20 +86,20 @@ class Mysql extends PDOConnection {
             $this->_tableFields[$sourceTableName] = $fieldResult;
         }
 
-        return  $this->_tableFields[$sourceTableName];
+        return $this->_tableFields[$sourceTableName];
     }
 
     /**
      * 取得数据库的表信息
-     * @param  string $dbName
+     * @param string $dbName
      * @return array
      */
     public function getTables(string $dbName = ''): array
     {
-        $sql    = !empty($dbName) ? 'SHOW TABLES FROM ' . $dbName : 'SHOW TABLES ';
-        $pdo    = $this->PDOStatementHandle($sql);
+        $sql = !empty($dbName) ? 'SHOW TABLES FROM ' . $dbName : 'SHOW TABLES ';
+        $pdo = $this->PDOStatementHandle($sql);
         $result = $pdo->fetchAll(PDO::FETCH_ASSOC);
-        $info   = [];
+        $info = [];
 
         foreach ($result as $key => $val) {
             $info[$key] = current($val);

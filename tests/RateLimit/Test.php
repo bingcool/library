@@ -1,17 +1,17 @@
 <?php
 
-include_once dirname(dirname(__DIR__))."/vendor/autoload.php";
+include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 
-if(isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 1) {
+if (isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 1) {
     $redis = new \Common\Library\Cache\Predis([
         'scheme' => 'tcp',
-        'host'   => '127.0.0.1',
-        'port'   => 6379,
+        'host' => '127.0.0.1',
+        'port' => 6379,
     ]);
     $redis->connect();
     $pubSub = new \Common\Library\PubSub\PredisPubSub($redis);
-    var_dump( 'use Predis driver');
-}else {
+    var_dump('use Predis driver');
+} else {
 
     $redis = new \Common\Library\Cache\Redis();
     $redis->connect('127.0.0.1');
@@ -22,8 +22,7 @@ if(isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 1) {
 }
 
 
-while (true)
-{
+while (true) {
     $rateLimit = new \Common\Library\RateLimit\RedisLimit($redis);
     $key = 'ali-query-api';
     $limitTime = 1;
@@ -31,11 +30,10 @@ while (true)
     $remainTime = 60;
     $isLimit = $rateLimit->checkLimit($key, $limitTime, $limitNum, $remainTime);
 
-    if($isLimit)
-    {
+    if ($isLimit) {
         var_dump('limit');
         usleep(20000);
-    }else {
+    } else {
         var_dump('coroutine');
     }
 

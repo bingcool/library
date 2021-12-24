@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Cache;
@@ -15,8 +15,8 @@ namespace Common\Library\Cache;
  * Class RedisConnection
  * @package Common\Library\Cache
  */
-
-class RedisConnection {
+class RedisConnection
+{
 
     /**
      * @var null
@@ -43,17 +43,19 @@ class RedisConnection {
      * @param mixed $arguments
      * @param string $errorMsg
      */
-    protected function log(string $method, $arguments, string $errorMsg = 'ok') {
-        if(count($this->lastLogs) > $this->spendLogNum) {
+    protected function log(string $method, $arguments, string $errorMsg = 'ok')
+    {
+        if (count($this->lastLogs) > $this->spendLogNum) {
             $this->lastLogs = [];
         }
-        $this->lastLogs[] = json_encode(['time'=>date('Y-m-d, H:i:s'), 'method'=>$method, 'args'=>$arguments, 'msg'=>$errorMsg],JSON_UNESCAPED_UNICODE);
+        $this->lastLogs[] = json_encode(['time' => date('Y-m-d, H:i:s'), 'method' => $method, 'args' => $arguments, 'msg' => $errorMsg], JSON_UNESCAPED_UNICODE);
     }
 
     /**
      * @return array
      */
-    public function getLastLogs() {
+    public function getLastLogs()
+    {
         return array_map(function ($item) {
             return json_decode($item, true) ?? [];
         }, $this->lastLogs);
@@ -62,8 +64,9 @@ class RedisConnection {
     /**
      * @param int $logNum
      */
-    public function setLimitLogNum(int $spendLogNum) {
-        if($spendLogNum > static::MAX_SPEND_LOG_NUM) {
+    public function setLimitLogNum(int $spendLogNum)
+    {
+        if ($spendLogNum > static::MAX_SPEND_LOG_NUM) {
             $spendLogNum = static::MAX_SPEND_LOG_NUM;
         }
         $this->spendLogNum = $spendLogNum;
@@ -72,17 +75,14 @@ class RedisConnection {
     /**
      * @param float $time
      */
-    protected function sleep(float $time = 0.5) {
-        if(class_exists('Swoole\Coroutine\System') && \Swoole\Coroutine::getCid() > 0)
-        {
+    protected function sleep(float $time = 0.5)
+    {
+        if (class_exists('Swoole\Coroutine\System') && \Swoole\Coroutine::getCid() > 0) {
             \Swoole\Coroutine\System::sleep($time);
-        }else
-        {
-            if($time < 1)
-            {
+        } else {
+            if ($time < 1) {
                 usleep($time * 1000000);
-            }else
-            {
+            } else {
                 sleep(floor($time));
             }
         }

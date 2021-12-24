@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db;
@@ -26,7 +26,7 @@ class PgSqlBuilder extends SqlBuilder
      */
     public function buildFindInSet(string $alias, string $searchField, $searchValue, string &$sql, array &$params)
     {
-        if(is_numeric($searchValue)) {
+        if (is_numeric($searchValue)) {
             $searchValue = (string)$searchValue;
         }
 

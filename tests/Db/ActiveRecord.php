@@ -32,6 +32,6 @@ class ActiveRecord extends \Common\Library\Db\Model
      */
     public function createPkValue()
     {
-        return time() + rand(1,100000);
+        return time() + rand(1, 100000);
     }
 }

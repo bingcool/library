@@ -1,10 +1,12 @@
 <?php
+
 namespace Common\Library\Tests\Protobuf;
 
 use PHPUnit\Framework\TestCase;
 use Common\Library\Protobuf\Serializer;
 
-class PBTest extends  TestCase {
+class PBTest extends TestCase
+{
 
     public $serializer;
 
@@ -25,7 +27,7 @@ class PBTest extends  TestCase {
 
     }
 
-    public function testtestSerializer1(?int $cid=2)
+    public function testtestSerializer1(?int $cid = 2)
     {
         $listData = new GetBookListData();
         $listData->setUserId(12345);
@@ -61,8 +63,7 @@ class PBTest extends  TestCase {
         //$rsp1 = Serializer::decodeMessage($rsp1, $arr);
         var_dump($cid);
         var_dump($rsp1->getData()->getSex());
-        foreach ($rsp1->getData()->getMapAddr() as $key => $addr)
-        {
+        foreach ($rsp1->getData()->getMapAddr() as $key => $addr) {
             var_dump($key, $addr->getLat());
         }
     }

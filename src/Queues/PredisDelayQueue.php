@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Queues;
@@ -48,11 +48,9 @@ class PredisDelayQueue extends BaseDelayQueue
      */
     public function range($start, $end, ?bool $withScores = null)
     {
-        if($withScores === true)
-        {
+        if ($withScores === true) {
             $withScores = ['withscores' => true];
-        }else
-        {
+        } else {
             $withScores = [];
         }
         return $this->redis->zRange($this->delayKey, $start, $end, $withScores);
@@ -65,10 +63,9 @@ class PredisDelayQueue extends BaseDelayQueue
      * @param array $options
      * @return array
      */
-    public function rangeByScore($start, $end, array $options = ['limit' =>[0,9]])
+    public function rangeByScore($start, $end, array $options = ['limit' => [0, 9]])
     {
-        if (isset($options['limit']))
-        {
+        if (isset($options['limit'])) {
             $offset = $options['limit'][0] ?? null;
             $limit = $options['limit'][1] ?? null;
         }
@@ -99,13 +96,12 @@ class PredisDelayQueue extends BaseDelayQueue
     public function retry($member, int $delayTime)
     {
         $retryTimes = $this->redis->hGet($this->retryMessageKey, $member);
-        if($retryTimes >= $this->retryTimes)
-        {
+        if ($retryTimes >= $this->retryTimes) {
             $this->redis->hDel($this->retryMessageKey, $member);
             return;
         }
 
-        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(),2, ...[$this->retryMessageKey, $this->delayKey, $member, time() + $delayTime]);
+        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), 2, ...[$this->retryMessageKey, $this->delayKey, $member, time() + $delayTime]);
     }
 
 }

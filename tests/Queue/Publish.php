@@ -1,6 +1,6 @@
 <?php
 
-include_once dirname(dirname(__DIR__))."/vendor/autoload.php";
+include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 
 
 $redis = new \Common\Library\Cache\Redis();

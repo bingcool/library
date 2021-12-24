@@ -11,7 +11,7 @@ $name_space = str_replace('.', '/', $package);
 $last_name_space = array_pop(explode('/', $name_space));
 
 // 输出位置
-$php_out = substr($current_dir, 0, strpos($current_dir, $last_name_space))."$last_name_space";
+$php_out = substr($current_dir, 0, strpos($current_dir, $last_name_space)) . "$last_name_space";
 // protoc 执行命令
 $proto_shell = "protoc -I={$current_dir} --php_out={$php_out} {$proto_name}";
 

@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\RateLimit;
@@ -81,7 +81,7 @@ class RedisLimit
         int $ttl = 3600
     )
     {
-        $this->rateKey = self::PREFIX_LIMIT.$key;
+        $this->rateKey = self::PREFIX_LIMIT . $key;
         $this->limitTime = $limitTime;
         $this->limitNum = $limitNum;
         $this->ttl = $ttl;
@@ -91,12 +91,10 @@ class RedisLimit
         $startMilliSecond = $endMilliSecond - ($this->limitTime * 1000);
         $remRemainTime = $endMilliSecond - ($this->ttl * 1000);
 
-        if($this->isPredisDriver)
-        {
+        if ($this->isPredisDriver) {
             $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $limitNum, $requireId]);
-        }else
-        {
-            $isLimit = $this->redis->eval($this->getLuaLimitScript(),[$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $limitNum, $requireId],1);
+        } else {
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), [$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $limitNum, $requireId], 1);
         }
 
         return $isLimit;
@@ -107,8 +105,8 @@ class RedisLimit
      */
     protected function getRequireId()
     {
-        $key = $this->rateKey.':reqId';
-        $redisIncrement = new \Common\Library\Uuid\RedisIncrement($this->redis,$key);
+        $key = $this->rateKey . ':reqId';
+        $redisIncrement = new \Common\Library\Uuid\RedisIncrement($this->redis, $key);
         return $redisIncrement->getIncrId();
     }
 
@@ -163,8 +161,7 @@ LUA;
      */
     public function isPredisDriver()
     {
-        if($this->redis instanceof \Common\Library\Cache\Predis)
-        {
+        if ($this->redis instanceof \Common\Library\Cache\Predis) {
             $this->isPredisDriver = true;
         }
         return $this->isPredisDriver;

@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\PubSub;
@@ -75,72 +75,53 @@ class PredisPubSub extends AbstractPubSub
     protected function handleSubscribe(array $channels, $callback, bool $isPattern = false)
     {
         $pubSubConsumer = $this->getPubSubConsumer();
-        if($isPattern)
-        {
+        if ($isPattern) {
             $pubSubConsumer->psubscribe(...$channels);
-        }else
-        {
+        } else {
             $pubSubConsumer->subscribe(...$channels);
         }
 
         /** @var object $message */
-        foreach($pubSubConsumer as $message)
-        {
+        foreach ($pubSubConsumer as $message) {
             $kind = $message->kind;
             $channel = $message->channel;
             $msg = $message->payload;
-            if($kind == 'message')
-            {
-                if($this->isCoroutine)
-                {
+            if ($kind == 'message') {
+                if ($this->isCoroutine) {
                     $exception = '';
-                    \Swoole\Coroutine::create(function () use($callback, $channel, $msg, & $exception)
-                    {
-                        try
-                        {
+                    \Swoole\Coroutine::create(function () use ($callback, $channel, $msg, & $exception) {
+                        try {
                             return call_user_func($callback, $this->redis, $channel, $msg);
-                        }catch (\Throwable $throwable)
-                        {
-                            if(class_exists("Workerfy\\AbstractProcess"))
-                            {
+                        } catch (\Throwable $throwable) {
+                            if (class_exists("Workerfy\\AbstractProcess")) {
                                 \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($throwable);
-                            }else
-                            {
+                            } else {
                                 $exception = $throwable;
                             }
                         }
                     });
 
-                    if($exception instanceof \Throwable)
-                    {
+                    if ($exception instanceof \Throwable) {
                         throw $exception;
                     }
-                }else
-                {
+                } else {
                     return call_user_func($callback, $this->redis, $channel, $msg);
                 }
 
-            }else if($kind == 'pmessage')
-            {
+            } else if ($kind == 'pmessage') {
                 $pattern = $message->pattern ?? '';
 
-                if($this->isCoroutine)
-                {
-                    \Swoole\Coroutine::create(function () use($callback, $pattern, $channel, $msg)
-                    {
-                        try
-                        {
+                if ($this->isCoroutine) {
+                    \Swoole\Coroutine::create(function () use ($callback, $pattern, $channel, $msg) {
+                        try {
                             return call_user_func($callback, $this->redis, $pattern, $channel, $msg);
-                        }catch (\Exception $e)
-                        {
-                            if(class_exists("Workerfy\\AbstractProcess"))
-                            {
+                        } catch (\Exception $e) {
+                            if (class_exists("Workerfy\\AbstractProcess")) {
                                 \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
                             }
                         }
                     });
-                }else
-                {
+                } else {
                     return call_user_func($callback, $this->redis, $pattern, $channel, $msg);
                 }
             }
@@ -152,8 +133,7 @@ class PredisPubSub extends AbstractPubSub
      */
     protected function getPubSubConsumer()
     {
-        if(!$this->pubSubConsumer)
-        {
+        if (!$this->pubSubConsumer) {
             $this->pubSubConsumer = $this->redis->pubSubLoop();
         }
 

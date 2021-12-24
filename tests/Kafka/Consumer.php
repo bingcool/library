@@ -1,12 +1,12 @@
 <?php
 
-include_once dirname(dirname(__DIR__))."/vendor/autoload.php";
+include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 
 
 $metaBrokerList = '192.168.99.103:9092';
 $topicName = 'mykafka';
 
-$consumer =new \Common\Library\Kafka\Consumer($metaBrokerList, $topicName);
+$consumer = new \Common\Library\Kafka\Consumer($metaBrokerList, $topicName);
 
 $consumer->setRebalanceCb(function (\RdKafka\KafkaConsumer $kafkaConsumer, $err, $partitions) {
     switch ($err) {
@@ -40,19 +40,16 @@ $consumer->setGroupId('group_order_pay');
 // 订阅返回消费实例
 $rdKafkaConsumer = $consumer->subject();
 
-while (true)
-{
+while (true) {
     // 10s 超时
     $message = $rdKafkaConsumer->consume(10 * 1000);
 
-    if(!empty($message))
-    {
-        var_dump('offset='.$message->offset.'--- err='.$message->err.'--partition='.$message->partition);
-        switch ($message->err)
-        {
+    if (!empty($message)) {
+        var_dump('offset=' . $message->offset . '--- err=' . $message->err . '--partition=' . $message->partition);
+        switch ($message->err) {
             case RD_KAFKA_RESP_ERR_NO_ERROR:
                 //  解释数据
-                $payload = json_decode($message->payload,true) ?? $message->payload;
+                $payload = json_decode($message->payload, true) ?? $message->payload;
                 //var_dump($payload);
                 break;
             case RD_KAFKA_RESP_ERR__PARTITION_EOF:

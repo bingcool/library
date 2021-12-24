@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Queues;
@@ -57,14 +57,13 @@ class Queue
      */
     public function __construct(RedisConnection $redis, string $queueKey)
     {
-        if($redis instanceof Predis)
-        {
+        if ($redis instanceof Predis) {
             $this->isPredisDriver = true;
         }
         $this->redis = $redis;
         $this->queueKey = $queueKey;
-        $this->retryQueueKey = $queueKey.':retry_queue_sort';
-        $this->retryMessageKey = $queueKey.':retry_queue_msg';
+        $this->retryQueueKey = $queueKey . ':retry_queue_sort';
+        $this->retryMessageKey = $queueKey . ':retry_queue_msg';
     }
 
     /**
@@ -75,17 +74,14 @@ class Queue
     public function push(...$items)
     {
         $push = [];
-        if(empty($items))
-        {
+        if (empty($items)) {
             return false;
         }
-        foreach($items as $v)
-        {
+        foreach ($items as $v) {
             $push[] = is_array($v) ? json_encode($v) : $v;
         }
         // Predis handle
-        if($this->isPredisDriver)
-        {
+        if ($this->isPredisDriver) {
             return $this->redis->lPush($this->queueKey, $push);
         }
         return $this->redis->lPush($this->queueKey, ...$push);
@@ -97,20 +93,17 @@ class Queue
      */
     public function pop(int $timeOut)
     {
-        if($timeOut <= 0)
-        {
+        if ($timeOut <= 0) {
             $timeOut = 1;
         }
 
-        if($this->isPredisDriver)
-        {
+        if ($this->isPredisDriver) {
             $result = $this->redis->brPop([$this->queueKey], $timeOut);
-            if($result === null)
-            {
+            if ($result === null) {
                 $result = [];
             }
             $this->redis->eval(LuaScripts::getQueueLuaScript(), 2, ...[$this->retryQueueKey, $this->queueKey, '-inf', time(), 0, 100]);
-        }else {
+        } else {
             /**
              * @var \Redis $redis
              */
@@ -128,17 +121,15 @@ class Queue
      */
     public function retry($data, int $delayTime = 10)
     {
-        if(is_array($data))
-        {
+        if (is_array($data)) {
             $data = json_encode($data);
         }
 
         $uniqueMember = md5($data);
 
-        if($this->isPredisDriver)
-        {
+        if ($this->isPredisDriver) {
             $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), 2, ...[$this->retryQueueKey, $this->retryMessageKey, time() + $delayTime, $data, $this->retryTimes, $uniqueMember]);
-        }else {
+        } else {
             $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), [$this->retryQueueKey, $this->retryMessageKey, time() + $delayTime, $data, $this->retryTimes, $uniqueMember], 2);
         }
         return $result;
@@ -159,8 +150,7 @@ class Queue
      */
     public function setRetryTimes(int $retryTimes)
     {
-        if($retryTimes <= 0)
-        {
+        if ($retryTimes <= 0) {
             return;
         }
         $this->retryTimes = $retryTimes;
@@ -188,13 +178,10 @@ class Queue
      */
     public function delRetryMessageKey()
     {
-        if($this->retryQueueCount() == 0 && (int)$this->redis->lLen($this->queueKey) == 0 )
-        {
-            if($this->isPredisDriver)
-            {
+        if ($this->retryQueueCount() == 0 && (int)$this->redis->lLen($this->queueKey) == 0) {
+            if ($this->isPredisDriver) {
                 $this->redis->del([$this->retryMessageKey]);
-            }else
-            {
+            } else {
                 /**
                  * @var \Redis $redis
                  */

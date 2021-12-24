@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 use Common\Library\Protobuf\Serializer;
 use Common\Library\ArrayHelper\ArrayUtil;
 
-class ArrayTest extends  TestCase
+class ArrayTest extends TestCase
 {
     public function testDiffArr()
     {
@@ -14,14 +14,14 @@ class ArrayTest extends  TestCase
             'name' => 'bingcool',
             'sex' => 1,
             'client_id' => 2345,
-            'data' => ['name'=>'vvv'],
+            'data' => ['name' => 'vvv'],
         ];
 
         $arr2 = [
             'name' => 'bingcool2',
             'sex' => 2,
             'client_id' => 2345,
-            'data' => ['name'=>'vvv11'],
+            'data' => ['name' => 'vvv11'],
         ];
 
 
@@ -37,28 +37,27 @@ class ArrayTest extends  TestCase
                 'name' => 'bingcool',
                 'age' => 18,
                 'client_id' => 2345,
-                'data' => ['name'=>'vvv'],
+                'data' => ['name' => 'vvv'],
             ],
             [
                 'name' => 'bingcool2',
                 'age' => '20',
                 'client_id' => 2345,
-                'data' => ['name'=>'vvv11'],
+                'data' => ['name' => 'vvv11'],
             ],
             [
                 'name' => 'bingcool2',
                 'age' => 6,
                 'client_id' => 2345,
-                'data' => ['name'=>'vvv11'],
+                'data' => ['name' => 'vvv11'],
             ]
         ];
 
-        try{
-            $newArr = \Common\Library\ArrayHelper\ArrayUtil::sortDataArr($arr,'age','asc',false);
+        try {
+            $newArr = \Common\Library\ArrayHelper\ArrayUtil::sortDataArr($arr, 'age', 'asc', false);
             var_dump($newArr);
 
-        }catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             var_dump($e->getMessage());
         }
 
@@ -71,7 +70,7 @@ class ArrayTest extends  TestCase
             'sex' => 1,
             'client_id' => 2345,
             'data' => [
-                'name'=>'vvv9999',
+                'name' => 'vvv9999',
                 'city' => 'Gunagzhou'
             ],
         ];
@@ -81,14 +80,14 @@ class ArrayTest extends  TestCase
             'sex' => 2,
             'client_id' => 2345,
             'data' => [
-                'name'=> 'vvv11',
+                'name' => 'vvv11',
                 'country' => 'CN'
             ],
         ];
 
-       $arr =  ArrayUtil::merge($arr1, $arr2, true);
+        $arr = ArrayUtil::merge($arr1, $arr2, true);
 
-       var_dump($arr);
+        var_dump($arr);
 
     }
 }

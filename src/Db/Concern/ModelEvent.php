@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db\Concern;
@@ -39,7 +39,7 @@ trait ModelEvent
 
     /**
      * 当前操作的事件响应
-     * @param  bool $withEvent  是否需要事件响应
+     * @param bool $withEvent 是否需要事件响应
      * @return $this
      */
     public function withEvent(bool $withEvent)
@@ -60,7 +60,7 @@ trait ModelEvent
 
     /**
      * 触发事件
-     * @param  string $event 事件名
+     * @param string $event 事件名
      * @return bool
      * @throws \Exception
      */
@@ -74,12 +74,12 @@ trait ModelEvent
 
         try {
             $result = null;
-            /**@var \Closure $callFunction*/
-            if(isset($this->customEventHandlers[$onEvent]) && $this->customEventHandlers[$onEvent] instanceof \Closure) {
+            /**@var \Closure $callFunction */
+            if (isset($this->customEventHandlers[$onEvent]) && $this->customEventHandlers[$onEvent] instanceof \Closure) {
                 $callFunction = $this->customEventHandlers[$onEvent];
                 $result = $callFunction->call($this);
-            }else {
-                if(method_exists(static::class, $eventFunction) && !in_array($onEvent, $this->skipEvents)) {
+            } else {
+                if (method_exists(static::class, $eventFunction) && !in_array($onEvent, $this->skipEvents)) {
                     $result = $this->{$eventFunction}();
                 }
             }
@@ -96,7 +96,7 @@ trait ModelEvent
      */
     public function setEventHandle(string $event, \Closure $func)
     {
-        if(!in_array($event, [
+        if (!in_array($event, [
             static::BEFORE_INSERT,
             static::AFTER_INSERT,
             static::BEFORE_UPDATE,
@@ -120,9 +120,9 @@ trait ModelEvent
      */
     public function getEventHandle(string $event = '')
     {
-        if($event) {
+        if ($event) {
             $handle = $this->customEventHandlers[$event] ?? null;
-        }else {
+        } else {
             $handle = $this->customEventHandlers;
         }
         return $handle;

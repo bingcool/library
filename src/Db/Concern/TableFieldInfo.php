@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db\Concern;
@@ -19,8 +19,7 @@ trait TableFieldInfo
      */
     protected function getSchemaInfo(): array
     {
-        if(empty($this->_schemaInfo))
-        {
+        if (empty($this->_schemaInfo)) {
             $table = $this->table ? $this->table . $this->_suffix : $this->table;
             $schemaInfo = $this->getConnection()->getSchemaInfo($table);
             $this->_schemaInfo = $schemaInfo;
@@ -59,7 +58,7 @@ trait TableFieldInfo
     protected function getFieldType(?string $field = null)
     {
         $schemaInfo = $this->getSchemaInfo();
-        if($field) {
+        if ($field) {
             return $schemaInfo['type'][$field] ?? null;
         }
         return $schemaInfo['type'] ?? [];

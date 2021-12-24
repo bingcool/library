@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Queues;
@@ -52,7 +52,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     /**
      * @var array
      */
-    const OPTIONS = ['NX','XX','CH','INCR'];
+    const OPTIONS = ['NX', 'XX', 'CH', 'INCR'];
 
     /**
      * RedisDelayQueue constructor.
@@ -62,13 +62,12 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      */
     public function __construct(RedisConnection $redis, string $delayKey, ?string $option = null)
     {
-        if($option && !in_array(strtoupper($option), static::OPTIONS))
-        {
+        if ($option && !in_array(strtoupper($option), static::OPTIONS)) {
             throw new QueueException('Redis Sort Score Number Option Error');
         }
         $this->redis = $redis;
         $this->delayKey = $delayKey;
-        $this->retryMessageKey = $delayKey.':retry_delq_msg';
+        $this->retryMessageKey = $delayKey . ':retry_delq_msg';
         $this->option = $option;
     }
 
@@ -88,8 +87,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      */
     public function setRetryTimes(int $retryTimes)
     {
-        if($retryTimes <= 0)
-        {
+        if ($retryTimes <= 0) {
             return;
         }
         $this->retryTimes = $retryTimes;
@@ -104,15 +102,13 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      */
     public function addItem(int $score, $member, int $delayTime)
     {
-        if($score < 0)
-        {
+        if ($score < 0) {
             $score = time();
         }
         $this->sortData[] = $score + $delayTime;
         $this->sortData[] = is_array($member) ? json_encode($member) : $member;
 
-        if(count($this->sortData) >= 200)
-        {
+        if (count($this->sortData) >= 200) {
             $this->push();
         }
 
@@ -124,8 +120,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      */
     public function push()
     {
-        if(empty($this->sortData))
-        {
+        if (empty($this->sortData)) {
             return 0;
         }
 
@@ -204,13 +199,10 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     {
         $chuncks = array_chunk($result, 2, false);
         $data = [];
-        foreach($chuncks as $chunck)
-        {
-            if(preg_match("/^[1-9][0-9]*$/", $chunck[1]))
-            {
+        foreach ($chuncks as $chunck) {
+            if (preg_match("/^[1-9][0-9]*$/", $chunck[1])) {
                 $data[$chunck[0]] = (int)$chunck[1];
-            }else
-            {
+            } else {
                 $data[$chunck[0]] = $chunck[1];
             }
         }
@@ -269,8 +261,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     public function retry($member, int $delayTime)
     {
         $retryTimes = $this->redis->hGet($this->retryMessageKey, $member);
-        if($retryTimes >= $this->retryTimes)
-        {
+        if ($retryTimes >= $this->retryTimes) {
             $this->redis->hDel($this->retryMessageKey, $member);
             return;
         }

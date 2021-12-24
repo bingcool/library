@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Uuid;
@@ -83,40 +83,33 @@ class RedisIncrement
      */
     public function getIncrId(?int $count = null)
     {
-        if($count <= 0)
-        {
+        if ($count <= 0) {
             $count = 1;
         }
 
         $usleepTime = 15 * 1000;
         do {
             $dataArr = $this->doHandle($this->redis, $count);
-            if(!empty($dataArr))
-            {
+            if (!empty($dataArr)) {
                 break;
             }
             usleep($usleepTime);
             --$this->retryTimes;
-        }while($this->retryTimes);
+        } while ($this->retryTimes);
 
-        if(empty($dataArr))
-        {
-            if($this->errorReportClosure instanceof \Closure) {
+        if (empty($dataArr)) {
+            if ($this->errorReportClosure instanceof \Closure) {
                 try {
                     call_user_func($this->errorReportClosure);
-                }catch (\Throwable $e)
-                {
+                } catch (\Throwable $e) {
 
                 }
             }
 
-            if(count($this->followConnections) > 0)
-            {
-                foreach($this->followConnections as $connection)
-                {
+            if (count($this->followConnections) > 0) {
+                foreach ($this->followConnections as $connection) {
                     $dataArr = $this->doHandle($connection, $count);
-                    if(!empty($dataArr))
-                    {
+                    if (!empty($dataArr)) {
                         break;
                     }
                 }
@@ -124,15 +117,13 @@ class RedisIncrement
         }
 
 
-        if(empty($dataArr))
-        {
+        if (empty($dataArr)) {
             return null;
         }
 
         list($prefixNumber, $incrId) = $dataArr;
 
-        if(!isset($incrId) || !is_numeric($prefixNumber))
-        {
+        if (!isset($incrId) || !is_numeric($prefixNumber)) {
             return null;
         }
 
@@ -149,15 +140,12 @@ class RedisIncrement
     protected function doHandle(RedisConnection $connection, int $count)
     {
         try {
-            if($this->isPredisDriver)
-            {
+            if ($this->isPredisDriver) {
                 $dataArr = $connection->eval($this->getLuaScripts(), 1, ...[$this->incrKey, $step = $count ?? 1, $this->ttl]);
-            }else
-            {
+            } else {
                 $dataArr = $connection->eval($this->getLuaScripts(), [$this->incrKey, $step = $count ?? 1, $this->ttl], 1);
             }
-        }catch (\Throwable $e)
-        {
+        } catch (\Throwable $e) {
 
         }
         return $dataArr ?? [];
@@ -176,8 +164,7 @@ class RedisIncrement
      */
     public function isPredisDriver()
     {
-        if($this->redis instanceof \Common\Library\Cache\Predis)
-        {
+        if ($this->redis instanceof \Common\Library\Cache\Predis) {
             $this->isPredisDriver = true;
         }
         return $this->isPredisDriver;

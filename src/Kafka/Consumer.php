@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Kafka;
@@ -19,8 +19,8 @@ use RdKafka\KafkaConsumer;
  * Class Consumer
  * @package Common\Library\Kafka
  */
-
-class Consumer extends AbstractKafka {
+class Consumer extends AbstractKafka
+{
     /**
      * @var KafkaConsumer
      */
@@ -87,7 +87,7 @@ class Consumer extends AbstractKafka {
      */
     public function setRebalanceCb(callable $callback = null)
     {
-        if(!$callback) {
+        if (!$callback) {
             $callback = $this->getRebalanceCbCallBack();
         }
         $this->conf->setRebalanceCb($callback);
@@ -96,21 +96,21 @@ class Consumer extends AbstractKafka {
     /**
      * @return callable
      */
-    protected function getRebalanceCbCallBack() : callable
+    protected function getRebalanceCbCallBack(): callable
     {
         return $callBack = function (\RdKafka\KafkaConsumer $kafka, $err, array $partitions = null) {
-            switch($err) {
+            switch ($err) {
                 case RD_KAFKA_RESP_ERR__ASSIGN_PARTITIONS:
                     $kafka->assign($partitions);
                     $callback = $this->rebalanceCbCallbacks[RD_KAFKA_RESP_ERR__ASSIGN_PARTITIONS] ?? '';
-                    if($callback instanceof \Closure) {
+                    if ($callback instanceof \Closure) {
                         $callback->call($this, $partitions);
                     }
                     break;
                 case RD_KAFKA_RESP_ERR__REVOKE_PARTITIONS:
                     $kafka->assign(null);
                     $callback = $this->rebalanceCbCallbacks[RD_KAFKA_RESP_ERR__REVOKE_PARTITIONS] ?? '';
-                    if($callback instanceof \Closure) {
+                    if ($callback instanceof \Closure) {
                         $callback->call($this, $partitions);
                     }
                     break;
@@ -163,16 +163,16 @@ class Consumer extends AbstractKafka {
      */
     public function subject(string $topicName = null)
     {
-        if(!$this->groupId) {
+        if (!$this->groupId) {
             throw new \RdKafka\Exception('Kafka Consumer Missing GroupId');
         }
-        if($topicName) {
+        if ($topicName) {
             $this->topicName = $topicName;
         }
         try {
             $rdKafkaConsumer = $this->getRdKafkaConsumer();
             $rdKafkaConsumer->subscribe([$this->topicName]);
-        }catch (\Throwable $throwable) {
+        } catch (\Throwable $throwable) {
             throw $throwable;
         }
         return $rdKafkaConsumer;

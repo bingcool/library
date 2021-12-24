@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\HttpClient;
@@ -15,7 +15,6 @@ namespace Common\Library\HttpClient;
  * Class BaseCurl
  * @package Common\Library\HttpClient
  */
-
 class BaseCurl
 {
     /**
@@ -91,15 +90,13 @@ class BaseCurl
      */
     public function getInfo($opt = 0)
     {
-        if(empty($opt))
-        {
-            if(class_exists('Swoole\Curl\Handler') && is_object($this->curl) && $this->curl instanceof \Swoole\Curl\Handler) {
+        if (empty($opt)) {
+            if (class_exists('Swoole\Curl\Handler') && is_object($this->curl) && $this->curl instanceof \Swoole\Curl\Handler) {
                 $info = curl_getinfo($this->curl, 0);
-            }else if(is_resource($this->curl))
-            {
+            } else if (is_resource($this->curl)) {
                 $info = curl_getinfo($this->curl);
             }
-        }else {
+        } else {
             $info = curl_getinfo($this->curl, $opt);
         }
 

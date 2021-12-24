@@ -58,20 +58,21 @@ class GetBookListData extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type string $name
+     * @type string $name
      *          姓名
-     *     @type int $age
+     * @type int $age
      *          年龄
-     *     @type bool $sex
+     * @type bool $sex
      *          性别
-     *     @type int $phone
+     * @type int $phone
      *          手机
-     *     @type \Common\Library\Tests\Protobuf\Addr[]|\Google\Protobuf\Internal\RepeatedField $addr
-     *     @type int $user_id
-     *     @type array|\Google\Protobuf\Internal\MapField $map_addr
+     * @type \Common\Library\Tests\Protobuf\Addr[]|\Google\Protobuf\Internal\RepeatedField $addr
+     * @type int $user_id
+     * @type array|\Google\Protobuf\Internal\MapField $map_addr
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = NULL)
+    {
         \Common\Library\Tests\Protobuf\Book::initOnce();
         parent::__construct($data);
     }

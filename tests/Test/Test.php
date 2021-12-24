@@ -1,7 +1,8 @@
 <?php
 
 //前序遍历生成二叉树
-function createBinTree($data = 1){
+function createBinTree($data = 1)
+{
     $binTree = new \stdClass();
     $binTree->data = $data;
     $binTree->left = null;
@@ -36,8 +37,7 @@ $leftArr = [];
 // 前序遍历
 function viewLeft($node, &$leftArr, $level)
 {
-    if($node == null)
-    {
+    if ($node == null) {
         return;
     }
 
@@ -53,14 +53,14 @@ function viewLeft($node, &$leftArr, $level)
 
 }
 
-viewLeft($rootNode1, $leftArr,1);
+viewLeft($rootNode1, $leftArr, 1);
 //var_dump($leftArr);
 
 // 层级遍历
 function levelorder($node)
 {
     $data = [];
-    if (! ($node instanceof \stdClass)) {
+    if (!($node instanceof \stdClass)) {
         return $data;
     }
 
@@ -68,26 +68,22 @@ function levelorder($node)
     $node->level = $level;
 
     $queue = [$node]; // 临时处理队列, 把开始节点放进队列
-    while (!empty($queue))
-    {
+    while (!empty($queue)) {
         $node = array_shift($queue); // 出队
         $level = $node->level;
 
         $data[$level][] = $node->data;
 
-        if($node->left || $node->right)
-        {
+        if ($node->left || $node->right) {
             $level++;
         }
 
-        if($node->left)
-        {
+        if ($node->left) {
             $node->left->level = $level;
             array_push($queue, $node->left);
         }
 
-        if($node->right)
-        {
+        if ($node->right) {
             $node->right->level = $level;
             array_push($queue, $node->right);
         }

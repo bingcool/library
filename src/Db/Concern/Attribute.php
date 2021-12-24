@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db\Concern;
@@ -76,7 +76,7 @@ trait Attribute
 
     /**
      * 判断一个字段名是否为主键字段
-     * @param  string $key 名称
+     * @param string $key 名称
      * @return bool
      */
     protected function isPk(string $key): bool
@@ -99,15 +99,15 @@ trait Attribute
     public function getPkValue()
     {
         $pk = $this->getPk();
-        if(is_string($pk) && array_key_exists($pk, $this->_data)) {
+        if (is_string($pk) && array_key_exists($pk, $this->_data)) {
             $types = $this->getFieldType();
             $pkValue = $this->_data[$pk] ?? 0;
-            if(isset($types[$pk]) && !empty($pkValue)) {
-                if($types[$pk] == 'int' || $types[$pk] == 'integer') {
+            if (isset($types[$pk]) && !empty($pkValue)) {
+                if ($types[$pk] == 'int' || $types[$pk] == 'integer') {
                     $pkValue = (int)$pkValue;
-                }else if($types[$pk] == 'float') {
+                } else if ($types[$pk] == 'float') {
                     $pkValue = (float)$pkValue;
-                }else {
+                } else {
                     $pkValue = (string)$pkValue;
                 }
             }
@@ -118,7 +118,7 @@ trait Attribute
 
     /**
      * 设置允许写入的字段,默认获取数据表所有字段
-     * @param  array $fields 允许写入的字段
+     * @param array $fields 允许写入的字段
      * @return $this
      */
     public function allowField(array $fields)
@@ -129,12 +129,12 @@ trait Attribute
 
     /**
      * 获取对象原始数据 如果不存在指定字段返回null
-     * @param  string $fieldName 字段名 留空获取全部
+     * @param string $fieldName 字段名 留空获取全部
      * @return mixed
      */
     public function getOrigin(string $fieldName = null)
     {
-        if(is_null($fieldName)) {
+        if (is_null($fieldName)) {
             return $this->_origin;
         }
         return $this->_origin[$fieldName] ?? null;
@@ -142,13 +142,13 @@ trait Attribute
 
     /**
      * 获取对象原始数据(原始出表或者对象设置即将如表的数据) 如果不存在指定字段返回false
-     * @param  string $fieldName 字段名 留空获取全部
+     * @param string $fieldName 字段名 留空获取全部
      * @return mixed
      * @throws Exception
      */
     public function getData(string $fieldName = null)
     {
-        if(is_null($fieldName)) {
+        if (is_null($fieldName)) {
             return $this->_data;
         }
         return $this->_data[$fieldName] ?? null;
@@ -167,7 +167,8 @@ trait Attribute
     /**
      * @return array
      */
-    protected function parseDiffData() {
+    protected function parseDiffData()
+    {
         $diffData = static::dirtyArray($this->_data, $this->_origin);
         // 只读字段不允许更新
         foreach ($this->_readOnly as $key => $field) {
@@ -177,13 +178,13 @@ trait Attribute
         }
 
         $originAttributes = $newAttributes = [];
-        foreach($diffData as $fieldName=>$value) {
+        foreach ($diffData as $fieldName => $value) {
             $originValue = isset($this->_origin[$fieldName]) ? $this->getValue($fieldName, $this->_origin[$fieldName]) : null;
             $originAttributes[$fieldName] = $originValue;
             $newAttributes[$fieldName] = $this->getValue($fieldName, $value);
         }
 
-        if($originAttributes) {
+        if ($originAttributes) {
             $this->_diffAttributes = [
                 'old_attributes' => $originAttributes ?? [],
                 'new_attributes' => $newAttributes ?? []
@@ -196,9 +197,10 @@ trait Attribute
     /**
      * @return array
      */
-    public function getDiffAttributes() {
-        if($this->isNew()) {
-            foreach($this->_data as $field=>$value) {
+    public function getDiffAttributes()
+    {
+        if ($this->isNew()) {
+            foreach ($this->_data as $field => $value) {
                 $newAttributes[$field] = $this->getValue($field, $value);
             }
             $diffAttributes = [
@@ -206,7 +208,7 @@ trait Attribute
                 'new_attributes' => $newAttributes ?? []
             ];
             $this->_diffAttributes = $diffAttributes;
-        }else {
+        } else {
             $this->parseDiffData();
             $diffAttributes = $this->_diffAttributes;
         }
@@ -221,8 +223,7 @@ trait Attribute
     public function getDirtyAttributeFields()
     {
         $diffAttributes = $this->_diffAttributes;
-        if(empty($diffAttributes))
-        {
+        if (empty($diffAttributes)) {
             $diffAttributes = $this->getDiffAttributes();
         }
         return array_keys($diffAttributes['new_attributes'] ?? []);
@@ -234,14 +235,11 @@ trait Attribute
      */
     public function hasDirtyAttributeFields()
     {
-        if($this->isNew())
-        {
+        if ($this->isNew()) {
             return true;
-        }else
-        {
+        } else {
             $diffAttributes = $this->getDirtyAttributeFields();
-            if($diffAttributes)
-            {
+            if ($diffAttributes) {
                 return true;
             }
             return false;
@@ -256,8 +254,8 @@ trait Attribute
     protected function getCustomData(array $customFields): array
     {
         $diffData = $originAttributes = $newAttributes = [];
-        foreach($customFields as $fieldName) {
-            if(isset($this->_readOnly[$fieldName]) || !isset($this->_data[$fieldName]) || !isset($this->_origin[$fieldName])) {
+        foreach ($customFields as $fieldName) {
+            if (isset($this->_readOnly[$fieldName]) || !isset($this->_data[$fieldName]) || !isset($this->_origin[$fieldName])) {
                 continue;
             }
             $diffData[$fieldName] = $this->_data[$fieldName];
@@ -270,8 +268,8 @@ trait Attribute
 
     /**
      * 直接设置数据对象值
-     * @param  string $name  属性名
-     * @param  mixed  $value 值
+     * @param string $name 属性名
+     * @param mixed $value 值
      * @return void
      */
     public function set(string $name, $value): void
@@ -281,8 +279,8 @@ trait Attribute
 
     /**
      * 数据写入 类型转换
-     * @param  mixed        $value 值
-     * @param  string|array $type  要转换的类型
+     * @param mixed $value 值
+     * @param string|array $type 要转换的类型
      * @return mixed
      */
     protected function writeTransform($value, $type)
@@ -300,18 +298,18 @@ trait Attribute
         switch ($type) {
             case 'int':
             case 'integer':
-                $value = (int) $value;
+                $value = (int)$value;
                 break;
             case 'float':
                 if (empty($param)) {
-                    $value = (float) $value;
+                    $value = (float)$value;
                 } else {
-                    $value = (float) number_format($value, (int) $param, '.', '');
+                    $value = (float)number_format($value, (int)$param, '.', '');
                 }
                 break;
             case 'bool':
             case 'boolean':
-                $value = (bool) $value;
+                $value = (bool)$value;
                 break;
             case 'timestamp':
                 if (!is_numeric($value)) {
@@ -328,11 +326,11 @@ trait Attribute
                 }
                 break;
             case 'array':
-                $value = (array) $value;
+                $value = (array)$value;
                 break;
             case 'json':
-                $option = !empty($param) ? (int) $param : JSON_UNESCAPED_UNICODE;
-                $value  = json_encode($value, $option);
+                $option = !empty($param) ? (int)$param : JSON_UNESCAPED_UNICODE;
+                $value = json_encode($value, $option);
                 break;
             case 'serialize':
                 $value = serialize($value);
@@ -349,8 +347,8 @@ trait Attribute
 
     /**
      * 数据读取 类型转换
-     * @param  mixed        $value 值
-     * @param  string|array $type  要转换的类型
+     * @param mixed $value 值
+     * @param string|array $type 要转换的类型
      * @return mixed
      */
     protected function readTransform($value, $type)
@@ -368,29 +366,29 @@ trait Attribute
         switch ($type) {
             case 'int':
             case 'integer':
-                $value = (int) $value;
+                $value = (int)$value;
                 break;
             case 'float':
                 if (empty($param)) {
-                    $value = (float) $value;
+                    $value = (float)$value;
                 } else {
-                    $value = (float) number_format($value, (int) $param, '.', '');
+                    $value = (float)number_format($value, (int)$param, '.', '');
                 }
                 break;
             case 'bool':
             case 'boolean':
-                $value = (bool) $value;
+                $value = (bool)$value;
                 break;
             case 'timestamp':
                 if (!is_null($value)) {
                     $format = !empty($param) ? $param : $this->dateFormat;
-                    $value  = $this->formatDateTime($format, $value, true);
+                    $value = $this->formatDateTime($format, $value, true);
                 }
                 break;
             case 'datetime':
                 if (!is_null($value)) {
                     $format = !empty($param) ? $param : $this->dateFormat;
-                    $value  = $this->formatDateTime($format, $value);
+                    $value = $this->formatDateTime($format, $value);
                 }
                 break;
             case 'json':
@@ -410,8 +408,7 @@ trait Attribute
                 }
                 break;
             default:
-                if (false !== strpos($type, '\\'))
-                {
+                if (false !== strpos($type, '\\')) {
                     $value = new $type($value);
                 }
         }

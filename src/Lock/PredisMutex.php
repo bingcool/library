@@ -1,4 +1,5 @@
 <?php
+
 namespace Common\Library\Lock;
 
 use malkusch\lock\exception\LockReleaseException;
@@ -6,14 +7,13 @@ use Throwable;
 
 /**
  * +----------------------------------------------------------------------
-* | Common library of swoole
-* +----------------------------------------------------------------------
-* | Licensed ( https://opensource.org/licenses/MIT )
-* +----------------------------------------------------------------------
-* | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-* +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
-
 class PredisMutex extends \malkusch\lock\mutex\PredisMutex
 {
     /**
@@ -48,15 +48,13 @@ class PredisMutex extends \malkusch\lock\mutex\PredisMutex
         $codeResult = null;
         $codeException = null;
         try {
-            if($this->isCoroutine())
-            {
+            if ($this->isCoroutine()) {
                 $chan = new \Swoole\Coroutine\Channel(1);
             }
 
             $codeResult = $code();
 
-            if($chan ?? null)
-            {
+            if ($chan ?? null) {
                 $chan->pop($this->timeOut + 1);
                 $chan->close();
             }
@@ -91,7 +89,7 @@ class PredisMutex extends \malkusch\lock\mutex\PredisMutex
     /**
      * @return bool
      */
-    public function releaseLock():bool
+    public function releaseLock(): bool
     {
         if (!$this->release($this->key)) {
             throw new LockReleaseException('Failed to release the lock.');
@@ -105,8 +103,7 @@ class PredisMutex extends \malkusch\lock\mutex\PredisMutex
      */
     public function isCoroutine()
     {
-        if(\Swoole\Coroutine::getCid() > 0)
-        {
+        if (\Swoole\Coroutine::getCid() > 0) {
             return true;
         }
 

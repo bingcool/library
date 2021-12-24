@@ -7,21 +7,21 @@ use Common\Library\Protobuf\Serializer;
 
 class PhpTest extends TestCase
 {
-    public $arr = [1,2,45,67,21,89,44,66,33];
+    public $arr = [1, 2, 45, 67, 21, 89, 44, 66, 33];
 
     public function testQuickSort()
     {
-        $arr = [1,2,45,67,21,89,44,66,33];
+        $arr = [1, 2, 45, 67, 21, 89, 44, 66, 33];
         $result = $this->quickSort($arr);
         var_dump($result);
     }
+
     // 快速排序法
     protected function quickSort($arr)
     {
         $length = count($arr);
 
-        if($length <=1)
-        {
+        if ($length <= 1) {
             return $arr;
         }
 
@@ -29,12 +29,10 @@ class PhpTest extends TestCase
 
         $right = $left = [];
 
-        for($i=1;$i<$length;$i++)
-        {
-            if($arr[$i] > $middle)
-            {
+        for ($i = 1; $i < $length; $i++) {
+            if ($arr[$i] > $middle) {
                 $right[] = $arr[$i];
-            }else {
+            } else {
                 $left[] = $arr[$i];
             }
         }
@@ -47,13 +45,14 @@ class PhpTest extends TestCase
 
     public function testMaoSort()
     {
-        $arr = [1,2,45,67,21,89,44,66,33];
+        $arr = [1, 2, 45, 67, 21, 89, 44, 66, 33];
         $result = $this->maoSort($arr);
         var_dump($result);
     }
+
     public function testSelectSort()
     {
-        $arr = [1,2,45,67,21,89,44,66,33];
+        $arr = [1, 2, 45, 67, 21, 89, 44, 66, 33];
         $result = $this->selectSort($arr);
         var_dump($result);
     }
@@ -61,20 +60,16 @@ class PhpTest extends TestCase
     protected function maoSort($arr)
     {
         $length = count($arr);
-        if($length <= 1)
-        {
+        if ($length <= 1) {
             return $arr;
         }
 
-        for($i=1;$i<$length;$i++)
-        {
-            for($j=0;$j<$length-$i;$j++)
-            {
-                if($arr[$j] > $arr[$j+1])
-                {
-                     $tmp = $arr[$j];
-                     $arr[$j] = $arr[$j+1];
-                     $arr[$j+1] = $tmp;
+        for ($i = 1; $i < $length; $i++) {
+            for ($j = 0; $j < $length - $i; $j++) {
+                if ($arr[$j] > $arr[$j + 1]) {
+                    $tmp = $arr[$j];
+                    $arr[$j] = $arr[$j + 1];
+                    $arr[$j + 1] = $tmp;
                 }
             }
         }
@@ -91,12 +86,9 @@ class PhpTest extends TestCase
     {
         $length = count($arr);
 
-        for($i=0;$i<$length;$i++)
-        {
-            for($j=$i+1;$j<$length;$j++)
-            {
-                if($arr[$i] < $arr[$j])
-                {
+        for ($i = 0; $i < $length; $i++) {
+            for ($j = $i + 1; $j < $length; $j++) {
+                if ($arr[$i] < $arr[$j]) {
                     $temp = $arr[$i];
                     $arr[$i] = $arr[$j];
                     $arr[$j] = $temp;
@@ -112,7 +104,7 @@ class PhpTest extends TestCase
         $binTree = new \stdClass();
         $binTree->data = null;
         $binTree->left = null;
-        $binTree->right =  null;
+        $binTree->right = null;
 
     }
 
@@ -121,7 +113,8 @@ class PhpTest extends TestCase
      * @param $number
      * @return int
      */
-    public function testBinarySearch($arr, $number) {
+    public function testBinarySearch($arr, $number)
+    {
         // 非数组或者数组为空，直接返回-1
         if (!is_array($arr) || empty($arr)) {
             return -1;

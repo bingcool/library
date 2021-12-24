@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db\Concern;
@@ -15,11 +15,11 @@ namespace Common\Library\Db\Concern;
  * Trait Util
  * @package Common\Library\Db\Concern
  */
-
-trait Util {
+trait Util
+{
     /**
      * 下划线转驼峰(首字母大写
-     * @param  string $value
+     * @param string $value
      * @return string
      */
     public static function studly(string $value): string

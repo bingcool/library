@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Cache;
@@ -15,7 +15,8 @@ namespace Common\Library\Cache;
  * @see \Redis
  * @mixin \Redis
  */
-class Redis extends RedisConnection {
+class Redis extends RedisConnection
+{
 
     /**
      * @var \Redis
@@ -40,7 +41,8 @@ class Redis extends RedisConnection {
     /**
      * Redis constructor
      */
-    public function __construct() {
+    public function __construct()
+    {
         $this->buildRedis();
     }
 
@@ -48,8 +50,9 @@ class Redis extends RedisConnection {
      * buildRedis
      * @throws Exception
      */
-    protected function buildRedis() {
-        if(!extension_loaded('redis')) {
+    protected function buildRedis()
+    {
+        if (!extension_loaded('redis')) {
             throw new \Exception("Missing extension redis, please install it");
         }
         unset($this->redis);
@@ -72,11 +75,12 @@ class Redis extends RedisConnection {
         $reserved = null,
         int $retry_interval = 0,
         float $read_timeout = 0.0
-    ) {
+    )
+    {
         $this->redis->connect($host, $port, $timeout, $reserved, $retry_interval, $read_timeout);
         $this->config = [$host, $port, $timeout, $reserved, $retry_interval, $read_timeout];
         $this->isPersistent = false;
-        $this->log(__FUNCTION__,$this->config);
+        $this->log(__FUNCTION__, $this->config);
         return $this;
     }
 
@@ -96,7 +100,8 @@ class Redis extends RedisConnection {
         $persistent_id = null,
         int $retry_interval = 0,
         float $read_timeout = 0.0
-    ) {
+    )
+    {
         $this->redis->pconnect($host, $port, $timeout, $persistent_id, $retry_interval, $read_timeout);
         $this->config = [$host, $port, $timeout, $persistent_id, $retry_interval, $read_timeout];
         $this->isPersistent = true;
@@ -107,15 +112,16 @@ class Redis extends RedisConnection {
     /**
      * reConnect
      */
-    protected function reConnect() {
+    protected function reConnect()
+    {
         $config = $this->config;
         $this->buildRedis();
-        if($this->isPersistent) {
+        if ($this->isPersistent) {
             $this->pconnect(...$config);
-        }else {
+        } else {
             $this->connect(...$config);
         }
-        if($this->password) {
+        if ($this->password) {
             $this->auth($this->password);
         }
     }
@@ -123,7 +129,8 @@ class Redis extends RedisConnection {
     /**
      * @param string $password
      */
-    public function auth(string $password) {
+    public function auth(string $password)
+    {
         $this->password = $password;
         $this->redis->auth($password);
     }
@@ -134,13 +141,14 @@ class Redis extends RedisConnection {
      * @return mixed
      * @throws \Throwable
      */
-    public function __call(string $method, array $arguments) {
+    public function __call(string $method, array $arguments)
+    {
         try {
-            $this->log($method, $arguments,"start to exec method={$method}");
+            $this->log($method, $arguments, "start to exec method={$method}");
             $result = $this->redis->{$method}(...$arguments);
             $this->log($method, $arguments);
             return $result;
-        }catch(\RedisException|\Exception $e) {
+        } catch (\RedisException|\Exception $e) {
             $this->log($method, $arguments, $e->getMessage());
             $this->log($method, $arguments, 'start to reConnect');
             $this->sleep(0.5);
@@ -148,10 +156,10 @@ class Redis extends RedisConnection {
             $this->reConnect();
             $this->log($method, $arguments, "reConnect successful, start to try exec method={$method} again");
             $result = $this->redis->{$method}(...$arguments);
-            $this->log($method, $arguments,'retry ok');
+            $this->log($method, $arguments, 'retry ok');
             return $result;
-        }catch(\Throwable $t) {
-            $this->log($method, $arguments, 'retry failed,errorMsg='.$t->getMessage());
+        } catch (\Throwable $t) {
+            $this->log($method, $arguments, 'retry failed,errorMsg=' . $t->getMessage());
             throw $t;
         }
     }
@@ -178,7 +186,8 @@ class Redis extends RedisConnection {
     /**
      * @return array
      */
-    public function getConfig() {
+    public function getConfig()
+    {
         return $this->config;
     }
 
@@ -195,7 +204,7 @@ class Redis extends RedisConnection {
      */
     public function isConnect()
     {
-        if($this->redis->ping() == '+PONG') {
+        if ($this->redis->ping() == '+PONG') {
             return true;
         }
         return false;
@@ -207,7 +216,7 @@ class Redis extends RedisConnection {
     public function __destruct()
     {
         parent::__destruct();
-        if(!$this->isPersistent) {
+        if (!$this->isPersistent) {
             $this->redis->close();
         }
     }

@@ -28,11 +28,12 @@ class Addr extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type float $lon
-     *     @type float $lat
+     * @type float $lon
+     * @type float $lat
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = NULL)
+    {
         \Common\Library\Tests\Protobuf\Book::initOnce();
         parent::__construct($data);
     }

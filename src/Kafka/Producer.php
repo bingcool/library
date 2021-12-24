@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Kafka;
@@ -19,8 +19,8 @@ use RdKafka\ProducerTopic;
  * Class Producer
  * @package Common\Library\Kafka
  */
-
-class Producer extends AbstractKafka {
+class Producer extends AbstractKafka
+{
     /**
      * @var \RdKafka\Producer
      */
@@ -80,7 +80,7 @@ class Producer extends AbstractKafka {
      */
     public function getTopicConf()
     {
-        if(!$this->topicConf) {
+        if (!$this->topicConf) {
             $this->topicConf = new TopicConf();
         }
         $this->setTopicConfig();
@@ -92,7 +92,7 @@ class Producer extends AbstractKafka {
      */
     public function getRdKafkaProducer(): \RdKafka\Producer
     {
-        if(!$this->rdKafkaProducer) {
+        if (!$this->rdKafkaProducer) {
             $this->rdKafkaProducer = new \RdKafka\Producer($this->conf);
         }
         return $this->rdKafkaProducer;
@@ -103,7 +103,7 @@ class Producer extends AbstractKafka {
      */
     public function getProducerTopic()
     {
-        if(!$this->producerTopic) {
+        if (!$this->producerTopic) {
             $this->producerTopic = $this->getRdKafkaProducer()->newTopic($this->topicName, $this->getTopicConf() ?? null);
         }
 
@@ -127,8 +127,9 @@ class Producer extends AbstractKafka {
         string $key = null,
         $partition = RD_KAFKA_PARTITION_UA,
         $msgFlag = 0
-    ) {
-        if(!$this->topicName) {
+    )
+    {
+        if (!$this->topicName) {
             throw new \RdKafka\Exception('Kafka Producer Missing topicName');
         }
         $this->getRdKafkaProducer();
@@ -155,8 +156,9 @@ class Producer extends AbstractKafka {
         $headers = null,
         $partition = RD_KAFKA_PARTITION_UA,
         $msgFlag = 0
-    ) {
-        if(!$this->topicName) {
+    )
+    {
+        if (!$this->topicName) {
             throw new \RdKafka\Exception('Kafka Producer Missing topicName');
         }
         $this->getRdKafkaProducer();

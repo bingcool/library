@@ -119,8 +119,7 @@ class BaseArrayHelper
         $res = array_shift($args);
         while (!empty($args)) {
             $next = array_shift($args);
-            if(is_array($next))
-            {
+            if (is_array($next)) {
                 foreach ($next as $k => $v) {
                     if ($v instanceof UnsetArrayValue) {
                         unset($res[$k]);
@@ -133,11 +132,9 @@ class BaseArrayHelper
                             $res[$k] = $v;
                         }
                     } elseif (is_array($v) && isset($res[$k]) && is_array($res[$k])) {
-                        if($recursive)
-                        {
+                        if ($recursive) {
                             $res[$k] = self::merge($res[$k], $v);
-                        }else
-                        {
+                        } else {
                             $res[$k] = $v;
                         }
                     } else {
@@ -203,7 +200,7 @@ class BaseArrayHelper
             $key = $lastKey;
         }
 
-        if (is_array($array) && (isset($array[$key]) || array_key_exists($key, $array)) ) {
+        if (is_array($array) && (isset($array[$key]) || array_key_exists($key, $array))) {
             return $array[$key];
         }
 
@@ -410,7 +407,7 @@ class BaseArrayHelper
                 $value = static::getValue($element, $key);
                 if ($value !== null) {
                     if (is_float($value)) {
-                        $value = (string) $value;
+                        $value = (string)$value;
                     }
                     $lastArray[$value] = $element;
                 }
@@ -786,8 +783,8 @@ class BaseArrayHelper
      * @param array|\Traversable $needles The values that must **all** be in `$haystack`.
      * @param array|\Traversable $haystack The set of value to search.
      * @param bool $strict Whether to enable strict (`===`) comparison.
-     * @throws InvalidParamException if `$haystack` or `$needles` is neither traversable nor an array.
      * @return bool `true` if `$needles` is a subset of `$haystack`, `false` otherwise.
+     * @throws InvalidParamException if `$haystack` or `$needles` is neither traversable nor an array.
      * @since 2.0.7
      */
     public static function isSubset($needles, $haystack, $strict = false)

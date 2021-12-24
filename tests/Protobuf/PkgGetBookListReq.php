@@ -30,12 +30,13 @@ class PkgGetBookListReq extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type int $book_id
+     * @type int $book_id
      *          响应
-     *     @type int $user_id
+     * @type int $user_id
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = NULL)
+    {
         \Common\Library\Tests\Protobuf\Book::initOnce();
         parent::__construct($data);
     }

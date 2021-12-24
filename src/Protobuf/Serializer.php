@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Protobuf;
@@ -38,7 +38,7 @@ class Serializer
      */
     public function __construct()
     {
-        
+
     }
 
     /**
@@ -76,11 +76,10 @@ class Serializer
     {
         try {
             $message->mergeFromJsonString(json_encode($data));
-            if($message)
-            {
+            if ($message) {
                 return $message;
             }
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Get message descriptor
             $pool = DescriptorPool::getGeneratedPool();
             $messageType = $pool->getDescriptorByClassName(get_class($message));
@@ -227,7 +226,7 @@ class Serializer
             list($_, $fieldsToOneof) = $this->getDescriptorMaps($messageType);
             if (isset($fieldsToOneof[$key])) {
                 $oneofName = $fieldsToOneof[$key];
-                $oneofGetter =  $this->getGetter($oneofName);
+                $oneofGetter = $this->getGetter($oneofName);
                 if ($message->$oneofGetter() !== $key) {
                     continue;
                 }

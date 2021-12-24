@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\PubSub;
@@ -59,38 +59,29 @@ class RedisPubSub extends AbstractPubSub
      */
     protected function handleSubscribe(array $channels, $callback)
     {
-        if($this->isCoroutine)
-        {
+        if ($this->isCoroutine) {
             $exception = '';
-            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use($callback, & $exception)
-            {
-                \Swoole\Coroutine::create(function () use($callback, $redis, $chan, $msg, & $exception)
-                {
-                    try
-                    {
+            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use ($callback, & $exception) {
+                \Swoole\Coroutine::create(function () use ($callback, $redis, $chan, $msg, & $exception) {
+                    try {
                         return call_user_func($callback, $redis, $chan, $msg);
-                    }catch (\Throwable $throwable)
-                    {
-                        if(class_exists("Workerfy\\AbstractProcess"))
-                        {
+                    } catch (\Throwable $throwable) {
+                        if (class_exists("Workerfy\\AbstractProcess")) {
                             \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($throwable);
-                        }else
-                        {
+                        } else {
                             $exception = $throwable;
                         }
                     }
                 });
 
-                if($exception instanceof \Throwable)
-                {
+                if ($exception instanceof \Throwable) {
                     throw $exception;
                 }
 
             });
 
-        }else {
-            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use($callback)
-            {
+        } else {
+            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use ($callback) {
                 return call_user_func($callback, $redis, $chan, $msg);
             });
         }
@@ -103,28 +94,21 @@ class RedisPubSub extends AbstractPubSub
      */
     public function psubscribe(array $patterns, $callback)
     {
-        if($this->isCoroutine)
-        {
-            $this->redis->psubscribe($patterns, function ($redis, $pattern, $chan, $msg) use($callback)
-            {
-                \Swoole\Coroutine::create(function () use($callback, $redis, $pattern, $chan, $msg)
-                {
-                    try
-                    {
+        if ($this->isCoroutine) {
+            $this->redis->psubscribe($patterns, function ($redis, $pattern, $chan, $msg) use ($callback) {
+                \Swoole\Coroutine::create(function () use ($callback, $redis, $pattern, $chan, $msg) {
+                    try {
                         return call_user_func($callback, $redis, $pattern, $chan, $msg);
-                    }catch (\Exception $e)
-                    {
-                        if(class_exists("Workerfy\\AbstractProcess"))
-                        {
+                    } catch (\Exception $e) {
+                        if (class_exists("Workerfy\\AbstractProcess")) {
                             \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
                         }
                     }
                 });
             });
 
-        }else {
-            $this->redis->psubscribe($patterns, function ($redis, $pattern, $chan, $msg) use($callback)
-            {
+        } else {
+            $this->redis->psubscribe($patterns, function ($redis, $pattern, $chan, $msg) use ($callback) {
                 return call_user_func($callback, $redis, $pattern, $chan, $msg);
             });
         }

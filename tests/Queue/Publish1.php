@@ -1,6 +1,6 @@
 <?php
 
-include_once dirname(dirname(__DIR__))."/vendor/autoload.php";
+include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 
 
 $redis = new \Common\Library\Cache\Redis();
@@ -12,7 +12,7 @@ $queue = new \Common\Library\Queues\Queue(
     'ali_queue_key'
 );
 
-$queue->push(['kkkk','lllllll']);
+$queue->push(['kkkk', 'lllllll']);
 
 
 

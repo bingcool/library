@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\Db;
@@ -15,8 +15,8 @@ namespace Common\Library\Db;
  * Class Util
  * @package Common\Library\Db
  */
-
-class Util {
+class Util
+{
 
     /** 将Pg的整型数组类型字符串转为php数组
      * eg {123,456,789} -> [123,456,789]
@@ -26,11 +26,11 @@ class Util {
      */
     public static function trimArray($string, $valueIsString = false)
     {
-        if($valueIsString) {
+        if ($valueIsString) {
             $string = str_replace(['{', '}'], ['', ''], $string);
             $items = explode(',', $string);
             $array = array_map(function ($item) {
-                if(is_numeric($item)) {
+                if (is_numeric($item)) {
                     $item = (int)$item;
                 }
                 return $item;
@@ -55,7 +55,7 @@ class Util {
         $data = array_filter($data, function ($item) {
             return !($item === '' || is_null($item));
         });
-        return  '{' . implode(',', $data) . '}';
+        return '{' . implode(',', $data) . '}';
     }
 
     /**
@@ -65,7 +65,7 @@ class Util {
      */
     public static function formatToJson(array $data)
     {
-        $result =  is_array($data) ? json_encode($data, JSON_UNESCAPED_UNICODE) : '{}';
+        $result = is_array($data) ? json_encode($data, JSON_UNESCAPED_UNICODE) : '{}';
         return $result;
     }
 }

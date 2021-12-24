@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\HttpClient;
@@ -15,7 +15,6 @@ namespace Common\Library\HttpClient;
  * Class RawResponse
  * @package Common\Library\HttpClient
  */
-
 class RawResponse
 {
     /**
@@ -37,8 +36,8 @@ class RawResponse
     /**
      * Creates a new RawResponse entity.
      *
-     * @param string|array $headers        The headers as a raw string or array.
-     * @param string       $body           The raw response body.
+     * @param string|array $headers The headers as a raw string or array.
+     * @param string $body The raw response body.
      */
     public function __construct($headers, $body, $info)
     {
@@ -59,8 +58,7 @@ class RawResponse
      */
     public function getHeaders(?string $headerKey = null)
     {
-        if($headerKey)
-        {
+        if ($headerKey) {
             return $this->headers[$headerKey] ?? '';
         }
         return $this->headers;

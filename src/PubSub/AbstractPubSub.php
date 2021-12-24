@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Common library of swoole
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Common library of swoole
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Common\Library\PubSub;
@@ -48,15 +48,12 @@ Abstract class AbstractPubSub
      */
     protected function isCoroutine()
     {
-        if(!is_null($this->isCoroutine))
-        {
+        if (!is_null($this->isCoroutine)) {
             return $this->isCoroutine;
         }
-        if(class_exists('Swoole\Coroutine') && \Swoole\Coroutine::getCid() > 0)
-        {
+        if (class_exists('Swoole\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
             $this->isCoroutine = true;
-        }else
-        {
+        } else {
             $this->isCoroutine = false;
         }
 

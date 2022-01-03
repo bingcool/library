@@ -22,6 +22,7 @@ abstract class Model implements ArrayAccess
 {
     use Concern\Attribute;
     use Concern\ModelEvent;
+    use Concern\Expression;
     use Concern\ParseSql;
     use Concern\TableFieldInfo;
     use Concern\TimeStamp;
@@ -39,6 +40,19 @@ abstract class Model implements ArrayAccess
 
     const BEFORE_DELETE = 'BeforeDelete';
     const AFTER_DELETE = 'AfterDelete';
+
+    const EVENTS = [
+        self::BEFORE_INSERT,
+        self::AFTER_INSERT,
+        self::BEFORE_UPDATE,
+        self::AFTER_UPDATE,
+        self::BEFORE_DELETE,
+        self::AFTER_DELETE,
+        self::BEFORE_INSERT_TRANSACTION,
+        self::AFTER_INSERT_TRANSACTION,
+        self::BEFORE_UPDATE_TRANSACTION,
+        self::AFTER_UPDATE_TRANSACTION
+    ];
 
     /**
      * @var string
@@ -60,6 +74,11 @@ abstract class Model implements ArrayAccess
      * @var bool
      */
     protected $isNew = true;
+
+    /**
+     * @var PDOConnection
+     */
+    protected $connection;
 
     /**
      * @var int
@@ -97,6 +116,11 @@ abstract class Model implements ArrayAccess
     protected $_scene;
 
     /**
+     * @var array
+     */
+    private $_macro = [];
+
+    /**
      * Model constructor.
      * @param mixed ...$params
      */
@@ -110,6 +134,14 @@ abstract class Model implements ArrayAccess
      * @return PDOConnection
      */
     abstract public function getConnection();
+
+    /**
+     * @param PDOConnection $connection
+     */
+    public function setConnection(PDOConnection $connection)
+    {
+        $this->connection = $connection;
+    }
 
     /**
      * @return Model
@@ -256,7 +288,7 @@ abstract class Model implements ArrayAccess
     /**
      * @param \Closure $callback
      * @return mixed|null
-     * @throws Throwable
+     * @throws \Throwable
      */
     protected function transaction(\Closure $callback)
     {
@@ -296,7 +328,7 @@ abstract class Model implements ArrayAccess
 
         $method = 'set' . self::studly($name) . 'Attr';
 
-        if (method_exists($this, $method)) {
+        if (method_exists(static::class, $method)) {
             // 返回修改器处理过的数据
             $value = $this->$method($value);
             $this->_set[$name] = true;
@@ -363,8 +395,10 @@ abstract class Model implements ArrayAccess
 
             list($sql, $bindParams) = $this->parseInsertSql($allowFields);
             try {
-                $hasBeforeInsertTransaction = method_exists($this, 'onBeforeInsertTransaction');
-                $hasAfterInsertTransaction = method_exists($this, 'onAfterInsertTransaction');
+
+                $hasBeforeInsertTransaction = method_exists(static::class, 'onBeforeInsertTransaction');
+                $hasAfterInsertTransaction = method_exists(static::class, 'onAfterInsertTransaction');
+
                 if ($hasBeforeInsertTransaction && $hasAfterInsertTransaction) {
                     $this->transaction(function () use ($sql, $bindParams) {
                         $this->onBeforeInsertTransaction();
@@ -471,8 +505,10 @@ abstract class Model implements ArrayAccess
         $allowFields = $this->getAllowFields();
         if ($diffData) {
             list($sql, $bindParams) = $this->parseUpdateSql($diffData, $allowFields);
-            $hasBeforeUpdateTransaction = method_exists($this, 'onBeforeUpdateTransaction');
-            $hasAfterUpdateTransaction = method_exists($this, 'onAfterUpdateTransaction');
+
+            $hasBeforeUpdateTransaction = method_exists(static::class, 'onBeforeUpdateTransaction');
+            $hasAfterUpdateTransaction = method_exists(static::class, 'onAfterUpdateTransaction');
+
             try {
                 if ($hasBeforeUpdateTransaction && $hasAfterUpdateTransaction) {
                     $this->transaction(function () use ($sql, $bindParams) {
@@ -519,7 +555,6 @@ abstract class Model implements ArrayAccess
     /**
      * @param bool $force 强制物理删除
      * @return bool
-     * @throws \Throwable
      */
     public function delete(bool $force = false): bool
     {
@@ -676,7 +711,7 @@ abstract class Model implements ArrayAccess
     protected function getValue(string $fieldName, $value)
     {
         $method = 'get' . self::studly($fieldName) . 'Attr';
-        if (method_exists($this, $method)) {
+        if (method_exists(static::class, $method)) {
             $value = $this->$method($value);
         } else if (isset($this->_fieldTypeMap[$fieldName])) {
             $value = $this->readTransform($value, $this->_fieldTypeMap[$fieldName]);
@@ -761,6 +796,38 @@ abstract class Model implements ArrayAccess
         $model = new static();
         $model->setSuffix($suffix);
         return $model;
+    }
+
+    /**
+     * 设置方法注入
+     * @access public
+     * @param string $method
+     * @param \Closure $closure
+     * @return void
+     */
+    public function macroMethod(string $method, \Closure $closure)
+    {
+        if (!isset($this->_macro[static::class])) {
+            $this->_macro[static::class] = [];
+        }
+        $this->_macro[static::class][$method] = $closure;
+    }
+
+    /**
+     * 调用注入绑定的method
+     *
+     * @param $method
+     * @param $arguments
+     * @return mixed
+     */
+    public function __call($method, $arguments)
+    {
+        if (isset($this->_macro[static::class][$method])) {
+            $closure = $this->_macro[static::class][$method];
+            if ($closure instanceof \Closure) {
+                return $closure->call($this, ...$arguments);
+            }
+        }
     }
 
     /**

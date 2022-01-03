@@ -49,7 +49,7 @@ class DbTest extends TestCase
     {
         $orderId = 1639369444;
         $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
-        var_dump($order->getOldAttributeValue('remark', true));
+        var_dump($order->toArray());
     }
 
     public function testUpdateObject()

@@ -76,6 +76,8 @@ class Order extends ActiveRecord
         if ($this->isDirty('remark')) {
             var_dump('remark change');
         }
+
+        $this->order_amount = $this->inc('order_amount', 1);
         return parent::onBeforeUpdate();
     }
 

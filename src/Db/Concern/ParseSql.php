@@ -65,9 +65,13 @@ trait ParseSql
         $pk = $this->getPk();
         foreach ($allowFields as $field) {
             if (isset($diffData[$field])) {
-                $column = ':' . $field;
-                $setValues[] = $field . '=' . $column;
-                $bindParams[$column] = $diffData[$field];
+                if(in_array($field, $this->expressionFields)) {
+                    $setValues[] = $field . '=' . $diffData[$field];
+                }else {
+                    $column = ':' . $field;
+                    $setValues[] = $field . '=' . $column;
+                    $bindParams[$column] = $diffData[$field];
+                }
             }
         }
         $setValueStr = implode(',', $setValues);

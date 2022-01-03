@@ -400,13 +400,27 @@ class SqlBuilder
      * @param string $sql
      * @param array $params
      */
-    public function buildFindInSet(string $alias, string $searchField, $searchValue, string &$sql, array &$params)
+    public static function buildFindInSet(string $alias, string $searchField, $searchValue, string &$sql, array &$params)
     {
         if (is_numeric($searchValue)) {
             $searchValue = (string)$searchValue;
         }
 
         $sql .= " find_in_set('{$searchValue}', {$alias}.{$searchField}) ";
+    }
+
+    /**
+     * 表达式
+     *
+     * @param string $alias
+     * @param string $field
+     * @param string $expression
+     * @param string $sql
+     * @param array $params
+     */
+    public static function buildExpression(string $alias, string $field, string $expression, string &$sql, array &$params)
+    {
+        $sql .= " {$alias}.{$field}={$expression} ";
     }
 
     /**
@@ -426,9 +440,7 @@ class SqlBuilder
      */
     public static function buildBatchInsertSql(string $table, array $dataSet)
     {
-        $fields = [];
-        $paramsKeys = [];
-        $params = [];
+        $fields = $paramsKeys = $params = [];
         foreach ($dataSet as $index => $data) {
             foreach ($data as $k => $v) {
                 $fields[$k] = $k;

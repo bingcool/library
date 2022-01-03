@@ -23,19 +23,20 @@ trait ModelEvent
      * 是否需要事件响应
      * @var bool
      */
-    protected $withEvent = true;
+    private $withEvent = true;
 
     /**
      * 某些场景下需要设置忽略执行的事件
      * @var array
      */
-    protected $skipEvents = [];
+    private $skipEvents = [];
 
     /**
      * 在某些情况下，并不需要执行Model原生定义的事件处理函数，那么提供自定义处理或者设置忽略处理
      * @var array 动态定制事件事件处理回调函数，不使用固定的。如果设置自定义事件，则优先执行自定义事件
      */
-    protected $customEventHandlers = [];
+    private $customEventHandlers = [];
+
 
     /**
      * 当前操作的事件响应
@@ -96,18 +97,7 @@ trait ModelEvent
      */
     public function setEventHandle(string $event, \Closure $func)
     {
-        if (!in_array($event, [
-            static::BEFORE_INSERT,
-            static::AFTER_INSERT,
-            static::BEFORE_UPDATE,
-            static::AFTER_UPDATE,
-            static::BEFORE_DELETE,
-            static::AFTER_DELETE,
-            static::BEFORE_INSERT_TRANSACTION,
-            static::AFTER_INSERT_TRANSACTION,
-            static::BEFORE_UPDATE_TRANSACTION,
-            static::AFTER_UPDATE_TRANSACTION
-        ])) {
+        if (!in_array($event, static::EVENTS)) {
             throw new DbException("AddEventHandle first argument of eventName type error");
         }
 

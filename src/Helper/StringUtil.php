@@ -210,4 +210,49 @@ class StringUtil
     {
         return mb_convert_case($value, MB_CASE_TITLE, 'UTF-8');
     }
+
+    /**
+     * @param $pattern
+     * @param $string
+     * @param array $options
+     * @return bool
+     */
+    public static function matchWildcard($pattern, $string, $options = [])
+    {
+        if ($pattern === '*' && empty($options['filePath'])) {
+            return true;
+        }
+
+        $replacements = [
+            '\\\\\\\\' => '\\\\',
+            '\\\\\\*' => '[*]',
+            '\\\\\\?' => '[?]',
+            '\*' => '.*',
+            '\?' => '.',
+            '\[\!' => '[^',
+            '\[' => '[',
+            '\]' => ']',
+            '\-' => '-',
+        ];
+
+        if (isset($options['escape']) && !$options['escape']) {
+            unset($replacements['\\\\\\\\']);
+            unset($replacements['\\\\\\*']);
+            unset($replacements['\\\\\\?']);
+        }
+
+        if (!empty($options['filePath'])) {
+            $replacements['\*'] = '[^/\\\\]*';
+            $replacements['\?'] = '[^/\\\\]';
+        }
+
+        $pattern = strtr(preg_quote($pattern, '#'), $replacements);
+        $pattern = '#^' . $pattern . '$#us';
+
+        if (isset($options['caseSensitive']) && !$options['caseSensitive']) {
+            $pattern .= 'i';
+        }
+
+        return preg_match($pattern, $string) === 1;
+    }
 }

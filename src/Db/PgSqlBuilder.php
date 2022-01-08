@@ -24,7 +24,7 @@ class PgSqlBuilder extends SqlBuilder
      * @param string $sql
      * @param array $params
      */
-    public function buildFindInSet(string $alias, string $searchField, $searchValue, string &$sql, array &$params)
+    public static function buildFindInSet(string $alias, string $searchField, $searchValue, string &$sql, array &$params)
     {
         if (is_numeric($searchValue)) {
             $searchValue = (string)$searchValue;

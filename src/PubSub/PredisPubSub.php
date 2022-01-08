@@ -142,21 +142,21 @@ class PredisPubSub extends AbstractPubSub
 
     /**
      * @param array $channels
-     * @return void
+     * @return mixed
      */
     public function unsubscribe(array $channels)
     {
         $pubSubConsumer = $this->redis->pubSubLoop();
-        return $pubSubConsumer->unsubscribe(...$channels);
+        $pubSubConsumer->unsubscribe(...$channels);
     }
 
     /**
      * @param array $patterns
-     * @return void
+     * @return mixed
      */
     public function punsubscribe(array $patterns)
     {
         $pubSubConsumer = $this->redis->pubSubLoop();
-        return $pubSubConsumer->punsubscribe(...$patterns);
+        $pubSubConsumer->punsubscribe(...$patterns);
     }
 }

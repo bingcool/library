@@ -12,6 +12,7 @@
 namespace Common\Library\Db;
 
 use Common\Library\Exception\DbException;
+use Common\Library\Helper\StringUtil;
 use PDO;
 use PDOStatement;
 
@@ -56,7 +57,9 @@ abstract class PDOConnection implements ConnectionInterface
         // sql执行日志条目设置,不能设置太大,适合调试使用,设置为0，则不使用
         'spend_log_limit' => 30,
         // 是否开启dubug
-        'debug' => 1
+        'debug' => 1,
+        // sql 日志
+        'sql_log' => '',
     ];
 
     /**
@@ -276,12 +279,27 @@ abstract class PDOConnection implements ConnectionInterface
             $this->PDOStatement = $this->PDOInstance->prepare($sql);
             // 参数绑定
             $this->bindValue($bindParams);
+
             // 执行查询
             $this->PDOStatement->execute();
 
             if ($this->debug) {
                 $queryEndTime = microtime(true);
-                $this->log('Execute sql end', 'Execute successful, Execute time=' . ($queryEndTime - $queryStartTime));
+                $runTime = $queryEndTime - $queryStartTime;
+                $this->log('Execute sql end', 'Execute successful, Execute time=' . $runTime);
+                // sql log
+                if (isset($this->config['sql_log']) && !empty($this->config['sql_log'])) {
+                    $sqlLogFile = $this->config['sql_log'];
+                    $realSql = $this->getRealSql($this->queryStr, $this->bind);
+                    $dateTime = date('Y-m-d H:i:s');
+                    $sqlLog = "【{$dateTime}】【sql】".$realSql."【RunTime：{$runTime}】";
+                    file_put_contents($sqlLogFile, $sqlLog, FILE_APPEND);
+                    if (count($this->lastLogs) == 1) {
+                        if (filesize($sqlLogFile) > 5242880) {
+                            file_put_contents($sqlLogFile, $sqlLog);
+                        }
+                    }
+                }
             }
 
             $this->reConnectTimes = 0;
@@ -309,7 +327,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function getPDOStatement(): PDOStatement
     {
-        return $this->PDOStatement ?? null;
+        return $this->PDOStatement;
     }
 
     /**

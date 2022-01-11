@@ -4,6 +4,7 @@ namespace Common\Library\Tests\Db;
 
 use Common\Library\Db\PDOConnection;
 use Common\Library\Db\Mysql;
+use function foo\func;
 
 class Make
 {
@@ -43,7 +44,9 @@ class Make
             // sql执行日志条目设置,不能设置太大,适合调试使用,设置为0，则不使用
             'spend_log_limit' => 30,
             // 是否开启dubug
-            'debug' => 1
+            'debug' => 1,
+            // sql 日志
+            'sql_log' => __DIR__.'/sql.log',
         ];
 
         if (!is_object(static::$mysqlDb)) {

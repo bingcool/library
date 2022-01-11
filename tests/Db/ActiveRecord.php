@@ -14,7 +14,7 @@ class ActiveRecord extends \Common\Library\Db\Model
 
     public function __construct($userId)
     {
-        $this->userId;
+        $this->userId = $userId;
         parent::__construct($userId);
     }
 

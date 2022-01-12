@@ -61,8 +61,6 @@ class DbTest extends TestCase
         $order->save();
 
         $diff = $order->getDirtyAttributeFields();
-
-        var_dump($order->order_id, $diff);
     }
 
     public function testDeleteObject()
@@ -78,7 +76,7 @@ class DbTest extends TestCase
      */
     public function testTransaction()
     {
-        $orderId = 1623132269;
+        $orderId = '1623132269';
         $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
 
         $connection = $order->getConnection();
@@ -107,6 +105,10 @@ class DbTest extends TestCase
             ]);
 
             // 多层嵌套事务
+
+            // 启动事务，底层将关闭自动提交
+            $connection->beginTransaction();
+
             try {
                 $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)")->insert([
                     ':order_id' => time() + 5,
@@ -128,17 +130,18 @@ class DbTest extends TestCase
 
         } catch (\PDOException $e) {
             $connection->rollback();
-            var_dump($e->getMessage());
         }
 
-        // 后续继续执行各种curd操作
-        $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)")->insert([
-            ':order_id' => time() + 2,
-            ':user_id' => $this->userId,
-            ':order_amount' => 102,
-            ':order_product_ids' => json_encode([1, 2, 3]),
-            ':order_status' => 1
-        ]);
+        var_dump('success');
+
+//        // 后续继续执行各种curd操作
+//        $connection->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)")->insert([
+//            ':order_id' => time() + 2,
+//            ':user_id' => $this->userId,
+//            ':order_amount' => 102,
+//            ':order_product_ids' => json_encode([1, 2, 3]),
+//            ':order_status' => 1
+//        ]);
 
     }
 

@@ -77,13 +77,18 @@ class Order extends ActiveRecord
             var_dump('remark change');
         }
 
-        $this->order_amount = $this->inc('order_amount', 1);
+        //$this->order_amount = $this->inc('order_amount', 1.7);
         return parent::onBeforeUpdate();
     }
 
     public function onBeforeUpdateTransaction()
     {
-        var_dump('onBeforeUpdateTransaction');
+        $user = new User();
+        $user->user_name = 'bingcool' . rand(1, 1000);
+        $user->birth_day = '1991-05-05';
+        $user->sex = 1;
+        $user->phone = '12345678';
+        $user->save();
     }
 
     public function onAfterUpdateTransaction()
@@ -99,19 +104,19 @@ class Order extends ActiveRecord
     public function onAfterUpdate()
     {
         if ($this->isDirty('order_product_ids')) {
-            var_dump('change');
+            //var_dump('change');
         }
-        var_dump($this->getDiffAttributes());
+        //var_dump($this->getDiffAttributes());
         if ($this->isNew()) {
-            var_dump('isNew');
+           // var_dump('isNew');
         } else {
-            var_dump('noNew');
+           // var_dump('noNew');
         }
 
         if ($this->isExists()) {
-            var_dump('isExists');
+            //var_dump('isExists');
         } else {
-            var_dump('no isExists');
+            //var_dump('no isExists');
         }
         parent::onAfterUpdate();
     }

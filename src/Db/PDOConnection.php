@@ -12,7 +12,6 @@
 namespace Common\Library\Db;
 
 use Common\Library\Exception\DbException;
-use Common\Library\Helper\StringUtil;
 use PDO;
 use PDOStatement;
 
@@ -201,7 +200,8 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function connect(array $config = [], bool $autoConnection = true, bool $force = false)
     {
-        if (!$force) {
+        // 开启事物，整个事物的PDOInstance同一个
+        if (!$force || !empty($this->transTimes)) {
             if ($this->PDOInstance) return $this->PDOInstance;
         }
 
@@ -226,7 +226,12 @@ abstract class PDOConnection implements ConnectionInterface
         } catch (\PDOException|\Exception|\Throwable $e) {
             if ($autoConnection) {
                 $this->log('Connect failed, try to connect once again', 'Connect failed, errorMsg=' . $e->getMessage());
-                return $this->connect([], false, true);
+                $force = false;
+                // no start transaction
+                if(empty($this->transTimes)) {
+                    $force = true;
+                }
+                return $this->connect([], false, $force);
             } else {
                 throw $e;
             }
@@ -284,22 +289,7 @@ abstract class PDOConnection implements ConnectionInterface
             $this->PDOStatement->execute();
 
             if ($this->debug) {
-                $queryEndTime = microtime(true);
-                $runTime = $queryEndTime - $queryStartTime;
-                $this->log('Execute sql end', 'Execute successful, Execute time=' . $runTime);
-                // sql log
-                if (isset($this->config['sql_log']) && !empty($this->config['sql_log'])) {
-                    $sqlLogFile = $this->config['sql_log'];
-                    $realSql = $this->getRealSql($this->queryStr, $this->bind);
-                    $dateTime = date('Y-m-d H:i:s');
-                    $sqlLog = "【{$dateTime}】【sql】".$realSql."【RunTime：{$runTime}】";
-                    file_put_contents($sqlLogFile, $sqlLog, FILE_APPEND);
-                    if (count($this->lastLogs) == 1) {
-                        if (filesize($sqlLogFile) > 5242880) {
-                            file_put_contents($sqlLogFile, $sqlLog);
-                        }
-                    }
-                }
+                $this->saveRuntimeSql($queryStartTime ?? (microtime(true)) );
             }
 
             $this->reConnectTimes = 0;
@@ -927,12 +917,13 @@ abstract class PDOConnection implements ConnectionInterface
         $this->initConnect();
 
         $this->log('Transaction commit start', 'transaction commit start');
-
         // 不管多少层内嵌事务，最外层一次commit时候才真正一次性提交commit
-        if (1 == $this->transTimes) {
+        if ($this->transTimes == 1) {
             $this->PDOInstance->commit();
+        }else {
+            --$this->transTimes;
         }
-        --$this->transTimes;
+
         $this->log('Transaction commit finish', 'transaction commit ok');
     }
 
@@ -1117,6 +1108,36 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * runtime sql
+     *
+     * @param $queryStartTime
+     */
+    protected function saveRuntimeSql($queryStartTime)
+    {
+        $queryEndTime = microtime(true);
+        $runTime = number_format(($queryEndTime - $queryStartTime),6);
+        $this->log('Execute sql end', 'Execute successful, Execute time=' . $runTime);
+        // sql log
+        if (isset($this->config['sql_log']) && !empty($this->config['sql_log'])) {
+            $sqlLogFile = $this->config['sql_log'];
+            $realSql = $this->getRealSql($this->queryStr, $this->bind);
+            $dateTime = date('Y-m-d H:i:s');
+            $sqlFlag = 'sql-0';
+            if($this->isCoroutine()) {
+                $cid = \Swoole\Coroutine::getCid();
+                $sqlFlag = "【sql-{$cid}】";
+            }
+            $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【{$sqlFlag}】".$realSql."\r";
+            file_put_contents($sqlLogFile, $sqlLog, FILE_APPEND);
+            if (count($this->lastLogs) == 1) {
+                if (filesize($sqlLogFile) > 5242880) {
+                    file_put_contents($sqlLogFile, $sqlLog);
+                }
+            }
+        }
+    }
+
+    /**
      * @param string $action
      * @param string $msg
      */
@@ -1168,6 +1189,20 @@ abstract class PDOConnection implements ConnectionInterface
     public function getNumRows(): int
     {
         return (int)$this->numRows;
+    }
+
+    /**
+     * 是否协程环境
+     *
+     * @return bool
+     */
+    protected function isCoroutine(): bool
+    {
+        if(class_exists('Swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

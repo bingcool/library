@@ -30,8 +30,10 @@ trait Expression
 
     /**
      * 字段自增
+     * @param string $field
+     * @param float  $num
      */
-    public function inc(string $field, int $num)
+    public function inc(string $field, float $num)
     {
         if(is_numeric($this->$field) && !$this->isNew()) {
             $this->expressionFields[] = $field;
@@ -41,8 +43,10 @@ trait Expression
 
     /**
      * 字段自减
+     * @param string $field
+     * @param float  $num
      */
-    public function sub(string $field, int $num)
+    public function sub(string $field, float $num)
     {
         if(is_numeric($this->$field) && !$this->isNew()) {
             $this->expressionFields[] = $field;

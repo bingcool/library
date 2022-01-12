@@ -116,7 +116,7 @@ class Mysql extends PDOConnection
      */
     public function startTransXa(string $xid)
     {
-        $this->initConnect(true);
+        $this->initConnect();
         $this->PDOInstance->exec("XA START '$xid'");
     }
 

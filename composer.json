@@ -23,8 +23,7 @@
     "ext-curl": "*",
     "ext-json": "*",
     "predis/predis": "~1.1.7",
-    "malkusch/lock": "dev-master",
-    "php-amqplib/php-amqplib": "^3.0@dev"
+    "malkusch/lock": "dev-master"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",

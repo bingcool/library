@@ -920,9 +920,8 @@ abstract class PDOConnection implements ConnectionInterface
         // 不管多少层内嵌事务，最外层一次commit时候才真正一次性提交commit
         if ($this->transTimes == 1) {
             $this->PDOInstance->commit();
-        }else {
-            --$this->transTimes;
         }
+        --$this->transTimes;
 
         $this->log('Transaction commit finish', 'transaction commit ok');
     }

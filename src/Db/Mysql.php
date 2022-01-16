@@ -53,7 +53,7 @@ class Mysql extends PDOConnection
         $sourceTableName = $tableName;
         if (!isset($this->_tableFields[$tableName]) && empty($this->_tableFields[$tableName]) || isset($this->objExpireTime)) {
 
-            [$tableName] = explode(' ', $tableName);
+            list($tableName) = explode(' ', $tableName);
 
             if (false === strpos($tableName, '`')) {
                 if (strpos($tableName, '.')) {

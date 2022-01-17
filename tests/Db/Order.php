@@ -2,6 +2,9 @@
 
 namespace Common\Library\Tests\Db;
 
+use Common\Library\Events\EventDispatcher;
+use Common\Library\Tests\Events\RegisterUserListener;
+
 /**
  * @property integer $order_id
  * @property integer $user_id
@@ -50,6 +53,13 @@ class Order extends ActiveRecord
 
     public function onBeforeInsert(): bool
     {
+
+        /**
+         * 注册事件
+         */
+        EventDispatcher::getInstance()->dispatch(new RegisterUserListener($this->toArray()));
+
+
         return parent::onBeforeInsert();
     }
 

@@ -11,13 +11,23 @@
 
 namespace Common\Library\Events;
 
+/**
+ * class AbstractListener
+ * @package Common\Library\Events
+ */
+
 abstract class AbstractListener
 {
 
     /**
      * @var array
      */
-    protected $data;
+    protected $data = [];
+
+    /**
+     * @var array
+     */
+    protected $result = [];
 
     /**
      * @param array $data
@@ -33,11 +43,27 @@ abstract class AbstractListener
     abstract public function listen(): array;
 
     /**
-     * Handle the AbstractEventHandle when the event is triggered, all listeners will
-     * complete before the event is returned to the EventDispatcher.
+     * @return array
      */
-    public function process($event)
+    public function getData()
     {
+        return $this->data;
+    }
 
+    /**
+     * @param $class
+     * @param $return
+     */
+    public function setResult($class, $return)
+    {
+        $this->result[$class] = $return;
+    }
+
+    /**
+     * @param string|null $className
+     */
+    public function getResult(?string $className = null)
+    {
+        return $className ?  ($this->result[$className] ?? null) : $this->result;
     }
 }

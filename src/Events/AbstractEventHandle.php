@@ -11,13 +11,11 @@
 
 namespace Common\Library\Events;
 
-use Common\Library\Helper\StringUtil;
-
 /**
  * class AbstractEventHandle
  * @package Common\Library\Events
  */
-class AbstractEventHandle
+abstract class AbstractEventHandle
 {
-
+    abstract public function handle(array $data, AbstractListener $listener);
 }

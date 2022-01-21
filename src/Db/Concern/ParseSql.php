@@ -12,6 +12,7 @@
 namespace Common\Library\Db\Concern;
 
 use Common\Library\Db\PDOConnection;
+use Common\Library\Exception\DbException;
 
 /**
  * Trait ParseSql
@@ -121,6 +122,11 @@ trait ParseSql
         }
         $attributes = $connection->createCommand($sql)->queryOne($bindParams);
         if ($attributes) {
+            $pk = $this->getPk();
+            if(!isset($attributes[$pk])) {
+                $className = get_class($this);
+                throw new DbException("{$className} property error, no match table primary key");
+            }
             $this->parseOrigin($attributes);
             $this->setIsNew(false);
         } else {

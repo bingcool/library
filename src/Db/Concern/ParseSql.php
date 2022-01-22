@@ -66,15 +66,25 @@ trait ParseSql
         $pk = $this->getPk();
         foreach ($allowFields as $field) {
             if (isset($diffData[$field])) {
-                if(in_array($field, $this->expressionFields)) {
-                    $setValues[] = $field . '=' . $diffData[$field];
-                }else {
-                    $column = ':' . $field;
-                    $setValues[] = $field . '=' . $column;
-                    $bindParams[$column] = $diffData[$field];
+                $column = ':' . $field;
+                $setValues[] = $field . '=' . $column;
+                $bindParams[$column] = $diffData[$field];
+            }
+
+            if(!empty($this->expressionFields)) {
+                    // expression
+                if(array_key_exists('*@'.$field, $this->expressionFields)) {
+                    $setValues[] = $field . '=' . $this->expressionFields['*@'.$field];
+                }else if(array_key_exists('+@'.$field, $this->expressionFields)) {
+                    // inc
+                    $setValues[] = $field.'='.$field.'+'.$this->expressionFields['+@'.$field];
+                }else if(array_key_exists('-@'.$field, $this->expressionFields)) {
+                    // sub
+                    $setValues[] = $field.'='.$field.'-'.$this->expressionFields['-@'.$field];
                 }
             }
         }
+        $this->expressionFields = [];
         $setValueStr = implode(',', $setValues);
         $sql = "UPDATE {$this->table} SET {$setValueStr} WHERE {$pk}=:pk";
         $bindParams[':pk'] = $this->getPkValue() ?? 0;

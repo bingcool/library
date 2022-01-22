@@ -29,7 +29,13 @@ class SqlBuilder
      * @param array $params
      * @param string $operator
      */
-    public static function buildMultiWhere(string $alias, array $conditions, string &$sql, array &$params, string $operator = 'AND')
+    public static function buildMultiWhere(
+        string $alias,
+        array $conditions,
+        string &$sql,
+        array &$params,
+        string $operator = 'AND'
+    )
     {
         foreach ($conditions as $field => $value) {
             self::buildWhere($alias, $field, $value, $sql, $params, $operator);
@@ -45,7 +51,14 @@ class SqlBuilder
      * @param array $params
      * @param string $operator
      */
-    public static function buildWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
+    public static function buildWhere(
+        string $alias,
+        string $field,
+        $value,
+        string &$sql,
+        array &$params,
+        string $operator = 'AND'
+    )
     {
         $prepareField = static::getPrepareField($field);
         if (!is_null($value)) {
@@ -76,7 +89,14 @@ class SqlBuilder
      * @param array $params
      * @param string $operator
      */
-    public static function buildEqualWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
+    public static function buildEqualWhere(
+        string $alias,
+        string $field,
+        $value,
+        string &$sql,
+        array &$params,
+        string $operator = 'AND'
+    )
     {
         if (is_array($value) || is_object($value)) {
             throw new DbException('Params item of value must string or int');
@@ -94,7 +114,14 @@ class SqlBuilder
      * @param array $params
      * @param string $operator
      */
-    public static function buildIntWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
+    public static function buildIntWhere(
+        string $alias,
+        string $field,
+        $value,
+        string &$sql,
+        array &$params,
+        string $operator = 'AND'
+    )
     {
         $prepareField = static::getPrepareField($field);
         if (is_null($value))
@@ -128,7 +155,14 @@ class SqlBuilder
      * @param array $params
      * @param string $operator
      */
-    public static function buildNotIntWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
+    public static function buildNotIntWhere(
+        string $alias,
+        string $field,
+        $value,
+        string &$sql,
+        array &$params,
+        string $operator = 'AND'
+    )
     {
         $prepareField = static::getPrepareField($field);
         if (is_null($value))
@@ -162,7 +196,14 @@ class SqlBuilder
      * @param array $params
      * @param string $operator
      */
-    public static function buildStringWhere(string $alias, string $field, $value, string &$sql, array &$params, string $operator = 'AND')
+    public static function buildStringWhere(
+        string $alias,
+        string $field,
+        $value,
+        string &$sql,
+        array &$params,
+        string $operator = 'AND'
+    )
     {
         $prepareField = static::getPrepareField($field);
         if (is_null($value))
@@ -194,15 +235,24 @@ class SqlBuilder
      * @param $endTime
      * @param string $sql
      * @param array $params
+     * @param string $operator
      */
-    public static function buildDateRange(string $alias, string $field, $startTime, $endTime, string &$sql, array &$params)
+    public static function buildDateRange(
+        string $alias,
+        string $field,
+        $startTime,
+        $endTime,
+        string &$sql,
+        array &$params,
+        string $operator = 'AND'
+    )
     {
         if ($startTime) {
-            $sql .= " and {$alias}.{$field} >= :begin_{$field} ";
+            $sql .= " {$operator} {$alias}.{$field} >= :begin_{$field} ";
             $params[":begin_{$field}"] = strlen($startTime) == 10 ? $startTime . ' 00:00:00' : $startTime;
         }
         if ($endTime) {
-            $sql .= " and {$alias}.{$field} <= :end_{$field} ";
+            $sql .= " {$operator} {$alias}.{$field} <= :end_{$field} ";
             $params[":end_{$field}"] = strlen($endTime) == 10 ? $endTime . ' 23:59:59' : $endTime;
         }
     }
@@ -215,17 +265,26 @@ class SqlBuilder
      * @param string $sql
      * @param array $params
      * @param bool $include
+     * @param string $operator
      */
-    public static function buildMinRange(string $alias, string $field, $min, string &$sql, array &$params, bool $include = true)
+    public static function buildMinRange(
+        string $alias,
+        string $field,
+        $min,
+        string &$sql,
+        array &$params,
+        bool $include = true,
+        string $operator = 'AND'
+    )
     {
         if (is_null($min) || $min === '') {
             $min = 0;
         }
 
         if ($include) {
-            $sql .= " and {$alias}.{$field} >= :min_{$field} ";
+            $sql .= " {$operator} {$alias}.{$field} >= :min_{$field} ";
         } else {
-            $sql .= " and {$alias}.{$field} > :min_{$field} ";
+            $sql .= " {$operator} {$alias}.{$field} > :min_{$field} ";
         }
 
         $params[":min_{$field}"] = $min;
@@ -239,17 +298,26 @@ class SqlBuilder
      * @param string $sql
      * @param array $params
      * @param bool $include
+     * @param string $operator
      */
-    public static function buildMaxRange(string $alias, string $field, $max, string &$sql, array &$params, bool $include = true)
+    public static function buildMaxRange(
+        string $alias,
+        string $field,
+        $max,
+        string &$sql,
+        array &$params,
+        bool $include = true,
+        string $operator = 'AND'
+    )
     {
         if (is_null($max) || $max === '') {
             $max = 0;
         }
 
         if ($include) {
-            $sql .= " and {$alias}.{$field} <= :max_{$field} ";
+            $sql .= " {$operator} {$alias}.{$field} <= :max_{$field} ";
         } else {
-            $sql .= " and {$alias}.{$field} < :max_{$field} ";
+            $sql .= " {$operator} {$alias}.{$field} < :max_{$field} ";
         }
 
         $params[":max_{$field}"] = $max;
@@ -275,14 +343,25 @@ class SqlBuilder
      * 组合key where查询 eg: where (`user_id`,`order_amount`,`sku`) in ((10000,105,'mi4'),(10000,123.5,'mi5'));
      *
      * @param string $alias
-     * @param string $groupField
-     * @param array $groupValue
+     * @param array $groupField  ['user_id','order_amount','sku']
+     * @param array $groupValue  ['(10000,105,'mi4')', '(10000,123.5,'mi5')' ]
      * @param string $sql
      * @param array $params
+     * @param string $operator
      */
-    public static function buildGroupFieldWhere(string $alias, string $groupField, array $groupValue, string &$sql, array &$params)
+    public static function buildGroupFieldWhere(string $alias, array $groupField, array $groupValue, string &$sql, array &$params, string $operator = 'AND')
     {
-        self::buildStringWhere($alias, $groupField, $groupValue, $sql, $params);
+        $newGroupField = [];
+        if($alias) {
+            foreach($groupField as $field) {
+                $newGroupField[] = $alias.'.'.$field;
+            }
+        }else {
+            $newGroupField = $groupField;
+        }
+
+        $groupFieldStr = '('.implode(',', $newGroupField).')';
+        $sql .= " {$operator} {$groupFieldStr} IN (" . implode(',', $groupValue) . ")";
     }
 
     /**
@@ -295,7 +374,58 @@ class SqlBuilder
      */
     public static function buildLike(string $alias, string $field, string $keyword, string &$sql, &$params, string $operator = 'AND')
     {
-        $sql .= " $operator {$alias}.{$field} like '{$keyword}' ";
+        $sql .= " {$operator} {$alias}.{$field} like '{$keyword}' ";
+    }
+
+
+    /**
+     * buildGroupBy('a', ['wid','product_id'], $sql, $params)
+     * @param string $alias
+     * @param array $groupFields
+     * @param string $sql
+     * @param $params
+     */
+    public static function buildGroupBy
+    (
+        string $alias,
+        array $groupFields,
+        string &$sql,
+        &$params
+    )
+    {
+        $groupFieldItem = [];
+        foreach ($groupFields as $field) {
+            if (strpos($field, '.') === false) {
+                $groupFieldItem[] = "{$alias}.{$field}";
+            } else {
+                $groupFieldItem[] = "{$field}";
+            }
+        }
+
+        if ($groupFieldItem) {
+            $groupFieldStr = implode(',', $groupFieldItem);
+            $sql .= " group by {$groupFieldStr} ";
+        }
+    }
+
+
+    /**
+     * having 必须跟在group by 之后
+     *
+     * @param string $alias
+     * @param string $having
+     * @param string $sql
+     * @param $params
+     */
+    public static function buildHaving
+    (
+        string $alias,
+        string $having,
+        string &$sql,
+        &$params
+    )
+    {
+        $sql .= " having {$having} ";
     }
 
     /**
@@ -306,7 +436,13 @@ class SqlBuilder
      * @param string $sql
      * @param $params
      */
-    public static function buildOrderBy(string $alias, array $orderFieldRankMap, string &$sql, &$params)
+    public static function buildOrderBy
+    (
+        string $alias,
+        array $orderFieldRankMap,
+        string &$sql,
+        &$params
+    )
     {
         $sortField = [];
         foreach ($orderFieldRankMap as $field => $rank) {
@@ -326,40 +462,26 @@ class SqlBuilder
 
     }
 
-    /**
-     * buildGroupBy('a', ['wid','product_id'], $sql, $params)
-     * @param string $alias
-     * @param array $groupFields
-     * @param string $sql
-     * @param $params
-     */
-    public static function buildGroupBy(string $alias, array $groupFields, string &$sql, &$params)
-    {
-        $groupFieldItem = [];
-        foreach ($groupFields as $field) {
-            if (strpos($field, '.') === false) {
-                $groupFieldItem[] = "{$alias}.{$field}";
-            } else {
-                $groupFieldItem[] = "{$field}";
-            }
-        }
-
-        if ($groupFieldItem) {
-            $groupFieldStr = implode(',', $groupFieldItem);
-            $sql .= " group by $groupFieldStr ";
-        }
-    }
-
 
     /**
+     * 分页,order by 之后
+     *
      * @param string $alias
-     * @param string $having
+     * @param int $offset
+     * @param int $size
      * @param string $sql
-     * @param $params
+     * @param array $params
      */
-    public static function buildHaving(string $alias, string $having, string &$sql, &$params)
+    public static function buildLimit
+    (
+        string $alias,
+        int $offset,
+        int $size,
+        string &$sql,
+        &$params
+    )
     {
-        $sql .= " having {$having} ";
+        $sql .= " LIMIT {$offset},{$size} ";
     }
 
     /**
@@ -399,14 +521,22 @@ class SqlBuilder
      * @param $searchValue
      * @param string $sql
      * @param array $params
+     * @param string $operator
      */
-    public static function buildFindInSet(string $alias, string $searchField, $searchValue, string &$sql, array &$params)
+    public static function buildFindInSet(
+        string $alias,
+        string $searchField,
+        $searchValue,
+        string &$sql,
+        array &$params,
+        string $operator = 'AND'
+    )
     {
         if (is_numeric($searchValue)) {
             $searchValue = (string)$searchValue;
         }
 
-        $sql .= " find_in_set('{$searchValue}', {$alias}.{$searchField}) ";
+        $sql .= " {$operator} find_in_set('{$searchValue}', {$alias}.{$searchField}) ";
     }
 
     /**
@@ -418,7 +548,13 @@ class SqlBuilder
      * @param string $sql
      * @param array $params
      */
-    public static function buildExpression(string $alias, string $field, string $expression, string &$sql, array &$params)
+    public static function buildExpression(
+        string $alias,
+        string $field,
+        string $expression,
+        string &$sql,
+        array &$params
+    )
     {
         $sql .= " {$alias}.{$field}={$expression} ";
     }

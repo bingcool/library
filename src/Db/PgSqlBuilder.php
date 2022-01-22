@@ -16,20 +16,29 @@ use Common\Library\Exception\DbException;
 class PgSqlBuilder extends SqlBuilder
 {
     /**
-     * 查找in string. eg: where '8' = ANY(string_to_array(some_column,','))
+     * 查找in string. eg: where 1=1 and '8' = ANY(string_to_array(some_column,','))
      *
      * @param string $alias
      * @param string $searchField
      * @param $searchValue
      * @param string $sql
      * @param array $params
+     * @param string $operator
      */
-    public static function buildFindInSet(string $alias, string $searchField, $searchValue, string &$sql, array &$params)
+    public static function buildFindInSet
+    (
+        string $alias,
+        string $searchField,
+        $searchValue,
+        string &$sql,
+        array &$params,
+        string $operator = 'AND'
+    )
     {
         if (is_numeric($searchValue)) {
             $searchValue = (string)$searchValue;
         }
 
-        $sql .= " '{$searchValue}' = ANY(string_to_array({$alias}.{$searchField},',')) ";
+        $sql .= " {$operator} '{$searchValue}' = ANY(string_to_array({$alias}.{$searchField},',')) ";
     }
 }

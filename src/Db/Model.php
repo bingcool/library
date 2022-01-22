@@ -503,7 +503,8 @@ abstract class Model implements ArrayAccess
         }
 
         $allowFields = $this->getAllowFields();
-        if ($diffData) {
+
+        if ($diffData || count($this->expressionFields) > 0) {
             list($sql, $bindParams) = $this->parseUpdateSql($diffData, $allowFields);
 
             $hasBeforeUpdateTransaction = method_exists(static::class, 'onBeforeUpdateTransaction');

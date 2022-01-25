@@ -63,10 +63,37 @@ class DbTest extends TestCase
 
         //SqlBuilder::buildLike('a', 'remark','%test-remark',$sql, $params);
 
-        //SqlBuilder::buildFindInSet('a','order_product_ids','1', $sql, $params);
+        SqlBuilder::buildFindInSet('a','order_product_ids',1, $sql, $params);
 
         SqlBuilder::buildGroupBy('a', $groupFields,$sql, $params);
         SqlBuilder::buildHaving('a', 'total > 1200' ,$sql, $params);
+
+        SqlBuilder::buildOrderBy('a', ['order_amount' => 'DESC'], $sql, $params);
+        SqlBuilder::buildLimit('a', 0, 10, $sql, $params);
+
+        $result = $db->createCommand($sql)
+            ->queryAll($params);
+
+        $sql = $db->getLastSql();
+
+        var_dump($sql, $result);
+    }
+
+    public function testGroupFind1()
+    {
+
+        $db = \Common\Library\Tests\Db\Order::model($this->userId)->getSlaveConnection();
+
+        $sql = 'select a.user_id, a.order_amount, a.order_status from tbl_order as a where 1=1 ';
+        $params = [];
+
+        SqlBuilder::buildEqualWhere('a','order_status'," 1 or 2=2", $sql, $params);
+        SqlBuilder::buildDateRange('a', 'create_time','2021-10-01','2022-12-01',$sql, $params);
+
+        SqlBuilder::buildLike('a', 'remark','%test-remark',$sql, $params);
+
+        //SqlBuilder::buildFindInSet('a','order_product_ids','1', $sql, $params);
+
 
         SqlBuilder::buildOrderBy('a', ['order_amount' => 'DESC'], $sql, $params);
         SqlBuilder::buildLimit('a', 0, 10, $sql, $params);

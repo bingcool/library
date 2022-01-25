@@ -18,7 +18,7 @@ namespace Common\Library\Db\Concern;
 trait Util
 {
     /**
-     * 下划线转驼峰(首字母大写
+     * 下划线转驼峰(首字母大写)
      * @param string $value
      * @return string
      */

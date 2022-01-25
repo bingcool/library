@@ -88,6 +88,7 @@ class SqlBuilder
      * @param string $sql
      * @param array $params
      * @param string $operator
+     * @throws \DbException
      */
     public static function buildEqualWhere(
         string $alias,
@@ -351,13 +352,17 @@ class SqlBuilder
      */
     public static function buildGroupFieldWhere(string $alias, array $groupField, array $groupValue, string &$sql, array &$params, string $operator = 'AND')
     {
-        $newGroupField = [];
+        $newGroupField = $newGroupValue = [];
         if($alias) {
             foreach($groupField as $field) {
                 $newGroupField[] = $alias.'.'.$field;
             }
         }else {
             $newGroupField = $groupField;
+        }
+
+        foreach ($groupValue as $value) {
+            $newGroupValue[] = Util::quote($value);
         }
 
         $groupFieldStr = '('.implode(',', $newGroupField).')';
@@ -374,7 +379,10 @@ class SqlBuilder
      */
     public static function buildLike(string $alias, string $field, string $keyword, string &$sql, &$params, string $operator = 'AND')
     {
-        $sql .= " {$operator} {$alias}.{$field} like '{$keyword}' ";
+        $paramCount = ++static::$paramCount;
+        $preLikeField = ":like{$paramCount}_{$field}";
+        $sql .= " {$operator} {$alias}.{$field} LIKE $preLikeField ";
+        $params[$preLikeField] = $keyword;
     }
 
 
@@ -404,7 +412,8 @@ class SqlBuilder
 
         if ($groupFieldItem) {
             $groupFieldStr = implode(',', $groupFieldItem);
-            $sql .= " group by {$groupFieldStr} ";
+            $groupFieldStr = Util::quote($groupFieldStr);
+            $sql .= " GROUP BY {$groupFieldStr} ";
         }
     }
 
@@ -425,7 +434,8 @@ class SqlBuilder
         &$params
     )
     {
-        $sql .= " having {$having} ";
+        $having = Util::quote($having);
+        $sql .= " HAVING {$having} ";
     }
 
     /**
@@ -457,7 +467,8 @@ class SqlBuilder
 
         if ($sortField) {
             $sortFieldStr = implode(',', $sortField);
-            $sql .= " order by {$sortFieldStr} ";
+            $sortFieldStr = Util::quote($sortFieldStr);
+            $sql .= " ORDER BY {$sortFieldStr} ";
         }
 
     }
@@ -534,6 +545,8 @@ class SqlBuilder
     {
         if (is_numeric($searchValue)) {
             $searchValue = (string)$searchValue;
+        }else {
+            $searchValue = Util::quote($searchValue);
         }
 
         $sql .= " {$operator} find_in_set('{$searchValue}', {$alias}.{$searchField}) ";

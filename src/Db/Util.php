@@ -18,6 +18,9 @@ namespace Common\Library\Db;
 class Util
 {
 
+
+    use Concern\Util;
+
     /** 将Pg的整型数组类型字符串转为php数组
      * eg {123,456,789} -> [123,456,789]
      * @param $string
@@ -67,5 +70,16 @@ class Util
     {
         $result = is_array($data) ? json_encode($data, JSON_UNESCAPED_UNICODE) : '{}';
         return $result;
+    }
+
+    /**
+     * 字符转义
+     *
+     * @param string $string
+     * @return string
+     */
+    public static function quote(string $string)
+    {
+        return addcslashes(str_replace("'", "''", $string), "\000\n\r\\\032");
     }
 }

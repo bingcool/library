@@ -202,7 +202,6 @@ class Predis extends RedisConnection
     {
         if ($parameters) {
             $this->buildRedis($parameters, $options);
-            $this->isInitConfig = true;
         }
     }
 
@@ -233,6 +232,7 @@ class Predis extends RedisConnection
         $this->redis = new \Predis\Client($parameters, $options);
         $this->parameters = $parameters;
         $this->options = $options;
+        $this->isInitConfig = true;
     }
 
     /**

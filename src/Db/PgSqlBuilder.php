@@ -37,6 +37,9 @@ class PgSqlBuilder extends SqlBuilder
     {
         if (is_numeric($searchValue)) {
             $searchValue = (string)$searchValue;
+        }else
+        {
+            $searchValue = Util::quote($searchValue);
         }
 
         $sql .= " {$operator} '{$searchValue}' = ANY(string_to_array({$alias}.{$searchField},',')) ";

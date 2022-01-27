@@ -264,6 +264,16 @@ class Predis extends RedisConnection
     }
 
     /**
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     */
+    public static function __callStatic(string $name, array $arguments)
+    {
+        return \Predis\Client::{$name}(...$arguments);
+    }
+
+    /**
      * getParameters
      * @return array
      */

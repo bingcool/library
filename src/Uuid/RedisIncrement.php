@@ -12,6 +12,7 @@
 namespace Common\Library\Uuid;
 
 use Common\Library\Cache\RedisConnection;
+use function foo\func;
 
 class RedisIncrement
 {
@@ -47,6 +48,11 @@ class RedisIncrement
     protected $isPredisDriver;
 
     /**
+     * @var array
+     */
+    protected $poolIds = [];
+
+    /**
      * when master redis return empty|null value, report to record log
      *
      * @var \Closure
@@ -79,9 +85,33 @@ class RedisIncrement
     }
 
     /**
+     * pre GenerateId
+     *
+     * @param int $count
+     */
+    public function preBatchGenerateIds(int $count)
+    {
+        if($count >= 20000) {
+            $count = 20000;
+        }else if($count <= 0) {
+            $count = 10;
+        }
+        $maxId = $this->generateId($count);
+        $minId = $maxId - $count;
+        if($minId > 0) {
+            for($i=0; $i<$count; $i++) {
+                $this->poolIds[] = $minId+$i;
+            }
+        }
+    }
+
+    /**
+     * generateId
+     *
+     * @param int|null $count
      * @return int|null
      */
-    public function getIncrId(?int $count = null)
+    protected function generateId(?int $count = null)
     {
         if ($count <= 0) {
             $count = 1;
@@ -133,20 +163,27 @@ class RedisIncrement
     }
 
     /**
+     * @return int|null
+     */
+    public function getIncrId()
+    {
+        if($this->poolIds) {
+            return array_shift($this->poolIds);
+        }
+        return $this->generateId(1);
+    }
+
+    /**
      * @param RedisConnection $connection
      * @param int $count
      * @return mixed
      */
     protected function doHandle(RedisConnection $connection, int $count)
     {
-        try {
-            if ($this->isPredisDriver) {
-                $dataArr = $connection->eval($this->getLuaScripts(), 1, ...[$this->incrKey, $step = $count ?? 1, $this->ttl]);
-            } else {
-                $dataArr = $connection->eval($this->getLuaScripts(), [$this->incrKey, $step = $count ?? 1, $this->ttl], 1);
-            }
-        } catch (\Throwable $e) {
-
+        if ($this->isPredisDriver) {
+            $dataArr = $connection->eval($this->getLuaScripts(), 1, ...[$this->incrKey, $step = $count ?? 1, $this->ttl]);
+        } else {
+            $dataArr = $connection->eval($this->getLuaScripts(), [$this->incrKey, $step = $count ?? 1, $this->ttl], 1);
         }
         return $dataArr ?? [];
     }

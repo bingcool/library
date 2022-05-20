@@ -32,7 +32,7 @@ class ClientTest extends TestCase
             ]
         ];
         $count = count($list);
-        $incrId = $UUID->getIncrId(1);
+        $incrId = $UUID->getIncrId();
         var_dump($incrId);
 //        $id = $incrId - $count;
 //        foreach ($list as $item)

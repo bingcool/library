@@ -38,7 +38,15 @@ class MongodbModel
      * @var string
      */
     public $uri = 'mongodb=127.0.0.1:27017';
+
+    /**
+     * @var array
+     */
     public $uriOptions = [];
+
+    /**
+     * @var array
+     */
     public $driverOptions = [];
 
     /**

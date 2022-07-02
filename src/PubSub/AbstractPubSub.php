@@ -21,7 +21,7 @@ Abstract class AbstractPubSub
     protected $redis;
 
     /**
-     * @var null|bool
+     * @var bool
      */
     protected $isCoroutine;
 

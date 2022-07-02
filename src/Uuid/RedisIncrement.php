@@ -88,6 +88,7 @@ class RedisIncrement
      * pre GenerateId
      *
      * @param int $count
+     * @return bool
      */
     public function preBatchGenerateIds(int $count)
     {
@@ -103,6 +104,7 @@ class RedisIncrement
                 $this->poolIds[] = $minId+$i;
             }
         }
+        return true;
     }
 
     /**

@@ -48,7 +48,7 @@ class Producer extends AbstractKafka
 
     /**
      * Producer constructor.
-     * @param string $metaBrokerList
+     * @param mixed $metaBrokerList
      * @param string $topicName
      */
     public function __construct($metaBrokerList = '', string $topicName = '')
@@ -113,9 +113,7 @@ class Producer extends AbstractKafka
     /**
      * @param string $payload
      * @param int $timeoutMs
-     *
-     * 同一个key的信息将会配分配到相同的分区，所有比如对于以下orderId顺序处理事件，传入orderId即可
-     * @param string|null $key
+     * @param string|null $key 同一个key的信息将会配分配到相同的分区，所有比如对于以下orderId顺序处理事件，传入orderId即可
      * @param int $partition
      * @param int $msgFlag
      * @return void

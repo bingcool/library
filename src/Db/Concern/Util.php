@@ -29,7 +29,8 @@ trait Util
     }
 
     /**
-     * 比较关联数组数据值不同,发生变化的的$array1的字段数组
+     * 比较关联数组数据值不同,返回发生变化的$array1的字段数组
+     *
      * @param array $array1
      * @param array $array2
      * @return array

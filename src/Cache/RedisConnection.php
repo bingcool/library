@@ -19,7 +19,7 @@ class RedisConnection
 {
 
     /**
-     * @var null
+     * @var mixed
      */
     protected $redis;
 

@@ -177,13 +177,13 @@ class Predis extends RedisConnection
 
     /**
      * $parameters
-     * @var null
+     * @var array
      */
     protected $parameters = null;
 
     /**
      * $options
-     * @var null
+     * @var array
      */
     protected $options = null;
 

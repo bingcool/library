@@ -17,4 +17,14 @@
 - [x] Validate 组件  
 - [X] Event 组件   
 
+### 其他适合swoole环境使用的组件类库
+- [X] symfony/filesystem
+- [x] symfony/polyfill-uuid   
+- [x] xlswriter   
+- [x] Guzzle 
+- [x] catfan/Medoo    
+- [x] gearmand  
+
+https://baijiahao.baidu.com/s?id=1700417997484083491&wfr=spider&for=pc  
+
 Example: https://github.com/bingcool/library/tree/master/tests

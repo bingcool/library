@@ -31,6 +31,11 @@ class PredisMutex extends \malkusch\lock\mutex\PredisMutex
      */
     private $key;
 
+    /**
+     * @param array $redisAPIs
+     * @param string $name
+     * @param int $timeout
+     */
     public function __construct(array $redisAPIs, string $name, int $timeout = 3)
     {
         $this->timeOut = $timeout;
@@ -39,7 +44,9 @@ class PredisMutex extends \malkusch\lock\mutex\PredisMutex
     }
 
     /**
-     * {@inheritDoc}
+     * @param callable $code
+     * @return callable|mixed
+     * @throws Throwable
      */
     public function synchronized(callable $code)
     {

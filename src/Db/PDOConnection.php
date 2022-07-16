@@ -11,9 +11,9 @@
 
 namespace Common\Library\Db;
 
-use Common\Library\Exception\DbException;
 use PDO;
 use PDOStatement;
+use Common\Library\Exception\DbException;
 
 /**
  * Class PDOConnection
@@ -135,6 +135,16 @@ abstract class PDOConnection implements ConnectionInterface
     protected $debug = 1;
 
     /**
+     * @var callable
+     */
+    protected $afterCommitCallback;
+
+    /**
+     * @var callable
+     */
+    protected $afterRollBackCallback;
+
+    /**
      * PDO连接参数
      * @var array
      */
@@ -220,7 +230,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function connect(array $config = [], bool $autoConnection = true, bool $force = false)
     {
-        // 开启事物，整个事物的PDOInstance同一个
+        // 开启事物，整个事物的PDOInstance必须是要同一个
         if (!$force || !empty($this->transTimes)) {
             if ($this->PDOInstance) return $this->PDOInstance;
         }
@@ -869,6 +879,21 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * 是否开启事物
+     *
+     * @return bool
+     */
+    public function isEnableTransaction(): bool
+    {
+        if($this->transTimes > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /**
      * 启动事务
      * @return void
      * @throws Throwable
@@ -940,12 +965,26 @@ abstract class PDOConnection implements ConnectionInterface
         // 不管多少层内嵌事务，最外层一次commit时候才真正一次性提交commit
         if ($this->transTimes == 1) {
             $this->PDOInstance->commit();
+            if(is_callable($this->afterCommitCallback)) {
+                call_user_func($this->afterCommitCallback);
+            }
         }
         --$this->transTimes;
 
         $this->log('Transaction commit finish', 'transaction commit ok');
     }
 
+
+    /**
+     *
+     * @param callable $callback
+     * @return mixed
+     */
+    public function afterCommitCallback(?callable $callback = null) {
+        if(is_callable($callback)) {
+            $this->afterCommitCallback = $callback;
+        }
+    }
 
     /**
      * 事务回滚
@@ -961,6 +1000,9 @@ abstract class PDOConnection implements ConnectionInterface
 
         if ($this->transTimes == 1) {
             $this->PDOInstance->rollBack();
+            if(is_callable($this->afterRollBackCallback)) {
+                call_user_func($this->afterRollBackCallback);
+            }
         } elseif ($this->transTimes > 1 && $this->supportSavepoint()) {
             $this->PDOInstance->exec(
                 $this->parseSavepointRollBack('trans' . $this->transTimes)
@@ -970,6 +1012,17 @@ abstract class PDOConnection implements ConnectionInterface
         $this->transTimes = max(0, $this->transTimes - 1);
         $this->log('Transaction rollback finish', 'transaction rollback ok');
 
+    }
+
+    /**
+     *
+     * @param callable $callback
+     * @return mixed
+     */
+    public function afterRollbackCallback(?callable $callback = null) {
+        if(is_callable($callback)) {
+            $this->afterRollBackCallback = $callback;
+        }
     }
 
     /**

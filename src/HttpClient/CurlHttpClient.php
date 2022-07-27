@@ -35,7 +35,7 @@ class CurlHttpClient implements HttpClientInterface
     protected $options = [];
 
     /**
-     * @var string|boolean The raw response from the server
+     * @var string|bool The raw response from the server
      */
     protected $rawResponse;
 

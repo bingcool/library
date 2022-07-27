@@ -153,7 +153,10 @@ class RawResponse
      */
     public function getInfo($opt = null)
     {
-        return $this->info[$opt] ?? $this->info;
+        if($opt) {
+            return $this->info[$opt] ?? '';
+        }
+        return $this->info;
     }
 
     /**

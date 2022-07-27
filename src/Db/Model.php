@@ -310,6 +310,17 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * $this
+     */
+    public function beginTransaction()
+    {
+        if(!$this->getConnection()->isEnableTransaction()) {
+            $this->getConnection()->beginTransaction();
+        }
+        return $this;
+    }
+
+    /**
      * 修改器 设置数据对象的值处理
      * @param string $name 名称
      * @param mixed $value 值

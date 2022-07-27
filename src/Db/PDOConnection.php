@@ -527,6 +527,17 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * 批量插入数据(推荐使用)
+     * @param string $table
+     * @param array $dataSet
+     * @return int
+     */
+    public function insertAll(string $table, array $dataSet)
+    {
+        return $this->multiInsert($table, $dataSet);
+    }
+
+    /**
      * @param array $bindParams
      * @param int $fetchType
      * @return array|mixed

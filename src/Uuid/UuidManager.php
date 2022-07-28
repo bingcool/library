@@ -11,10 +11,16 @@
 
 namespace Common\Library\Uuid;
 
+use Swoole\Coroutine\Channel;
 use Common\Library\Cache\RedisConnection;
 
-class RedisIncrement
+class UuidManager
 {
+    /**
+     * @var mixed
+     */
+    private static $instance;
+
     /**
      * @var RedisConnection
      */
@@ -47,9 +53,9 @@ class RedisIncrement
     protected $isPredisDriver;
 
     /**
-     * @var array
+     * @var Channel
      */
-    protected $poolIds = [];
+    protected $channel;
 
     /**
      * when master redis return empty|null value, report to record log
@@ -69,18 +75,38 @@ class RedisIncrement
      */
     public function __construct(
         RedisConnection $redis,
-        string $incrKey,
-        int $ttl = 15,
-        array $followConnections = [],
-        \Closure $errorReportClosure = null
+        string          $incrKey,
+        int             $ttl = 15,
+        array           $followConnections = [],
+        \Closure        $errorReportClosure = null
     )
     {
-        $this->redis = $redis;
-        $this->incrKey = $incrKey;
-        $this->ttl = $ttl;
-        $this->followConnections = $followConnections;
+        $this->redis              = $redis;
+        $this->incrKey            = $incrKey;
+        $this->ttl                = $ttl;
+        $this->followConnections  = $followConnections;
         $this->errorReportClosure = $errorReportClosure;
         $this->isPredisDriver();
+    }
+
+    /**
+     * @param mixed ...$args
+     * @return static
+     */
+    public static function getInstance(...$args)
+    {
+        if (!isset(self::$instance)) {
+            self::$instance = new static(...$args);
+        }
+        return self::$instance;
+    }
+
+    /**
+     * @return Channel
+     */
+    public function getChannel()
+    {
+        return $this->channel;
     }
 
     /**
@@ -89,18 +115,24 @@ class RedisIncrement
      * @param int $count
      * @return bool
      */
-    public function preBatchGenerateIds(int $count)
+    public function tickPreBatchGenerateIds(float $timeOut, int $poolSize)
     {
-        if($count >= 20000) {
-            $count = 20000;
-        }else if($count <= 0) {
-            $count = 10;
-        }
-        $maxId = $this->generateId($count);
-        $minId = $maxId - $count;
-        if($minId > 0) {
-            for($i=0; $i<$count; $i++) {
-                $this->poolIds[] = $minId+$i;
+        $this->channel = new Channel($poolSize);
+        $tickChannel = new Channel(1);
+        while(!$tickChannel->pop($timeOut)) {
+            try {
+                $maxId = $this->generateId($poolSize);
+                $minId = $maxId - $poolSize;
+                if ($minId > 0) {
+                    for ($i = 0; $i < $poolSize; $i++) {
+                        $value = $this->channel->push($minId + $i, 2);
+                        if(empty($value)) {
+                            break;
+                        }
+                    }
+                }
+            }catch (\Throwable $throwable){
+
             }
         }
         return true;
@@ -110,9 +142,10 @@ class RedisIncrement
      * generateId
      *
      * @param int|null $count
+     * @param RedisConnection
      * @return int|null
      */
-    protected function generateId(?int $count = null)
+    protected function generateId(?int $count = null, ?RedisConnection $redis = null)
     {
         if ($count <= 0) {
             $count = 1;
@@ -120,7 +153,7 @@ class RedisIncrement
 
         $usleepTime = 15 * 1000;
         do {
-            $dataArr = $this->doHandle($this->redis, $count);
+            $dataArr = $this->doHandle($redis ?? $this->redis, $count);
             if (!empty($dataArr)) {
                 break;
             }
@@ -164,14 +197,37 @@ class RedisIncrement
     }
 
     /**
-     * @return int|null
+     * @param RedisConnection $redis
+     * @param int $num
+     * @param float $timeOut
+     * @return array
      */
-    public function getIncrId()
+    public function getIncrIds(?RedisConnection $redis, int $num = 1, float $timeOut = 0.5)
     {
-        if($this->poolIds) {
-            return array_shift($this->poolIds);
+        $poolIds = [];
+        if($this->channel->length() > $num+1) {
+            for ($i = 0; $i < $num; $i++) {
+                $unId = $this->channel->pop($timeOut);
+                if(empty($id)) {
+                    break;
+                }
+                $poolIds[] = $unId;
+            }
         }
-        return $this->generateId(1);
+
+        $poolIds = array_unique($poolIds);
+        $hasNum  = count($poolIds);
+        if($hasNum < $num) {
+            $remainNum = $num - $hasNum;
+            $maxId = $this->generateId($remainNum, $redis);
+            $minId = $maxId - $remainNum;
+            if ($minId > 0) {
+                for ($i = 0; $i < $remainNum; $i++) {
+                    $poolIds[] = $minId + $i;
+                }
+            }
+        }
+        return $poolIds;
     }
 
     /**
@@ -208,6 +264,4 @@ class RedisIncrement
         return $this->isPredisDriver;
     }
 
-
 }
-

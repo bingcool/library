@@ -15,7 +15,7 @@ class ClientTest extends TestCase
             'port' => 6379,
         ]);
 
-        $UUID = new \Common\Library\Uuid\RedisIncrement($redis, 'order_incr_id');
+        $UUID = new \Common\Library\Uuid\UuidIncrement($redis, 'order_incr_id');
 
         //var_dump($redis->ttl('order_incr_id'));
 
@@ -48,7 +48,7 @@ class ClientTest extends TestCase
 //        $redis = new \Common\Library\Cache\Redis();
 //        $redis->connect('127.0.0.1');
 //
-//        $UUID = new \Common\Library\Uuid\RedisIncrement($redis,'order_incr_id');
+//        $UUID = new \Common\Library\Uuid\UuidIncrement($redis,'order_incr_id');
 //
 //        // 批量获取，批量处理分配
 //        $list = [

@@ -13,7 +13,7 @@ namespace Common\Library\Uuid;
 
 use Common\Library\Cache\RedisConnection;
 
-class RedisIncrement
+class UuidIncrement
 {
     /**
      * @var RedisConnection

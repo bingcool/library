@@ -65,6 +65,11 @@ class UuidManager
     protected $errorReportClosure = null;
 
     /**
+     * @var int
+     */
+    protected $startTime;
+
+    /**
      * RedisIncr constructor.
      * @param RedisConnection $redis
      * @param string $incrKey
@@ -112,15 +117,29 @@ class UuidManager
     /**
      * pre GenerateId
      *
-     * @param int $count
+     * @param float $timeOut
+     * @param int $poolSize
      * @return bool
      */
     public function tickPreBatchGenerateIds(float $timeOut, int $poolSize)
     {
-        $this->channel = new Channel($poolSize);
-        $tickChannel = new Channel(1);
-        while(!$tickChannel->pop($timeOut)) {
+        $this->channel    = new Channel($poolSize);
+        $pushTickChannel  = new Channel(1);
+        $this->startTime  = time();
+
+        // generateId
+        while(!$pushTickChannel->pop($timeOut)) {
             try {
+
+                if(time() >= $this->startTime + $timeOut * 3) {
+                    $this->startTime = time();
+                    if($this->channel->length() > 0) {
+                        while ($this->channel->pop(0.05)) {
+                            continue;
+                        }
+                    }
+                }
+
                 $maxId = $this->generateId($poolSize);
                 $minId = $maxId - $poolSize;
                 if ($minId > 0) {
@@ -135,6 +154,7 @@ class UuidManager
 
             }
         }
+
         return true;
     }
 

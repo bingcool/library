@@ -13,6 +13,7 @@ namespace Common\Library\Uuid;
 
 use Swoole\Coroutine\Channel;
 use Common\Library\Cache\RedisConnection;
+use function foo\func;
 
 class UuidManager
 {
@@ -126,34 +127,35 @@ class UuidManager
         $this->channel    = new Channel($poolSize);
         $pushTickChannel  = new Channel(1);
         $this->startTime  = time();
+        \Swoole\Coroutine::create(function () use($poolSize, $timeOut, $pushTickChannel) {
+            // generateId
+            while(!$pushTickChannel->pop($timeOut)) {
+                try {
 
-        // generateId
-        while(!$pushTickChannel->pop($timeOut)) {
-            try {
-
-                if(time() >= $this->startTime + $timeOut * 3) {
-                    $this->startTime = time();
-                    if($this->channel->length() > 0) {
-                        while ($this->channel->pop(0.05)) {
-                            continue;
+                    if(time() >= $this->startTime + $timeOut * 3) {
+                        $this->startTime = time();
+                        if($this->channel->length() > 0) {
+                            while ($this->channel->pop(0.05)) {
+                                continue;
+                            }
                         }
                     }
-                }
 
-                $maxId = $this->generateId($poolSize);
-                $minId = $maxId - $poolSize;
-                if ($minId > 0) {
-                    for ($i = 0; $i < $poolSize; $i++) {
-                        $value = $this->channel->push($minId + $i, 2);
-                        if(empty($value)) {
-                            break;
+                    $maxId = $this->generateId($poolSize);
+                    $minId = $maxId - $poolSize;
+                    if ($minId > 0) {
+                        for ($i = 0; $i < $poolSize; $i++) {
+                            $value = $this->channel->push($minId + $i, 2);
+                            if(empty($value)) {
+                                break;
+                            }
                         }
                     }
-                }
-            }catch (\Throwable $throwable){
+                }catch (\Throwable $throwable){
 
+                }
             }
-        }
+        });
 
         return true;
     }

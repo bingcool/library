@@ -127,6 +127,11 @@ class UuidManager
         $this->channel    = new Channel($poolSize);
         $pushTickChannel  = new Channel(1);
         $this->startTime  = time();
+
+        if($poolSize <= 1) {
+            $poolSize = 1;
+        }
+
         \Swoole\Coroutine::create(function () use($poolSize, $timeOut, $pushTickChannel) {
             // generateId
             while(!$pushTickChannel->pop($timeOut)) {

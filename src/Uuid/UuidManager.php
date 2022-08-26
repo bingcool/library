@@ -34,7 +34,7 @@ class UuidManager
 
     /**
      * set between 5s ~ 20s , default 15s
-     * @var integer
+     * @var int
      */
     protected $ttl;
 

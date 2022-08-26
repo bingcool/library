@@ -32,12 +32,12 @@ class RedisLimit
 
     /**
      * 滑动窗口时间，小时|分钟|秒 级别
-     * @var integer
+     * @var int
      */
     protected $limitTime;
 
     /**
-     * @var integer
+     * @var int
      */
     protected $limitNum;
 
@@ -47,7 +47,7 @@ class RedisLimit
      * 如果有小时级别流量控制，那么设置为24小时(86400s)即可
      * 如果最大级别只有分钟流量控制，那么设置为1小时(3600s)即可
      * 如果只有秒级流量控制，那么设置为1分钟(60s)即可
-     * @var integer
+     * @var int
      */
     protected $ttl;
 
@@ -101,11 +101,11 @@ class RedisLimit
     }
 
     /**
-     * @return integer
+     * @return int
      */
     protected function getRequireId()
     {
-        $key = $this->rateKey . ':reqId';
+        $key = self::PREFIX_LIMIT . 'unique_req_id';
         $redisIncrement = new \Common\Library\Uuid\UuidIncrement($this->redis, $key);
         return $redisIncrement->getIncrId();
     }

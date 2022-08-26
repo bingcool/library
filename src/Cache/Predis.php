@@ -189,7 +189,7 @@ class Predis extends RedisConnection
 
     /**
      * $isInitConfig 是否已经初始化配置
-     * @var boolean
+     * @var bool
      */
     protected $isInitConfig = false;
 

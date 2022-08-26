@@ -386,7 +386,7 @@ abstract class Model implements ArrayAccess
      * @return bool
      * @throws \Throwable
      */
-    protected function insertData(): bool
+    protected function insertData()
     {
         // new flag
         $this->setIsNew(true);
@@ -480,7 +480,7 @@ abstract class Model implements ArrayAccess
             }
         }
 
-        return $this->_data[$pk] ?? null;
+        return $this->_data[$pk] ?? '';
     }
 
     /**
@@ -491,6 +491,7 @@ abstract class Model implements ArrayAccess
         if ($this->isNew() && $this->isExists()) {
             return $this->getPkValue();
         }
+        return null;
     }
 
     /**
@@ -513,7 +514,7 @@ abstract class Model implements ArrayAccess
 
     /**
      * buildAttributes
-     * @return $this|boolean
+     * @return $this|bool
      */
     protected function buildAttributes()
     {

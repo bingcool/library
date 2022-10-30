@@ -13,7 +13,6 @@ namespace Common\Library\Uuid;
 
 use Swoole\Coroutine\Channel;
 use Common\Library\Cache\RedisConnection;
-use function foo\func;
 
 class UuidManager
 {

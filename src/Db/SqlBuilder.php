@@ -88,7 +88,7 @@ class SqlBuilder
      * @param string $sql
      * @param array $params
      * @param string $operator
-     * @throws \DbException
+     * @throws DbException
      */
     public static function buildEqualWhere(
         string $alias,

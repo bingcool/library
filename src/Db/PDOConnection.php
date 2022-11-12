@@ -14,7 +14,6 @@ namespace Common\Library\Db;
 use PDO;
 use PDOStatement;
 use Common\Library\Exception\DbException;
-use function foo\func;
 
 /**
  * Class PDOConnection
@@ -254,9 +253,9 @@ abstract class PDOConnection implements ConnectionInterface
             $endTime = $this->debug ? microtime(true) : 0;
             $this->log('Connect start', 'Connect successful, Spend Time=' . ($endTime - $startTime));
             return $this->PDOInstance;
-        } catch (\PDOException|\Exception|\Throwable $e) {
+        } catch (\PDOException|\Exception|\Throwable $exception) {
             if ($autoConnection) {
-                $this->log('Connect failed, try to connect once again', 'Connect failed, errorMsg=' . $e->getMessage());
+                $this->log('Connect failed, try to connect once again', 'Connect failed, errorMsg=' . $exception->getMessage());
                 $force = false;
                 // no start transaction
                 if(empty($this->transTimes)) {
@@ -264,7 +263,7 @@ abstract class PDOConnection implements ConnectionInterface
                 }
                 return $this->connect([], false, $force);
             } else {
-                throw $e;
+                throw $exception;
             }
         }
     }
@@ -295,9 +294,9 @@ abstract class PDOConnection implements ConnectionInterface
      * @param array $bindParams
      * @param bool $procedure
      * @return PDOStatement
-     * @throws PDOException
-     * @throws Exception
-     * @throws Throwable
+     * @throws \PDOException
+     * @throws \Exception
+     * @throws \Throwable
      */
     public function PDOStatementHandle(string $sql, array $bindParams = []): PDOStatement
     {
@@ -908,7 +907,7 @@ abstract class PDOConnection implements ConnectionInterface
     /**
      * 启动事务
      * @return void
-     * @throws Throwable
+     * @throws \Throwable
      */
     public function beginTransaction()
     {
@@ -967,7 +966,7 @@ abstract class PDOConnection implements ConnectionInterface
     /**
      * 用于非自动提交状态下面的查询提交
      * @return void
-     * @throws Exception
+     * @throws \Throwable
      */
     public function commit()
     {
@@ -1008,7 +1007,7 @@ abstract class PDOConnection implements ConnectionInterface
     /**
      * 事务回滚
      * @return void
-     * @throws Exception
+     * @throws \Throwable
      */
     public function rollback()
     {
@@ -1164,16 +1163,16 @@ abstract class PDOConnection implements ConnectionInterface
      * 获取最近插入的ID
      * @param string $sequence 自增序列名
      * @return mixed
-     * @throws Throwable
+     * @throws \Throwable
      */
     public function getLastInsID($sequence = null)
     {
         try {
             $insertId = $this->PDOInstance->lastInsertId($sequence);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             $insertId = $this->PDOInstance->lastInsertId();
-        } catch (\Throwable $t) {
-            throw $t;
+        } catch (\Throwable $throwable) {
+            throw $throwable;
         }
         if (is_numeric($insertId)) {
             $insertId = (int)$insertId;

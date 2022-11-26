@@ -8,7 +8,7 @@
     "library"
   ],
   "license": "MIT",
-  "type": "project",
+  "type": "library",
   "authors": [
     {
       "name": "bingcool",
@@ -18,12 +18,12 @@
   ],
   "minimum-stability": "dev",
   "require": {
-    "php" : ">=7.1.0",
+    "php" : ">=7.2.0",
     "ext-pdo": "*",
     "ext-curl": "*",
     "ext-json": "*",
     "predis/predis": "~1.1.7",
-    "malkusch/lock": "dev-master"
+    "malkusch/lock": "~2.2"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",

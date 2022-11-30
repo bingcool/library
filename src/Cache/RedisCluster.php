@@ -113,8 +113,8 @@ class RedisCluster extends RedisConnection
             $result = $this->redisCluster->{$method}(...$arguments);
             $this->log($method, $arguments);
             return $result;
-        } catch (\RedisClusterException|\Exception $e) {
-            $this->log($method, $arguments, $e->getMessage());
+        } catch (\RedisClusterException|\Exception $exception) {
+            $this->log($method, $arguments, $exception->getMessage());
             $this->log($method, $arguments, 'redisCluster start to reBuild instance');
             $this->sleep(0.5);
             @$this->redisCluster->close();
@@ -124,9 +124,9 @@ class RedisCluster extends RedisConnection
             $result = $this->redisCluster->{$method}(...$arguments);
             $this->log($method, $arguments, 'RedisCluster exec retry ok');
             return $result;
-        } catch (\Throwable $t) {
-            $this->log($method, $arguments, 'RedisCluster retry exec failed,errorMsg=' . $t->getMessage());
-            throw $t;
+        } catch (\Throwable $throwable) {
+            $this->log($method, $arguments, 'RedisCluster retry exec failed,errorMsg=' . $throwable->getMessage());
+            throw $throwable;
         }
     }
 

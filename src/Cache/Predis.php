@@ -248,8 +248,8 @@ class Predis extends RedisConnection
             $result = $this->redis->{$method}(...$arguments);
             $this->log($method, $arguments);
             return $result;
-        } catch (\Exception $e) {
-            $this->log($method, $arguments, $e->getMessage());
+        } catch (\Exception $exception) {
+            $this->log($method, $arguments, $exception->getMessage());
             $this->redis->disconnect();
             $this->sleep(0.5);
             $this->log($method, $arguments, 'start to try again');
@@ -257,9 +257,9 @@ class Predis extends RedisConnection
             $result = $this->redis->{$method}(...$arguments);
             $this->log($method, $arguments, 'retry ok');
             return $result;
-        } catch (\Throwable $t) {
-            $this->log($method, $arguments, 'retry failed,errorMsg=' . $t->getMessage());
-            throw $t;
+        } catch (\Throwable $throwable) {
+            $this->log($method, $arguments, 'retry failed,errorMsg=' . $throwable->getMessage());
+            throw $throwable;
         }
     }
 

@@ -148,8 +148,8 @@ class Redis extends RedisConnection
             $result = $this->redis->{$method}(...$arguments);
             $this->log($method, $arguments);
             return $result;
-        } catch (\RedisException|\Exception $e) {
-            $this->log($method, $arguments, $e->getMessage());
+        } catch (\RedisException|\Exception $exception) {
+            $this->log($method, $arguments, $exception->getMessage());
             $this->log($method, $arguments, 'start to reConnect');
             $this->sleep(0.5);
             $this->redis->close();
@@ -158,9 +158,9 @@ class Redis extends RedisConnection
             $result = $this->redis->{$method}(...$arguments);
             $this->log($method, $arguments, 'retry ok');
             return $result;
-        } catch (\Throwable $t) {
-            $this->log($method, $arguments, 'retry failed,errorMsg=' . $t->getMessage());
-            throw $t;
+        } catch (\Throwable $throwable) {
+            $this->log($method, $arguments, 'retry failed,errorMsg=' . $throwable->getMessage());
+            throw $throwable;
         }
     }
 

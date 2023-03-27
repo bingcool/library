@@ -8,7 +8,8 @@ $proto_name = "book.proto";
 $current_dir = getcwd();
 // php命名空间
 $name_space = str_replace('.', '/', $package);
-$last_name_space = array_pop(explode('/', $name_space));
+$name_space_arr = explode('/', $name_space);
+$last_name_space = array_pop($name_space_arr);
 
 // 输出位置
 $php_out = substr($current_dir, 0, strpos($current_dir, $last_name_space)) . "$last_name_space";

@@ -12,6 +12,7 @@
 namespace Common\Library\RateLimit;
 
 use Common\Library\Cache\RedisConnection;
+use Common\Library\Exception\RateLimitException;
 
 class RedisLimit
 {
@@ -30,16 +31,16 @@ class RedisLimit
      */
     protected $rateKey;
 
+    /** 滑动窗口单位数量
+     * @var int
+     */
+    protected $limitNum;
+
     /**
      * 滑动窗口时间，小时|分钟|秒 级别
      * @var int
      */
     protected $limitTime;
-
-    /**
-     * @var int
-     */
-    protected $limitNum;
 
     /**
      * sort set 保留请求id数据最长时长
@@ -69,22 +70,36 @@ class RedisLimit
 
     /**
      * @param string $key
+     * @return void
+     */
+    public function setRateKey(string $key) {
+        $this->rateKey = self::PREFIX_LIMIT . $key;
+    }
+
+    /**
+     * @param int $time
+     * @param int $num
+     * @param int $ttl
+     * @return void
+     */
+    public function setLimitParams(int $limitNum, int $limitTime, int $ttl) {
+        $this->limitNum = $limitNum;
+        $this->limitTime = $limitTime;
+        $this->ttl = $ttl;
+    }
+
+    /**
+     * @param string $key
      * @param int $limitTime
      * @param int $limitNum
      * @param int $ttl
-     * @return int
+     * @return bool
      */
-    public function checkLimit(
-        string $key,
-        int $limitTime,
-        int $limitNum,
-        int $ttl = 3600
-    )
+    public function checkLimit(): bool
     {
-        $this->rateKey = self::PREFIX_LIMIT . $key;
-        $this->limitTime = $limitTime;
-        $this->limitNum = $limitNum;
-        $this->ttl = $ttl;
+        if (empty($this->rateKey) || empty($this->limitNum) || empty($this->limitTime) || empty($this->ttl)) {
+            throw new RateLimitException("RateLimit Missing Set Params");
+        }
 
         $requireId = $this->getRequireId();
         $endMilliSecond = $this->getMilliSecond();
@@ -92,12 +107,12 @@ class RedisLimit
         $remRemainTime = $endMilliSecond - ($this->ttl * 1000);
 
         if ($this->isPredisDriver) {
-            $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $limitNum, $requireId]);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $this->limitNum, $requireId]);
         } else {
-            $isLimit = $this->redis->eval($this->getLuaLimitScript(), [$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $limitNum, $requireId], 1);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), [$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $this->limitNum, $requireId], 1);
         }
 
-        return $isLimit;
+        return (bool)$isLimit;
     }
 
     /**

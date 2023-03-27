@@ -725,7 +725,6 @@ abstract class Model implements ArrayAccess
      * 获取器 获取当前数据对象的值
      * @param string $fieldName
      * @return mixed
-     * @throws Exception
      */
     public function getAttribute(string $fieldName)
     {

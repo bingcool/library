@@ -117,7 +117,7 @@ class Producer extends AbstractKafka
      * @param int $partition
      * @param int $msgFlag
      * @return void
-     * @throws Exception
+     * @throws \RdKafka\Exception
      */
     public function produce(
         string $payload,
@@ -145,7 +145,7 @@ class Producer extends AbstractKafka
      * @param array|null $headers
      * @param int $partition
      * @param int $msgFlag
-     * @throws Exception
+     * @throws \RdKafka\Exception
      */
     public function producev(
         string $payload,

@@ -23,12 +23,12 @@
     "ext-curl": "*",
     "ext-json": "*",
     "predis/predis": "~1.1.7",
-    "malkusch/lock": "~2.2"
+    "malkusch/lock": "~2.2.0"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",
     "swoole/ide-helper": "@dev",
-    "phpunit/phpunit": "^7.0"
+    "phpunit/phpunit": ">=7.2.0"
   },
   "autoload": {
     "psr-4": {

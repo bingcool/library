@@ -4,6 +4,7 @@
 - [x] Db Mysql Model组件
 - [x] PostgreSql Model组件    
 - [x] Kafka Producer Consumer组件    
+- [x] Amqp 队列组件   
 - [x] Redis Cache组件  
 - [x] Redis Queue队列组件   
 - [x] Redis Delay Queue延迟队列组件            

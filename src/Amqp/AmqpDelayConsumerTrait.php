@@ -15,7 +15,7 @@ use PhpAmqpLib\Connection\Heartbeat\PCNTLHeartbeatSender;
 use PhpAmqpLib\Exception\AMQPIOException;
 use PhpAmqpLib\Exception\AMQPIOWaitException;
 
-trait AmqpConsumerTrait
+trait AmqpDelayConsumerTrait
 {
     /**
      * @param callable|null $callback
@@ -60,8 +60,11 @@ trait AmqpConsumerTrait
                     $sender = new PCNTLHeartbeatSender($this->amqpConnection);
                     $sender->register();
                 }
+
                 $this->channel->basic_qos(null,1,null);
-                $this->declareHandle($callback, $noLocal, $noAck, $exclusive, $nowait);
+
+                $this->declareHandleDelay($callback, $noLocal, $noAck, $exclusive, $nowait);
+
                 while ($this->channel->is_consuming()) {
                     $this->channel->wait();
                     // do something else
@@ -76,6 +79,7 @@ trait AmqpConsumerTrait
                 usleep(1 * 1000000);
             }catch (AMQPIOWaitException | \Throwable $exception) {
                 $this->close();
+                var_dump($exception->getMessage());
                 usleep(0.3 * 1000000);
             } finally {
                 if(isset($exception) && is_callable($this->consumerExceptionHandler)) {
@@ -87,5 +91,79 @@ trait AmqpConsumerTrait
                 }
             }
         }
+    }
+
+    /**
+     * @param callable|null $callback
+     * @param bool $noLocal
+     * @param bool $noAck
+     * @param bool $exclusive
+     * @param bool $nowait
+     * @return void
+     */
+    protected function declareHandleDelay(callable $callback = null, bool $noLocal = false, bool $noAck = false, bool $exclusive = false, bool $nowait = false)
+    {
+        if(empty($this->channel)) {
+            $this->channel = $this->amqpConnection->channel();
+        }
+        $this->exchangeDeclareDelay();
+        $this->queueDeclareDelay();
+        $this->queueBindDelay();
+        $this->channel->basic_consume(
+            $this->amqpConfig->arguments['x-dead-letter-queue'],
+            $this->amqpConfig->consumerTag,
+            $noLocal,
+            $noAck,
+            $exclusive,
+            $nowait,
+            $callback
+        );
+    }
+
+    /**
+     * @return void
+     */
+    protected function exchangeDeclareDelay()
+    {
+        $this->channel->exchange_declare(
+            $this->amqpConfig->arguments['x-dead-letter-exchange'],
+            $this->amqpConfig->type,
+            $this->amqpConfig->passive,
+            $this->amqpConfig->durable,
+            $this->amqpConfig->autoDelete,
+            $this->amqpConfig->internal,
+            $this->amqpConfig->nowait,
+            [],
+            $this->amqpConfig->ticket
+        );
+    }
+
+    /**
+     * @return void
+     */
+    protected function queueDeclareDelay()
+    {
+        $this->channel->queue_declare(
+            $this->amqpConfig->arguments['x-dead-letter-queue'],
+            $this->amqpConfig->passive,
+            $this->amqpConfig->durable,
+            $this->amqpConfig->autoDelete,
+            $this->amqpConfig->internal,
+            $this->amqpConfig->nowait,
+            [],
+            $this->amqpConfig->ticket
+        );
+    }
+
+    /**
+     * @return void
+     */
+    protected function queueBindDelay()
+    {
+        $this->channel->queue_bind(
+            $this->amqpConfig->arguments['x-dead-letter-queue'],
+            $this->amqpConfig->arguments['x-dead-letter-exchange'],
+            $this->amqpConfig->arguments['x-dead-letter-routing-key']
+        );
     }
 }

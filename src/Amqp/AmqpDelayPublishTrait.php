@@ -45,6 +45,7 @@ trait AmqpDelayPublishTrait
         if (!is_null($this->arguments)) {
             return $this->arguments;
         }
+
         if(isset($this->amqpConfig->arguments['x-dead-letter-exchange'])) {
             $this->arguments = new AMQPTable([
                 'x-dead-letter-exchange' => $this->amqpConfig->arguments['x-dead-letter-exchange'], //在同一个交换机下，这个不要改变
@@ -67,11 +68,19 @@ trait AmqpDelayPublishTrait
             $this->amqpConfig->queueName,
             $this->amqpConfig->passive,
             $this->amqpConfig->durable,
+            $this->amqpConfig->exclusive,
             $this->amqpConfig->autoDelete,
-            $this->amqpConfig->internal,
             $this->amqpConfig->nowait,
             $this->parseArguments(),
             $this->amqpConfig->ticket
         );
+    }
+
+    /**
+     * @return void
+     */
+    protected function queueBind()
+    {
+        $this->channel->queue_bind($this->amqpConfig->queueName, $this->amqpConfig->exchangeName, $this->amqpConfig->bindingKey);
     }
 }

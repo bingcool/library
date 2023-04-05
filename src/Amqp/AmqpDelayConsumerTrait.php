@@ -61,7 +61,7 @@ trait AmqpDelayConsumerTrait
                     $sender->register();
                 }
 
-                $this->channel->basic_qos(null,1,null);
+                $this->channel->basic_qos(0,1,false);
 
                 $this->declareHandleDelay($callback, $noLocal, $noAck, $exclusive, $nowait);
 
@@ -79,7 +79,6 @@ trait AmqpDelayConsumerTrait
                 usleep(1 * 1000000);
             }catch (AMQPIOWaitException | \Throwable $exception) {
                 $this->close();
-                var_dump($exception->getMessage());
                 usleep(0.3 * 1000000);
             } finally {
                 if(isset($exception) && is_callable($this->consumerExceptionHandler)) {
@@ -147,8 +146,8 @@ trait AmqpDelayConsumerTrait
             $this->amqpConfig->arguments['x-dead-letter-queue'],
             $this->amqpConfig->passive,
             $this->amqpConfig->durable,
+            $this->amqpConfig->exclusive,
             $this->amqpConfig->autoDelete,
-            $this->amqpConfig->internal,
             $this->amqpConfig->nowait,
             [],
             $this->amqpConfig->ticket

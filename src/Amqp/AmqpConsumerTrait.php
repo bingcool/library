@@ -56,11 +56,16 @@ trait AmqpConsumerTrait
                     $this->channel = $this->amqpConnection->channel();
                 }
 
+                if(empty($this->channel)) {
+                    $this->channel = $this->amqpConnection->channel();
+                }
+
                 if($this->amqpConnection->getHeartbeat() > 0) {
                     $sender = new PCNTLHeartbeatSender($this->amqpConnection);
                     $sender->register();
                 }
-                $this->channel->basic_qos(null,1,null);
+
+                $this->channel->basic_qos(0,1,false);
                 $this->declareHandle($callback, $noLocal, $noAck, $exclusive, $nowait);
                 while ($this->channel->is_consuming()) {
                     $this->channel->wait();

@@ -46,6 +46,11 @@ class AmqpConfig {
     /**
      * @var bool
      */
+   public $exclusive = false;
+
+    /**
+     * @var bool
+     */
    public $autoDelete = false;
 
     /**

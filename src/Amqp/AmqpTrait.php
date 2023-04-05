@@ -80,8 +80,8 @@ trait AmqpTrait
             $this->amqpConfig->queueName,
             $this->amqpConfig->passive,
             $this->amqpConfig->durable,
+            $this->amqpConfig->exclusive,
             $this->amqpConfig->autoDelete,
-            $this->amqpConfig->internal,
             $this->amqpConfig->nowait,
             $this->amqpConfig->arguments,
             $this->amqpConfig->ticket

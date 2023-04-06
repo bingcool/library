@@ -39,27 +39,6 @@ trait AmqpDelayPublishTrait
     }
 
     /**
-     * @return mixed
-     */
-    protected function parseArguments() {
-        if (!is_null($this->arguments)) {
-            return $this->arguments;
-        }
-
-        if(isset($this->amqpConfig->arguments['x-dead-letter-exchange'])) {
-            $this->arguments = new AMQPTable([
-                'x-dead-letter-exchange' => $this->amqpConfig->arguments['x-dead-letter-exchange'], //在同一个交换机下，这个不要改变
-                'x-dead-letter-routing-key' => $this->amqpConfig->arguments['x-dead-letter-routing-key'], // 死信队列binding key
-                'x-message-ttl' => $this->amqpConfig->arguments['x-message-ttl']
-            ]);
-        }else {
-            $this->arguments = $this->amqpConfig->arguments;
-        }
-
-        return $this->arguments;
-    }
-
-    /**
      * @return void
      */
     protected function queueDeclare()

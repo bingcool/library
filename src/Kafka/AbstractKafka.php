@@ -39,18 +39,18 @@ abstract class AbstractKafka
     /**
      * @var array
      */
-    protected $defaultConfig = [];
+    protected $defaultProperty = [];
 
     /**
      * @var array
      */
-    protected $defaultTopicConfig = [];
+    protected $defaultTopicProperty = [];
 
     /**
      * @param Conf $conf
      * @return mixed
      */
-    abstract public function setConf(Conf $conf);
+    abstract public function setGlobalConf(Conf $conf);
 
     /**
      * @param TopicConf $topicConf
@@ -72,13 +72,13 @@ abstract class AbstractKafka
     }
 
     /**
-     * @param array $config
+     * @param array $property
      * @return mixed
      */
-    public function setConfig(array $config = [])
+    public function setGlobalProperty(array $property = [])
     {
-        $config = array_merge($this->defaultConfig, $config);
-        foreach ($config as $key => $value) {
+        $properties = array_merge($this->defaultProperty, $property);
+        foreach ($properties as $key => $value) {
             $this->conf->set($key, $value);
             if ($key == 'auto.offset.reset') {
                 $this->getTopicConf()->set($key, $value);
@@ -87,13 +87,13 @@ abstract class AbstractKafka
     }
 
     /**
-     * @param array $topicConfig
+     * @param array $property
      * @return mixed
      */
-    public function setTopicConfig(array $topicConfig = [])
+    public function setTopicProperty(array $property = [])
     {
-        $config = array_merge($this->defaultTopicConfig, $topicConfig);
-        foreach ($config as $key => $value) {
+        $properties = array_merge($this->defaultTopicProperty, $property);
+        foreach ($properties as $key => $value) {
             $this->getTopicConf()->set($key, $value);
         }
     }
@@ -109,7 +109,7 @@ abstract class AbstractKafka
     /**
      * @return string
      */
-    public function getTopicName()
+    public function getTopicName(): string
     {
         return $this->topicName;
     }
@@ -117,7 +117,7 @@ abstract class AbstractKafka
     /**
      * @return Conf
      */
-    public function getConf()
+    public function getGlobalConf(): Conf
     {
         return $this->conf;
     }
@@ -125,7 +125,7 @@ abstract class AbstractKafka
     /**
      * @return TopicConf
      */
-    public function getTopicConf()
+    public function getTopicConf(): TopicConf
     {
         if (!$this->topicConf) {
             $this->topicConf = new TopicConf();

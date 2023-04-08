@@ -16,7 +16,7 @@ use RdKafka\TopicConf;
 use RdKafka\KafkaConsumer;
 
 /**
- * Class Consumer
+ * Class ConsumerKafka
  * @package Common\Library\Kafka
  */
 class Consumer extends AbstractKafka
@@ -32,6 +32,11 @@ class Consumer extends AbstractKafka
     protected $groupId;
 
     /**
+     * @var bool
+     */
+    protected $hasSubject = false;
+
+    /**
      * @var array
      */
     protected $rebalanceCbCallbacks = [];
@@ -40,7 +45,7 @@ class Consumer extends AbstractKafka
      * global config
      * @var array
      */
-    protected $defaultConfig = [
+    protected $defaultProperty = [
         'enable.auto.commit' => 1,
         'auto.commit.interval.ms' => 200,
         'auto.offset.reset' => 'earliest',
@@ -49,7 +54,7 @@ class Consumer extends AbstractKafka
     ];
 
     /**
-     * Consumer constructor.
+     * ConsumerKafka constructor.
      * @param string $metaBrokerList
      * @param string $topicName
      */
@@ -60,7 +65,7 @@ class Consumer extends AbstractKafka
     {
         $this->conf = new \RdKafka\Conf();
         $this->setBrokerList($metaBrokerList);
-        $this->setConfig();
+        $this->setGlobalProperty();
         $this->setRebalanceCb();
         $this->topicName = $topicName;
     }
@@ -115,7 +120,7 @@ class Consumer extends AbstractKafka
                     }
                     break;
                 default:
-                    throw new \RdKafka\Exception("kafka Consumer RebalanceCb ErrorCode={$err}");
+                    throw new \RdKafka\Exception("kafka ConsumerKafka RebalanceCb ErrorCode={$err}");
             }
         };
     }
@@ -143,7 +148,7 @@ class Consumer extends AbstractKafka
     /**
      * @param Conf $conf
      */
-    public function setConf(Conf $conf)
+    public function setGlobalConf(Conf $conf)
     {
         $this->conf = $conf;
     }
@@ -163,19 +168,39 @@ class Consumer extends AbstractKafka
      */
     public function subject(string $topicName = null)
     {
-        if (!$this->groupId) {
-            throw new \RdKafka\Exception('Kafka Consumer Missing GroupId');
+        if($this->hasSubject) {
+            return $this->rdKafkaConsumer;
         }
+
+        if (!$this->groupId) {
+            throw new \RdKafka\Exception('Kafka ConsumerKafka Missing GroupId');
+        }
+
         if ($topicName) {
             $this->topicName = $topicName;
         }
+
         try {
             $rdKafkaConsumer = $this->getRdKafkaConsumer();
             $rdKafkaConsumer->subscribe([$this->topicName]);
         } catch (\Throwable $throwable) {
             throw $throwable;
         }
-        return $rdKafkaConsumer;
+
+        $this->hasSubject = true;
+        if(empty($this->rdKafkaConsumer)) {
+            $this->rdKafkaConsumer = $rdKafkaConsumer;
+        }
+        return $this->rdKafkaConsumer;
+    }
+
+    /**
+     * @param int $timeout
+     * @return \RdKafka\Message
+     */
+    public function consume(int $timeout = 10*1000): \RdKafka\Message {
+        $this->subject();
+        return $this->rdKafkaConsumer->consume($timeout);
     }
 
     /**

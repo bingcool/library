@@ -16,7 +16,7 @@ use RdKafka\TopicConf;
 use RdKafka\ProducerTopic;
 
 /**
- * Class Producer
+ * Class ProducerKafka
  * @package Common\Library\Kafka
  */
 class Producer extends AbstractKafka
@@ -35,7 +35,7 @@ class Producer extends AbstractKafka
      * global config
      * @var array
      */
-    protected $defaultConfig = [
+    protected $defaultProperty = [
         'enable.idempotence' => 0,
         'message.send.max.retries' => 10
     ];
@@ -44,10 +44,10 @@ class Producer extends AbstractKafka
      * topic config
      * @var array
      */
-    protected $defaultTopicConfig = [];
+    protected $defaultTopicProperty = [];
 
     /**
-     * Producer constructor.
+     * ProducerKafka constructor.
      * @param mixed $metaBrokerList
      * @param string $topicName
      */
@@ -55,14 +55,14 @@ class Producer extends AbstractKafka
     {
         $this->conf = new \RdKafka\Conf();
         $this->setBrokerList($metaBrokerList);
-        $this->setConfig();
+        $this->setGlobalProperty();
         $this->topicName = $topicName;
     }
 
     /**
      * @param Conf $conf
      */
-    public function setConf(Conf $conf)
+    public function setGlobalConf(Conf $conf)
     {
         $this->conf = $conf;
     }
@@ -78,12 +78,12 @@ class Producer extends AbstractKafka
     /**
      * @return TopicConf
      */
-    public function getTopicConf()
+    public function getTopicConf(): TopicConf
     {
         if (!$this->topicConf) {
             $this->topicConf = new TopicConf();
         }
-        $this->setTopicConfig();
+        $this->setTopicProperty();
         return $this->topicConf;
     }
 
@@ -101,7 +101,7 @@ class Producer extends AbstractKafka
     /**
      * @return ProducerTopic
      */
-    public function getProducerTopic()
+    public function getProducerTopic(): ProducerTopic
     {
         if (!$this->producerTopic) {
             $this->producerTopic = $this->getRdKafkaProducer()->newTopic($this->topicName, $this->getTopicConf() ?? null);
@@ -128,7 +128,7 @@ class Producer extends AbstractKafka
     )
     {
         if (!$this->topicName) {
-            throw new \RdKafka\Exception('Kafka Producer Missing topicName');
+            throw new \RdKafka\Exception('Kafka ProducerKafka Missing topicName');
         }
         $this->getRdKafkaProducer();
         $this->rdKafkaProducer->addBrokers($this->metaBrokerList);
@@ -157,7 +157,7 @@ class Producer extends AbstractKafka
     )
     {
         if (!$this->topicName) {
-            throw new \RdKafka\Exception('Kafka Producer Missing topicName');
+            throw new \RdKafka\Exception('Kafka ProducerKafka Missing topicName');
         }
         $this->getRdKafkaProducer();
         $this->rdKafkaProducer->addBrokers($this->metaBrokerList);

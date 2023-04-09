@@ -195,12 +195,12 @@ class Consumer extends AbstractKafka
     }
 
     /**
-     * @param int $timeout
+     * @param int $timeoutMs
      * @return \RdKafka\Message
      */
-    public function consume(int $timeout = 10*1000): \RdKafka\Message {
+    public function consume(int $timeoutMs = 1000): \RdKafka\Message {
         $this->subject();
-        return $this->rdKafkaConsumer->consume($timeout);
+        return $this->rdKafkaConsumer->consume($timeoutMs);
     }
 
     /**

@@ -199,6 +199,7 @@ abstract class PDOConnection implements ConnectionInterface
         'Adaptive Server connection failed',
         'Communication link failure',
         'connection is no longer usable',
+        'Server shutdown in progress',
         'Login timeout expired',
         'SQLSTATE[HY000] [2002] Connection refused',
         'running with the --read-only option so it cannot execute this statement',
@@ -232,7 +233,9 @@ abstract class PDOConnection implements ConnectionInterface
     {
         // 开启事物，整个事物的PDOInstance必须是要同一个
         if (!$force || !empty($this->transTimes)) {
-            if ($this->PDOInstance) return $this->PDOInstance;
+            if ($this->PDOInstance) {
+                return $this->PDOInstance;
+            }
         }
 
         $this->config = array_merge($this->config, $config);
@@ -1108,6 +1111,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function free(): void
     {
+        $this->PDOInstance = null;
         $this->PDOStatement = null;
     }
 

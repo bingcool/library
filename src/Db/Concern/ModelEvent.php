@@ -39,13 +39,12 @@ trait ModelEvent
 
 
     /**
-     * 当前操作的事件响应
-     * @param bool $withEvent 是否需要事件响应
+     * 忽略所有事件的执行, 比如只更新某些字段，并不会有业务需要更新事件的
      * @return $this
      */
-    public function withEvent(bool $withEvent)
+    public function withOutAllEvents()
     {
-        $this->withEvent = $withEvent;
+        $this->withEvent = false;
         return $this;
     }
 
@@ -70,6 +69,7 @@ trait ModelEvent
         if (!$this->withEvent) {
             return true;
         }
+
         $onEvent = self::studly($event);
         $eventFunction = 'on' . $onEvent;
 

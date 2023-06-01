@@ -1230,19 +1230,15 @@ abstract class PDOConnection implements ConnectionInterface
             $runTime = number_format(($queryEndTime - $queryStartTime),6);
             $this->log('Execute sql end', 'Execute successful, Execute time=' . $runTime);
             // sql log
-            if (isset($this->config['sql_log']) && !empty($this->config['sql_log'])) {
-                $sqlLogFile = $this->config['sql_log'];
-                $realSql = $this->getRealSql($this->queryStr, $this->bind);
-                $dateTime = date('Y-m-d H:i:s');
-                $sqlFlag = 'sql-cid-0';
-                if($this->isCoroutine()) {
-                    $cid = \Swoole\Coroutine::getCid();
-                    $sqlFlag = "【sql-cid-{$cid}】";
-                    $logger = \Swoolefy\Core\Log\LogManager\LogManager::getInstance()->getLogger('sql_log');
-                    if ($logger) {
-                        $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【{$sqlFlag}】: ".$realSql;
-                        $logger->info($sqlLog);
-                    }
+            $realSql = $this->getRealSql($this->queryStr, $this->bind);
+            $dateTime = date('Y-m-d H:i:s');
+            if($this->isCoroutine()) {
+                $cid = \Swoole\Coroutine::getCid();
+                $sqlFlag = "【sql-cid-{$cid}】";
+                $logger = \Swoolefy\Core\Log\LogManager::getInstance()->getLogger('sql_log');
+                if ($logger) {
+                    $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【{$sqlFlag}】: ".$realSql;
+                    $logger->info($sqlLog);
                 }
             }
         }

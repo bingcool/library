@@ -1237,6 +1237,10 @@ abstract class PDOConnection implements ConnectionInterface
                 $sqlFlag = "【sql-cid-{$cid}】";
                 $logger = \Swoolefy\Core\Log\LogManager::getInstance()->getLogger('sql_log');
                 if ($logger) {
+                    $logFilePath = $logger->getLogFilePath();
+                    if (!file_exists($logFilePath)) {
+                        fopen($logFilePath, 'w');
+                    }
                     $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【{$sqlFlag}】: ".$realSql;
                     $logger->info($sqlLog);
                 }

@@ -14,6 +14,7 @@ namespace Common\Library\Db;
 use PDO;
 use PDOStatement;
 use Common\Library\Exception\DbException;
+use Swoolefy\Core\Log\LogManager;
 
 /**
  * Class PDOConnection
@@ -143,6 +144,11 @@ abstract class PDOConnection implements ConnectionInterface
      * @var array
      */
     protected $afterRollBackCallbacks = [];
+
+    /**
+     * @var array
+     */
+    protected static $slowSqlNoticeCallback;
 
     /**
      * PDO连接参数
@@ -321,9 +327,7 @@ abstract class PDOConnection implements ConnectionInterface
             // 执行查询
             $this->PDOStatement->execute();
 
-            if ($this->debug) {
-                $this->saveRuntimeSql($queryStartTime ?? (microtime(true)) );
-            }
+            $this->saveRuntimeSql($queryStartTime ?? (microtime(true)) );
 
             $this->reConnectTimes = 0;
             return $this->PDOStatement;
@@ -1220,25 +1224,69 @@ abstract class PDOConnection implements ConnectionInterface
      */
     protected function saveRuntimeSql($queryStartTime)
     {
-        $queryEndTime = microtime(true);
-        $runTime = number_format(($queryEndTime - $queryStartTime),6);
-        $this->log('Execute sql end', 'Execute successful, Execute time=' . $runTime);
-        // sql log
-        if (isset($this->config['sql_log']) && !empty($this->config['sql_log'])) {
-            $sqlLogFile = $this->config['sql_log'];
-            $realSql = $this->getRealSql($this->queryStr, $this->bind);
-            $dateTime = date('Y-m-d H:i:s');
-            $sqlFlag = 'sql-0';
-            if($this->isCoroutine()) {
-                $cid = \Swoole\Coroutine::getCid();
-                $sqlFlag = "【sql-{$cid}】";
-            }
-            $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【{$sqlFlag}】".$realSql."\r";
-            file_put_contents($sqlLogFile, $sqlLog, FILE_APPEND);
-            if (count($this->lastLogs) == 1) {
-                if (filesize($sqlLogFile) > 5242880) {
-                    file_put_contents($sqlLogFile, $sqlLog);
+        $realSql = '';
+        if ($this->debug) {
+            $queryEndTime = microtime(true);
+            $runTime = number_format(($queryEndTime - $queryStartTime),6);
+            $this->log('Execute sql end', 'Execute successful, Execute time=' . $runTime);
+            // sql log
+            if (isset($this->config['sql_log']) && !empty($this->config['sql_log'])) {
+                $sqlLogFile = $this->config['sql_log'];
+                $realSql = $this->getRealSql($this->queryStr, $this->bind);
+                $dateTime = date('Y-m-d H:i:s');
+                $sqlFlag = 'sql-cid-0';
+                if($this->isCoroutine()) {
+                    $cid = \Swoole\Coroutine::getCid();
+                    $sqlFlag = "【sql-cid-{$cid}】";
+                    $logger = \Swoolefy\Core\Log\LogManager\LogManager::getInstance()->getLogger('sql');
+                    if ($logger) {
+                        $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【{$sqlFlag}】: ".$realSql;
+                        $logger->info($sqlLog);
+                    }
                 }
+            }
+        }
+
+        if (isset(static::$slowSqlNoticeCallback['query_time']) && $runTime > static::$slowSqlNoticeCallback['query_time'] ) {
+            $this->callSlowSqlFn($runTime, !empty($realSql) ?  $realSql : $this->getRealSql($this->queryStr, $this->bind));
+        }
+    }
+
+    /**
+     * @param float $queryTime
+     * @param \Closure $fn
+     * @return void
+     */
+    public static function registerSlowSqlFn(float $queryTime, \Closure $fn)
+    {
+        static::$slowSqlNoticeCallback = [
+            'query_time' => $queryTime,
+            'fn' => $fn
+        ];
+    }
+
+    /**
+     * @param $readRunTime
+     * @param $readSql
+     * @return void
+     */
+    protected function callSlowSqlFn($readRunTime, $readSql)
+    {
+        if (class_exists('swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
+            \Swoole\Coroutine::create(function () use($readRunTime, $readSql) {
+                try {
+                    $fn = static::$slowSqlNoticeCallback['fn'];
+                    $fn($readRunTime, $readSql);
+                }catch (\Throwable $exception) {
+
+                }
+            });
+        }else {
+            try {
+                $fn = static::$slowSqlNoticeCallback['fn'];
+                $fn($readRunTime, $readSql);
+            }catch (\Throwable $exception) {
+
             }
         }
     }
@@ -1304,7 +1352,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     protected function isCoroutine(): bool
     {
-        if(class_exists('Swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
+        if(class_exists('Swoolefy\\Core\\Swfy') && \Swoole\Coroutine::getCid() > 0) {
             return true;
         }
 

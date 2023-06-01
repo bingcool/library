@@ -58,8 +58,6 @@ abstract class PDOConnection implements ConnectionInterface
         'spend_log_limit' => 30,
         // 是否开启dubug
         'debug' => 1,
-        // sql 日志
-        'sql_log' => '',
     ];
 
     /**
@@ -226,6 +224,16 @@ abstract class PDOConnection implements ConnectionInterface
         $this->config = array_merge($this->config, $config);
         $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
         $this->debug = (int)$this->config['debug'] ?? 1;
+    }
+
+    /**
+     * @param bool $isDebug
+     * @return void
+     */
+    public function setDebug(bool $isDebug)
+    {
+        $this->debug = (int)$isDebug;
+        $this->config['debug'] = $this->debug;
     }
 
     /**
@@ -1225,9 +1233,10 @@ abstract class PDOConnection implements ConnectionInterface
     protected function saveRuntimeSql($queryStartTime)
     {
         $realSql = '';
+        $queryEndTime = microtime(true);
+        $runTime = number_format(($queryEndTime - $queryStartTime),6);
+
         if ($this->debug) {
-            $queryEndTime = microtime(true);
-            $runTime = number_format(($queryEndTime - $queryStartTime),6);
             $this->log('Execute sql end', 'Execute successful, Execute time=' . $runTime);
             // sql log
             $realSql = $this->getRealSql($this->queryStr, $this->bind);

@@ -1238,7 +1238,7 @@ abstract class PDOConnection implements ConnectionInterface
                 if($this->isCoroutine()) {
                     $cid = \Swoole\Coroutine::getCid();
                     $sqlFlag = "【sql-cid-{$cid}】";
-                    $logger = \Swoolefy\Core\Log\LogManager\LogManager::getInstance()->getLogger('sql');
+                    $logger = \Swoolefy\Core\Log\LogManager\LogManager::getInstance()->getLogger('sql_log');
                     if ($logger) {
                         $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【{$sqlFlag}】: ".$realSql;
                         $logger->info($sqlLog);

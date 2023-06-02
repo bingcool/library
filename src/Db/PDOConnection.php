@@ -1275,17 +1275,17 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
-     * @param $readRunTime
-     * @param $readSql
+     * @param $realRunTime
+     * @param $realSql
      * @return void
      */
-    protected function callSlowSqlFn($readRunTime, $readSql)
+    protected function callSlowSqlFn($realRunTime, $realSql)
     {
         if (class_exists('swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
-            \Swoole\Coroutine::create(function () use($readRunTime, $readSql) {
+            \Swoole\Coroutine::create(function () use($realRunTime, $realSql) {
                 try {
                     $fn = static::$slowSqlNoticeCallback['fn'];
-                    $fn($readRunTime, $readSql);
+                    $fn($realRunTime, $realSql);
                 }catch (\Throwable $exception) {
 
                 }
@@ -1293,7 +1293,7 @@ abstract class PDOConnection implements ConnectionInterface
         }else {
             try {
                 $fn = static::$slowSqlNoticeCallback['fn'];
-                $fn($readRunTime, $readSql);
+                $fn($realRunTime, $realSql);
             }catch (\Throwable $exception) {
 
             }

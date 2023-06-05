@@ -59,6 +59,17 @@ trait ModelEvent
     }
 
     /**
+     * @return void
+     */
+    public function withOutAnyEvents()
+    {
+        foreach (self::EVENTS as $event)
+        {
+            $this->skipEvent($event);
+        }
+    }
+
+    /**
      * 触发事件
      * @param string $event 事件名
      * @return bool

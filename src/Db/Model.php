@@ -414,15 +414,15 @@ abstract class Model implements ArrayAccess
 
             $hasBeforeInsertTransaction = method_exists(static::class, 'onBeforeInsertTransaction');
             $hasAfterInsertTransaction = method_exists(static::class, 'onAfterInsertTransaction');
-
+            $enableAfterCommitCallback = false;
             if($hasBeforeInsertTransaction || $hasAfterInsertTransaction || $this->getConnection()->isEnableTransaction()) {
                 if(method_exists(static::class, 'onAfterInsertCommitCallBack')) {
+                    $enableAfterCommitCallback = true;
                     $this->getConnection()->afterCommitCallback([$this,'onAfterInsertCommitCallBack']);
                 }
             }
 
             if ($hasBeforeInsertTransaction && $hasAfterInsertTransaction) {
-                $enableTransaction = true;
                 $this->transaction(function () use ($sql, $bindParams) {
                     $this->onBeforeInsertTransaction();
                     $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
@@ -434,7 +434,6 @@ abstract class Model implements ArrayAccess
                     $this->trigger('AfterInsert');
                 });
             } else if ($hasBeforeInsertTransaction) {
-                $enableTransaction = true;
                 $this->transaction(function () use ($sql, $bindParams) {
                     $this->onBeforeInsertTransaction();
                     $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
@@ -445,7 +444,6 @@ abstract class Model implements ArrayAccess
                     $this->trigger('AfterInsert');
                 });
             } else if ($hasAfterInsertTransaction) {
-                $enableTransaction = true;
                 $this->transaction(function () use ($sql, $bindParams) {
                     $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
                     $this->onAfterInsertTransaction();
@@ -456,7 +454,6 @@ abstract class Model implements ArrayAccess
                     $this->trigger('AfterInsert');
                 });
             } else {
-                $enableTransaction = false;
                 $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
                 // set exist
                 $this->exists(true);
@@ -474,7 +471,7 @@ abstract class Model implements ArrayAccess
             $this->_data[$pk] = $this->getConnection()->getLastInsID($pk);
         }
 
-        if(isset($enableTransaction) && $enableTransaction === false) {
+        if(!$enableAfterCommitCallback) {
             if(method_exists(static::class, 'onAfterInsertCommitCallBack')) {
                 $this->onAfterInsertCommitCallBack();
             }
@@ -556,15 +553,16 @@ abstract class Model implements ArrayAccess
             $hasBeforeUpdateTransaction = method_exists(static::class, 'onBeforeUpdateTransaction');
             $hasAfterUpdateTransaction  = method_exists(static::class, 'onAfterUpdateTransaction');
 
+            $enableAfterCommitCallback = false;
             if($hasBeforeUpdateTransaction || $hasAfterUpdateTransaction || $this->getConnection()->isEnableTransaction()) {
                 if(method_exists(static::class, 'onAfterUpdateCommitCallBack')) {
+                    $enableAfterCommitCallback = true;
                     $this->getConnection()->afterCommitCallback([$this,'onAfterUpdateCommitCallBack']);
                 }
             }
 
             try {
                 if ($hasBeforeUpdateTransaction && $hasAfterUpdateTransaction) {
-                    $enableTransaction = true;
                     $this->transaction(function () use ($sql, $bindParams) {
                         $this->onBeforeUpdateTransaction();
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
@@ -573,7 +571,6 @@ abstract class Model implements ArrayAccess
                         $this->trigger('AfterUpdate');
                     });
                 } else if ($hasBeforeUpdateTransaction) {
-                    $enableTransaction = true;
                     $this->transaction(function () use ($sql, $bindParams) {
                         $this->onBeforeUpdateTransaction();
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
@@ -581,7 +578,6 @@ abstract class Model implements ArrayAccess
                         $this->trigger('AfterUpdate');
                     });
                 } else if ($hasAfterUpdateTransaction) {
-                    $enableTransaction = true;
                     $this->transaction(function () use ($sql, $bindParams) {
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                         $this->onAfterUpdateTransaction();
@@ -589,7 +585,6 @@ abstract class Model implements ArrayAccess
                         $this->trigger('AfterUpdate');
                     });
                 } else {
-                    $enableTransaction = false;
                     $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                     $this->checkResult($this->_data);
                     $this->trigger('AfterUpdate');
@@ -600,7 +595,7 @@ abstract class Model implements ArrayAccess
                 throw $e;
             }
 
-            if(isset($enableTransaction) && $enableTransaction === false) {
+            if(!$enableAfterCommitCallback) {
                 if(method_exists(static::class, 'onAfterUpdateCommitCallBack')) {
                     $this->onAfterUpdateCommitCallBack();
                 }

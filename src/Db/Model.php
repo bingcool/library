@@ -912,35 +912,35 @@ abstract class Model implements ArrayAccess
     }
 
     // ArrayAccess
-    public function offsetSet($name, $value)
+    public function offsetSet($offset, $value)
     {
-        $this->setAttribute($name, $value);
+        $this->setAttribute($offset, $value);
     }
 
     /**
-     * @param mixed $name
+     * @param mixed $offset
      * @return bool
      */
-    public function offsetExists($name): bool
+    public function offsetExists($offset): bool
     {
-        return $this->__isset($name);
+        return $this->__isset($offset);
     }
 
     /**
-     * @param mixed $name
+     * @param mixed $offset
      */
-    public function offsetUnset($name)
+    public function offsetUnset($offset)
     {
-        $this->__unset($name);
+        $this->__unset($offset);
     }
 
     /**
-     * @param mixed $name
+     * @param mixed $offset
      * @return mixed
      */
-    public function offsetGet($name)
+    public function offsetGet($offset)
     {
-        return $this->getAttribute($name);
+        return $this->getAttribute($offset);
     }
 
     /**

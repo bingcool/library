@@ -169,14 +169,6 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * @param $pk
-     * @param mixed ...$params
-     */
-    public function loadByPk($pk, ...$params)
-    {
-    }
-
-    /**
      * @return bool
      */
     protected function onBeforeInsert(): bool

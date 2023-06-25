@@ -42,7 +42,7 @@ trait ModelEvent
      * 忽略所有事件的执行, 比如只更新某些字段，并不会有业务需要更新事件的
      * @return $this
      */
-    public function withOutAllEvents()
+    public function withOutExecEvents()
     {
         $this->withEvent = false;
         return $this;
@@ -70,6 +70,17 @@ trait ModelEvent
     }
 
     /**
+     * 恢复所有事件的执行
+     *
+     * @return void
+     */
+    public function withRecoverEvents()
+    {
+        $this->skipEvents = [];
+        $this->withEvent = true;
+    }
+
+    /**
      * 触发事件
      * @param string $event 事件名
      * @return bool
@@ -84,21 +95,18 @@ trait ModelEvent
         $onEvent = self::studly($event);
         $eventFunction = 'on' . $onEvent;
 
-        try {
-            $result = null;
-            /**@var \Closure $callFunction */
-            if (isset($this->customEventHandlers[$onEvent]) && $this->customEventHandlers[$onEvent] instanceof \Closure) {
-                $callFunction = $this->customEventHandlers[$onEvent];
-                $result = $callFunction->call($this);
-            } else {
-                if (method_exists(static::class, $eventFunction) && !in_array($onEvent, $this->skipEvents)) {
-                    $result = $this->{$eventFunction}();
-                }
+        $result = null;
+        /**@var \Closure $callFunction */
+        if (isset($this->customEventHandlers[$onEvent]) && $this->customEventHandlers[$onEvent] instanceof \Closure) {
+            $callFunction = $this->customEventHandlers[$onEvent];
+            $result = $callFunction->call($this);
+        } else {
+            if (method_exists(static::class, $eventFunction) && !in_array($onEvent, $this->skipEvents)) {
+                $result = $this->{$eventFunction}();
             }
-            return false === $result ? false : true;
-        } catch (\Exception $e) {
-            throw $e;
         }
+
+        return false === $result ? false : true;
     }
 
     /**

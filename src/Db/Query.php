@@ -18,9 +18,9 @@ use PDOStatement;
  */
 class Query extends BaseQuery
 {
-    use concern\JoinAndViewQuery;
-    use concern\ParamsBind;
-    use concern\TableFieldInfo;
+    use Concern\JoinAndViewQuery;
+    use Concern\ParamsBind;
+    use Concern\TableFieldInfo;
 
     /**
      * 表达式方式指定Field排序

@@ -15,9 +15,10 @@ use think\Collection;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\DbException as Exception;
 use think\db\exception\ModelNotFoundException;
-use think\helper\Str;
+
+use Common\Library\Db\Helper\Str;
+
 use think\Model;
-use think\Paginator;
 
 /**
  * 数据查询基础类
@@ -105,13 +106,6 @@ abstract class BaseQuery
             $name = Str::snake(substr($method, 5));
             array_unshift($args, $name);
             return call_user_func_array([$this, 'where'], $args);
-        } elseif ($this->model && method_exists($this->model, 'scope' . $method)) {
-            // 动态调用命名范围
-            $method = 'scope' . $method;
-            array_unshift($args, $this);
-
-            call_user_func_array([$this->model, $method], $args);
-            return $this;
         } else {
             throw new Exception('method not exist:' . static::class . '->' . $method);
         }
@@ -125,10 +119,6 @@ abstract class BaseQuery
     public function newQuery(): BaseQuery
     {
         $query = new static($this->connection);
-
-        if ($this->model) {
-            $query->model($this->model);
-        }
 
         if (isset($this->options['table'])) {
             $query->table($this->options['table']);
@@ -176,7 +166,7 @@ abstract class BaseQuery
      */
     public function getName(): string
     {
-        return $this->name ?: $this->model->getName();
+        return $this->name;
     }
 
     /**
@@ -259,12 +249,7 @@ abstract class BaseQuery
      */
     public function value(string $field, $default = null)
     {
-        $result = $this->connection->value($this, $field, $default);
-
-        $array[$field] = $result;
-        $this->result($array);
-
-        return $array[$field];
+        //todo
     }
 
     /**
@@ -276,13 +261,8 @@ abstract class BaseQuery
      */
     public function column($field, string $key = ''): array
     {
-        $result = $this->connection->column($this, $field, $key);
-
-        if (count($result) != count($result, 1)) {
-            $this->resultSet($result, false);
-        }
-
-        return $result;
+       //todo
+        return [];
     }
 
     /**
@@ -331,7 +311,7 @@ abstract class BaseQuery
             return $this;
         }
 
-        if (is_string($field)) {
+        if (is_string($field) && $field != '*') {
             if (preg_match('/[\<\'\"\(]/', $field)) {
                 return $this->fieldRaw($field);
             }
@@ -339,10 +319,8 @@ abstract class BaseQuery
             $field = array_map('trim', explode(',', $field));
         }
 
-        if (true === $field) {
-            // 获取全部字段
-            $fields = $this->getTableFields();
-            $field  = $fields ?: ['*'];
+        if ('*' === $field || $field = ['*']) {
+            $field  = (array) $field;
         }
 
         if (isset($this->options['field'])) {
@@ -588,180 +566,8 @@ abstract class BaseQuery
         return $this;
     }
 
-    /**
-     * 分页查询
-     * @access public
-     * @param int|array $listRows 每页数量 数组表示配置参数
-     * @param int|bool  $simple   是否简洁模式或者总记录数
-     * @return Paginator
-     * @throws Exception
-     */
-    public function paginate($listRows = null, $simple = false): Paginator
-    {
-        if (is_int($simple)) {
-            $total  = $simple;
-            $simple = false;
-        }
 
-        $defaultConfig = [
-            'query'     => [], //url额外参数
-            'fragment'  => '', //url锚点
-            'var_page'  => 'page', //分页变量
-            'list_rows' => 15, //每页数量
-        ];
 
-        if (is_array($listRows)) {
-            $config   = array_merge($defaultConfig, $listRows);
-            $listRows = intval($config['list_rows']);
-        } else {
-            $config   = $defaultConfig;
-            $listRows = intval($listRows ?: $config['list_rows']);
-        }
-
-        $page = isset($config['page']) ? (int) $config['page'] : Paginator::getCurrentPage($config['var_page']);
-
-        $page = $page < 1 ? 1 : $page;
-
-        $config['path'] = $config['path'] ?? Paginator::getCurrentPath();
-
-        if (!isset($total) && !$simple) {
-            $options = $this->getOptions();
-
-            unset($this->options['order'], $this->options['cache'], $this->options['limit'], $this->options['page'], $this->options['field']);
-
-            $bind  = $this->bind;
-            $total = $this->count();
-            if ($total > 0) {
-                $results = $this->options($options)->bind($bind)->page($page, $listRows)->select();
-            } else {
-                if (!empty($this->model)) {
-                    $results = new \think\model\Collection([]);
-                } else {
-                    $results = new \think\Collection([]);
-                }
-            }
-        } elseif ($simple) {
-            $results = $this->limit(($page - 1) * $listRows, $listRows + 1)->select();
-            $total   = null;
-        } else {
-            $results = $this->page($page, $listRows)->select();
-        }
-
-        $this->removeOption('limit');
-        $this->removeOption('page');
-
-        return Paginator::make($results, $listRows, $page, $total, $simple, $config);
-    }
-
-    /**
-     * 根据数字类型字段进行分页查询（大数据）
-     * @access public
-     * @param int|array $listRows 每页数量或者分页配置
-     * @param string    $key      分页索引键
-     * @param string    $sort     索引键排序 asc|desc
-     * @return Paginator
-     * @throws Exception
-     */
-    public function paginateX($listRows = null, string $key = null, string $sort = null): Paginator
-    {
-        $defaultConfig = [
-            'query'     => [], //url额外参数
-            'fragment'  => '', //url锚点
-            'var_page'  => 'page', //分页变量
-            'list_rows' => 15, //每页数量
-        ];
-
-        $config   = is_array($listRows) ? array_merge($defaultConfig, $listRows) : $defaultConfig;
-        $listRows = is_int($listRows) ? $listRows : (int) $config['list_rows'];
-        $page     = isset($config['page']) ? (int) $config['page'] : Paginator::getCurrentPage($config['var_page']);
-        $page     = $page < 1 ? 1 : $page;
-
-        $config['path'] = $config['path'] ?? Paginator::getCurrentPath();
-
-        $key     = $key ?: $this->getPk();
-        $options = $this->getOptions();
-
-        if (is_null($sort)) {
-            $order = $options['order'] ?? '';
-            if (!empty($order)) {
-                $sort = $order[$key] ?? 'desc';
-            } else {
-                $this->order($key, 'desc');
-                $sort = 'desc';
-            }
-        } else {
-            $this->order($key, $sort);
-        }
-
-        $newOption = $options;
-        unset($newOption['field'], $newOption['page']);
-
-        $data = $this->newQuery()
-            ->options($newOption)
-            ->field($key)
-            ->where(true)
-            ->order($key, $sort)
-            ->limit(1)
-            ->find();
-
-        $result = $data[$key] ?? 0;
-
-        if (is_numeric($result)) {
-            $lastId = 'asc' == $sort ? ($result - 1) + ($page - 1) * $listRows : ($result + 1) - ($page - 1) * $listRows;
-        } else {
-            throw new Exception('not support type');
-        }
-
-        $results = $this->when($lastId, function ($query) use ($key, $sort, $lastId) {
-            $query->where($key, 'asc' == $sort ? '>' : '<', $lastId);
-        })
-            ->limit($listRows)
-            ->select();
-
-        $this->options($options);
-
-        return Paginator::make($results, $listRows, $page, null, true, $config);
-    }
-
-    /**
-     * 根据最后ID查询更多N个数据
-     * @access public
-     * @param int        $limit  LIMIT
-     * @param int|string $lastId LastId
-     * @param string     $key    分页索引键 默认为主键
-     * @param string     $sort   索引键排序 asc|desc
-     * @return array
-     * @throws Exception
-     */
-    public function more(int $limit, $lastId = null, string $key = null, string $sort = null): array
-    {
-        $key = $key ?: $this->getPk();
-
-        if (is_null($sort)) {
-            $order = $this->getOptions('order');
-            if (!empty($order)) {
-                $sort = $order[$key] ?? 'desc';
-            } else {
-                $this->order($key, 'desc');
-                $sort = 'desc';
-            }
-        } else {
-            $this->order($key, $sort);
-        }
-
-        $result = $this->when($lastId, function ($query) use ($key, $sort, $lastId) {
-            $query->where($key, 'asc' == $sort ? '>' : '<', $lastId);
-        })->limit($limit)->select();
-
-        $last = $result->last();
-
-        $result->first();
-
-        return [
-            'data'   => $result,
-            'lastId' => $last ? $last[$key] : null,
-        ];
-    }
 
     /**
      * 查询缓存 数据为空不缓存

@@ -11,8 +11,8 @@
 
 namespace Common\Library\Db;
 
-use Closure;
 use PDO;
+use Closure;
 use Common\Library\Exception\DbException;
 
 /**

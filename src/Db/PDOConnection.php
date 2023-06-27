@@ -293,6 +293,9 @@ abstract class PDOConnection implements ConnectionInterface
         $this->connect($this->config, true, $force);
     }
 
+    /**
+     * @return PDOConnection
+     */
     public function getConnection()
     {
         return $this;
@@ -706,14 +709,40 @@ abstract class PDOConnection implements ConnectionInterface
 
     /**
      * 获取数据表信息
-     * @param string $tableName 数据表名
+     * @param mixed $tableName 数据表名
      * @param string $fetch 获取信息类型 值包括 fields type bind pk
      * @return mixed
      */
-    public function getTableInfo(string $tableName, string $fetch = '')
+    public function getTableInfo($tableName, string $fetch = '')
     {
+        $tableName = $this->parseTableName($tableName);
+
+        if (empty($tableName)) {
+            return [];
+        }
+
         $info = $this->getSchemaInfo($tableName);
         return $fetch ? $info[$fetch] : $info;
+    }
+
+    /**
+     * @param $tableName
+     * @return mixed
+     */
+    public function parseTableName($tableName)
+    {
+        if (is_array($tableName)) {
+            $tableName = key($tableName) ?: current($tableName);
+        }
+
+        if (strpos($tableName, ',') || strpos($tableName, ')')) {
+            // 多表不获取字段信息
+            return [];
+        }
+
+        [$tableName] = explode(' ', $tableName);
+
+        return $tableName;
     }
 
     /**
@@ -754,7 +783,7 @@ abstract class PDOConnection implements ConnectionInterface
      * @param mixed $tableName 数据表名
      * @return string
      */
-    public function getAutoInc(string $tableName): string
+    public function getAutoInc($tableName): string
     {
         return $this->getTableInfo($tableName, 'autoinc');
     }
@@ -806,6 +835,17 @@ abstract class PDOConnection implements ConnectionInterface
         }
 
         return $this->info[$schema];
+    }
+
+    /**
+     * 获取数据表字段信息
+     * @access public
+     * @param mixed $tableName 数据表名
+     * @return array
+     */
+    public function getTableFields($tableName): array
+    {
+        return $this->getTableInfo($tableName, 'fields');
     }
 
     /**

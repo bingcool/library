@@ -11,14 +11,14 @@
 
 namespace Common\Library\Db;
 
-use Common\Library\Db\Collection;
 use Common\Library\Db\Helper\Str;
 use Common\Library\Db\Concern;
-
 use Common\Library\Exception\DbException;
+
 /**
  * 数据查询基础类
  */
+
 abstract class BaseQuery
 {
     use Concern\WhereQuery;
@@ -215,17 +215,11 @@ abstract class BaseQuery
             return $this->options['table'];
         }
 
+
+
         $name = $name ?: $this->name;
 
         return $this->prefix . Str::snake($name);
-    }
-
-    /**
-     * @return mixed|string
-     */
-    public function getTableName()
-    {
-        return $this->getTable();
     }
 
     /**
@@ -280,7 +274,7 @@ abstract class BaseQuery
      */
     public function value(string $field, $default = null)
     {
-        //todo
+
     }
 
     /**
@@ -350,7 +344,7 @@ abstract class BaseQuery
             $field = array_map('trim', explode(',', $field));
         }
 
-        if ('*' === $field || $field = ['*']) {
+        if ($field == '*') {
             $field  = (array) $field;
         }
 
@@ -508,9 +502,11 @@ abstract class BaseQuery
             if (strpos($table, ')')) {
                 // 子查询
             } elseif (false === strpos($table, ',')) {
-                if (strpos($table, ' ')) {
-                    [$item, $alias] = explode(' ', $table);
-                    $table          = [];
+                if (stripos($table, ' as ') || strpos($table, ' ')) {
+                    $items = explode(' ', $table);
+                    $item = $items[0];
+                    $table = [];
+                    $alias = array_pop($items);
                     $this->alias([$item => $alias]);
                     $table[$item] = $alias;
                 }

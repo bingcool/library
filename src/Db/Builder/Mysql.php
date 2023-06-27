@@ -126,8 +126,6 @@ class Mysql extends AbstractBuilder
             $set[] = $key . ' = ' . $val;
         }
 
-        var_dump($options);
-
         return str_replace(
             ['%INSERT%', '%EXTRA%', '%TABLE%', '%PARTITION%', '%SET%', '%DUPLICATE%', '%COMMENT%'],
             [

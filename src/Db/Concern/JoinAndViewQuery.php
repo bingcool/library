@@ -106,9 +106,11 @@ trait JoinAndViewQuery
             $table = $join;
         } else {
             // 使用别名
-            if (strpos($join, ' ')) {
+            if (stripos($join, ' as ') || strpos($join, ' ')) {
                 // 使用别名
-                [$table, $alias] = explode(' ', $join);
+                $items = explode(' ', $join);
+                $table = $items[0];
+                $alias = array_pop($items);
             } else {
                 $table = $join;
                 if (false === strpos($join, '.')) {

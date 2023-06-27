@@ -25,8 +25,7 @@ trait TableFieldInfo
     protected function getSchema(): array
     {
         if (empty($this->_schemaInfo)) {
-            $table = $this->getTableName();
-            $schemaInfo = $this->getConnection()->getSchemaInfo($table);
+            $schemaInfo = $this->getConnection()->getTableInfo($this->getTable());
             $this->_schemaInfo = $schemaInfo;
         }
 
@@ -35,13 +34,11 @@ trait TableFieldInfo
 
     /**
      * 获取数据表字段类型信息
-     * @access public
-     * @param string $tableName 数据表名
      * @return array
      */
     protected function getTableFields(): array
     {
-        return $this->getConnection()->getTableFieldsInfo($this->getTableName());
+        return $this->getConnection()->getTableFields($this->getTable());
     }
 
     /**
@@ -52,7 +49,11 @@ trait TableFieldInfo
      */
     protected function getFields(): array
     {
-        return $this->getConnection()->getFields($this->getTableName());
+        $tableName = $this->getConnection()->parseTableName($this->getTable());
+        if (empty($tableName)) {
+            return [];
+        }
+        return $this->getConnection()->getFields($tableName);
     }
 
     /**

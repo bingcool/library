@@ -293,6 +293,11 @@ abstract class PDOConnection implements ConnectionInterface
         $this->connect($this->config, true, $force);
     }
 
+    public function getConnection()
+    {
+        return $this;
+    }
+
     /**
      * 创建PDO实例
      * @param $dsn
@@ -755,6 +760,17 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * 获取数据表的主键
+     * @access public
+     * @param mixed $tableName 数据表名
+     * @return string|array
+     */
+    public function getPk($tableName)
+    {
+        return $this->getTableInfo($tableName, 'pk');
+    }
+
+    /**
      * Schema
      *
      * @param string $tableName 数据表名称
@@ -1157,19 +1173,19 @@ abstract class PDOConnection implements ConnectionInterface
     public function getRealSql(string $sql, array $bind = []): string
     {
         foreach ($bind as $key => $val) {
-            $value = is_array($val) ? $val[0] : $val;
-            $type = is_array($val) ? $val[1] : PDO::PARAM_STR;
+            $value = strval(is_array($val) ? $val[0] : $val);
+            $type  = is_array($val) ? $val[1] : PDO::PARAM_STR;
 
-            if ((self::PARAM_FLOAT == $type || PDO::PARAM_STR == $type) && is_string($value)) {
+            if (self::PARAM_FLOAT == $type || PDO::PARAM_STR == $type) {
                 $value = '\'' . addslashes($value) . '\'';
             } elseif (PDO::PARAM_INT == $type && '' === $value) {
-                $value = 0;
+                $value = '0';
             }
 
             // 判断占位符
             $sql = is_numeric($key) ?
                 substr_replace($sql, $value, strpos($sql, '?'), 1) :
-                substr_replace($sql, $value, strpos($sql, $key), strlen($key));
+                substr_replace($sql, $value, strpos($sql, ':' . $key), strlen(':' . $key));
         }
 
         return rtrim($sql);

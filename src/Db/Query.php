@@ -11,7 +11,9 @@
 
 namespace Common\Library\Db;
 
+use Common\Library\Exception\DbException;
 use PDOStatement;
+use Common\Library\Db\Concern;
 
 /**
  * PDO数据查询类
@@ -120,18 +122,6 @@ class Query extends BaseQuery
         }
 
         return $this;
-    }
-
-    /**
-     * 批处理执行SQL语句
-     * 批处理的指令都认为是execute操作
-     * @access public
-     * @param array $sql SQL批处理指令
-     * @return bool
-     */
-    public function batchQuery(array $sql = []): bool
-    {
-        return $this->connection->batchQuery($this, $sql);
     }
 
     /**
@@ -271,7 +261,7 @@ class Query extends BaseQuery
      * @access public
      * @param bool $sub 是否添加括号
      * @return string
-     * @throws Exception
+     * @throws DbException
      */
     public function buildSql(bool $sub = true): string
     {
@@ -365,7 +355,7 @@ class Query extends BaseQuery
      */
     public function getPdo(): PDOStatement
     {
-        return $this->connection->pdo($this);
+        return $this->connection->getPDOStatement();
     }
 
     /**
@@ -396,7 +386,7 @@ class Query extends BaseQuery
      * @param string|array $column   分批处理的字段名
      * @param string       $order    字段排序
      * @return bool
-     * @throws Exception
+     * @throws DbException
      */
     public function chunk(int $count, callable $callback, $column = null, string $order = 'asc'): bool
     {

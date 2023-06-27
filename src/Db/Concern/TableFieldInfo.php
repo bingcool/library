@@ -13,14 +13,19 @@ namespace Common\Library\Db\Concern;
 
 trait TableFieldInfo
 {
+    /**
+     * @var array
+     */
+    protected $_schemaInfo  = [];
+
 
     /**
      * @return array
      */
-    protected function getSchemaInfo(): array
+    protected function getSchema(): array
     {
         if (empty($this->_schemaInfo)) {
-            $table = $this->table ? $this->table . $this->_suffix : $this->table;
+            $table = $this->getTableName();
             $schemaInfo = $this->getConnection()->getSchemaInfo($table);
             $this->_schemaInfo = $schemaInfo;
         }
@@ -57,7 +62,7 @@ trait TableFieldInfo
      */
     protected function getFieldType(?string $field = null)
     {
-        $schemaInfo = $this->getSchemaInfo();
+        $schemaInfo = $this->getSchema();
         if ($field) {
             return $schemaInfo['type'][$field] ?? null;
         }
@@ -65,14 +70,24 @@ trait TableFieldInfo
     }
 
     /**
+     * 获取字段类型信息
+     * @access public
+     * @return array
+     */
+    public function getFieldsBindType(): array
+    {
+        $fieldType = $this->getFieldType();
+        return array_map([$this->connection, 'getFieldBindType'], $fieldType);
+    }
+
+    /**
      * 获取字段绑定的类型信息
      * @access public
-     * @param string $field 字段名
+     * @param string $fieldType 字段名
      * @return int
      */
-    protected function getFieldBindType(string $field): int
+    protected function getFieldBindType(string $fieldType): int
     {
-        $fieldType = $this->getFieldType($field) ?? null;
         return $this->getConnection()->getFieldBindType($fieldType ?: '');
     }
 

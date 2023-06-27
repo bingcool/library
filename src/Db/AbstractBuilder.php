@@ -13,12 +13,12 @@ namespace Common\Library\Db;
 
 use Closure;
 use PDO;
-use Common\Library\Exception\DbException as Exception;
+use Common\Library\Exception\DbException;
 
 /**
  * Db Builder
  */
-abstract class Builder
+abstract class AbstractBuilder
 {
     /**
      * Connection对象
@@ -161,7 +161,7 @@ abstract class Builder
                 $result[$item . '->' . $name] = 'json_set(' . $item . ', \'$.' . $name . '\', ' . $this->parseDataBind($query, $key . '->' . $name, $val, $bind) . ')';
             } elseif (false === strpos($key, '.') && !in_array($key, $fields, true)) {
                 if ($options['strict']) {
-                    throw new Exception('fields not exists:[' . $key . ']');
+                    throw new DbException('fields not exists:[' . $key . ']');
                 }
             } elseif (is_null($val)) {
                 $result[$item] = 'NULL';
@@ -360,14 +360,14 @@ abstract class Builder
 
             if (is_array($value)) {
                 if (key($value) !== 0) {
-                    throw new Exception('where express error:' . var_export($value, true));
+                    throw new DbException('where express error:' . var_export($value, true));
                 }
                 $field = array_shift($value);
             } elseif (true === $value) {
                 $where[] = ' ' . $logic . ' 1 ';
                 continue;
             } elseif (!($value instanceof Closure)) {
-                throw new Exception('where express error:' . var_export($value, true));
+                throw new DbException('where express error:' . var_export($value, true));
             }
 
             if ($value instanceof Closure) {
@@ -498,7 +498,7 @@ abstract class Builder
 
         // 检测操作符
         if (!is_string($exp)) {
-            throw new Exception('where express error:' . var_export($exp, true));
+            throw new DbException('where express error:' . var_export($exp, true));
         }
 
         $exp = strtoupper($exp);
@@ -534,7 +534,7 @@ abstract class Builder
             }
         }
 
-        throw new Exception('where express error:' . $exp);
+        throw new DbException('where express error:' . $exp);
     }
 
     /**
@@ -601,7 +601,7 @@ abstract class Builder
         [$op, $field] = $value;
 
         if (!in_array(trim($op), ['=', '<>', '>', '>=', '<', '<='])) {
-            throw new Exception('where express error:' . var_export($value, true));
+            throw new DbException('where express error:' . var_export($value, true));
         }
 
         return '( ' . $key . ' ' . $op . ' ' . $this->parseKey($query, $field, true) . ' )';
@@ -665,7 +665,7 @@ abstract class Builder
         } elseif ($value instanceof Raw) {
             $value = $this->parseRaw($query, $value);
         } else {
-            throw new Exception('where express error:' . $value);
+            throw new DbException('where express error:' . $value);
         }
 
         return $exp . ' ( ' . $value . ' )';
@@ -701,7 +701,7 @@ abstract class Builder
     protected function parseCompare(Query $query, string $key, string $exp, $value, $field, int $bindType): string
     {
         if (is_array($value)) {
-            throw new Exception('where express error:' . $exp . var_export($value, true));
+            throw new DbException('where express error:' . $exp . var_export($value, true));
         }
 
         // 比较运算
@@ -921,7 +921,7 @@ abstract class Builder
                     $sort    = in_array($sort, ['ASC', 'DESC'], true) ? ' ' . $sort : '';
                     $array[] = $this->parseKey($query, $key, true) . $sort;
                 } else {
-                    throw new Exception('order express error:' . $key);
+                    throw new DbException('order express error:' . $key);
                 }
             }
         }
@@ -1221,53 +1221,6 @@ abstract class Builder
 
         foreach ($insertFields as $field) {
             $fields[] = $this->parseKey($query, $field);
-        }
-
-        return str_replace(
-            ['%INSERT%', '%TABLE%', '%EXTRA%', '%FIELD%', '%DATA%', '%COMMENT%'],
-            [
-                !empty($options['replace']) ? 'REPLACE' : 'INSERT',
-                $this->parseTable($query, $options['table']),
-                $this->parseExtra($query, $options['extra']),
-                implode(' , ', $fields),
-                implode(' UNION ALL ', $values),
-                $this->parseComment($query, $options['comment']),
-            ],
-            $this->insertAllSql
-        );
-    }
-
-    /**
-     * 生成insertall SQL
-     * @access public
-     * @param  Query $query 查询对象
-     * @param  array $keys  字段名
-     * @param  array $datas 数据
-     * @return string
-     */
-    public function insertAllByKeys(Query $query, array $keys, array $datas): string
-    {
-        $options = $query->getOptions();
-
-        // 获取绑定信息
-        $bind   = $query->getFieldsBindType();
-        $fields = [];
-        $values = [];
-
-        foreach ($keys as $field) {
-            $fields[] = $this->parseKey($query, $field);
-        }
-
-        foreach ($datas as $data) {
-            foreach ($data as $key => &$val) {
-                if (!$query->isAutoBind()) {
-                    $val = PDO::PARAM_STR == $bind[$keys[$key]] ? '\'' . $val . '\'' : $val;
-                } else {
-                    $val = $this->parseDataBind($query, $keys[$key], $val, $bind);
-                }
-            }
-
-            $values[] = 'SELECT ' . implode(',', $data);
         }
 
         return str_replace(

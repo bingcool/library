@@ -11,30 +11,22 @@
 
 namespace Common\Library\Db;
 
-use think\Collection;
-use think\db\exception\DataNotFoundException;
-use think\db\exception\DbException as Exception;
-use think\db\exception\ModelNotFoundException;
-
+use Common\Library\Db\Collection;
 use Common\Library\Db\Helper\Str;
+use Common\Library\Db\Concern;
 
-use think\Model;
-
+use Common\Library\Exception\DbException;
 /**
  * 数据查询基础类
  */
 abstract class BaseQuery
 {
-    use concern\TimeFieldQuery;
-    use concern\AggregateQuery;
-    use concern\ModelRelationQuery;
-    use concern\ResultOperation;
-    use concern\Transaction;
-    use concern\WhereQuery;
+    use Concern\WhereQuery;
+    use Concern\ResultOperation;
 
     /**
      * 当前数据库连接对象
-     * @var Connection
+     * @var PDOConnection
      */
     protected $connection;
 
@@ -67,6 +59,10 @@ abstract class BaseQuery
      * @var array
      */
     protected $options = [];
+    /**
+     * @var \Common\Library\Db\AbstractBuilder
+     */
+    protected $builder;
 
     /**
      * 架构函数
@@ -78,6 +74,33 @@ abstract class BaseQuery
         $this->connection = $connection;
 
         $this->prefix = $this->connection->getConfig('prefix');
+
+        $class = $this->parseBuilderClass();
+        $this->builder = new $class($connection);
+    }
+
+    /**
+     * @return AbstractBuilder
+     */
+    public function getBuilder(): AbstractBuilder
+    {
+        return $this->builder;
+    }
+
+    /**
+     * @return mixed|string
+     */
+    protected function parseBuilderClass()
+    {
+        $config = $this->connection->getConfig('type');
+        $type = !empty($config['type']) ? $config['type'] : 'mysql';
+        if (false !== strpos($type, '\\')) {
+            $class = $type;
+        } else {
+            $class = '\\Common\\Library\\Db\\Builder\\' . ucfirst($type);
+        }
+
+        return $class;
     }
 
     /**
@@ -86,7 +109,7 @@ abstract class BaseQuery
      * @param string $method 方法名称
      * @param array  $args   调用参数
      * @return mixed
-     * @throws Exception
+     * @throws DbException
      */
     public function __call(string $method, array $args)
     {
@@ -107,7 +130,7 @@ abstract class BaseQuery
             array_unshift($args, $name);
             return call_user_func_array([$this, 'where'], $args);
         } else {
-            throw new Exception('method not exist:' . static::class . '->' . $method);
+            throw new DbException('method not exist:' . static::class . '->' . $method);
         }
     }
 
@@ -195,6 +218,14 @@ abstract class BaseQuery
         $name = $name ?: $this->name;
 
         return $this->prefix . Str::snake($name);
+    }
+
+    /**
+     * @return mixed|string
+     */
+    public function getTableName()
+    {
+        return $this->getTable();
     }
 
     /**
@@ -566,79 +597,6 @@ abstract class BaseQuery
         return $this;
     }
 
-
-
-
-    /**
-     * 查询缓存 数据为空不缓存
-     * @access public
-     * @param mixed             $key    缓存key
-     * @param integer|\DateTime $expire 缓存有效期
-     * @param string|array      $tag    缓存标签
-     * @return $this
-     */
-    public function cache($key = true, $expire = null, $tag = null)
-    {
-        if (false === $key || !$this->getConnection()->getCache()) {
-            return $this;
-        }
-
-        if ($key instanceof \DateTimeInterface || $key instanceof \DateInterval || (is_int($key) && is_null($expire))) {
-            $expire = $key;
-            $key    = true;
-        }
-
-        $this->options['cache']     = [$key, $expire, $tag ?: $this->getTable()];
-
-        return $this;
-    }
-
-    /**
-     * 查询缓存 允许缓存空数据
-     * @access public
-     * @param mixed             $key    缓存key
-     * @param integer|\DateTime $expire 缓存有效期
-     * @param string|array      $tag    缓存标签
-     * @return $this
-     */
-    public function cacheAlways($key = true, $expire = null, $tag = null)
-    {
-        $this->options['cache_always'] = true;
-        return $this->cache($key, $expire, $tag);
-    }
-
-    /**
-     * 强制更新缓存
-     *
-     * @param mixed         $key    缓存key
-     * @param int|\DateTime $expire 缓存有效期
-     * @param string|array  $tag    缓存标签
-     *
-     * @return $this
-     */
-    public function cacheForce($key = true, $expire = null, $tag = null)
-    {
-        $this->options['force_cache'] = true;
-        return $this->cache($key, $expire, $tag);
-    }
-
-    /**
-     * 指定查询lock
-     * @access public
-     * @param bool|string $lock 是否lock
-     * @return $this
-     */
-    public function lock($lock = false)
-    {
-        $this->options['lock'] = $lock;
-
-        if ($lock) {
-            $this->options['master'] = true;
-        }
-
-        return $this;
-    }
-
     /**
      * 指定数据表别名
      * @access public
@@ -658,17 +616,6 @@ abstract class BaseQuery
         return $this;
     }
 
-    /**
-     * 设置从主服务器读取数据
-     * @access public
-     * @param bool $readMaster 是否从主服务器读取
-     * @return $this
-     */
-    public function master(bool $readMaster = true)
-    {
-        $this->options['master'] = $readMaster;
-        return $this;
-    }
 
     /**
      * 设置是否严格检查字段名
@@ -805,13 +752,22 @@ abstract class BaseQuery
      * @param boolean $getLastInsID 返回自增主键
      * @return integer|string
      */
-    public function insert(array $data = [], bool $getLastInsID = false)
+    public function insert(array $data = [], bool $getLastInsID = true)
     {
         if (!empty($data)) {
             $this->options['data'] = $data;
         }
 
-        return $this->connection->insert($this, $getLastInsID);
+        $this->parseOptions();
+        $sql = $this->builder->insert($this);
+        $bindParams = $this->getBind();
+        $this->connection->createCommand($sql)->insert($bindParams);
+
+        if ($getLastInsID) {
+            $lastInsID = $this->connection->getLastInsID();
+        }
+
+        return $lastInsID ?? '';
     }
 
     /**
@@ -842,24 +798,43 @@ abstract class BaseQuery
             $limit = (int) $this->options['limit'];
         }
 
-        return $this->connection->insertAll($this, $dataSet, $limit);
-    }
+        $this->parseOptions();
 
-    /**
-     * 批量插入记录
-     * @access public
-     * @param array   $keys 键值
-     * @param array   $values 数据
-     * @param integer $limit   每次写入数据限制
-     * @return integer
-     */
-    public function insertAllByKeys(array $keys, array $values, int $limit = 0): int
-    {
-        if (empty($limit) && !empty($this->options['limit']) && is_numeric($this->options['limit'])) {
-            $limit = (int) $this->options['limit'];
+        if (!is_array(reset($dataSet))) {
+            return 0;
         }
 
-        return $this->connection->insertAllByKeys($this, $keys, $values, $limit);
+        if (0 === $limit && count($dataSet) >= 5000) {
+            $limit = 1000;
+        }
+
+        if ($limit) {
+            // 分批写入 自动启动事务支持
+            $this->connection->beginTransaction();
+
+            try {
+                $array = array_chunk($dataSet, $limit, true);
+                $count = 0;
+
+                foreach ($array as $item) {
+                    $sql = $this->builder->insertAll($this, $item);
+                    $bindParams = $this->getBind();
+                    $count += $this->connection->createCommand($sql)->execute($sql, $bindParams);
+                }
+
+                // 提交事务
+                $this->connection->commit();
+            } catch (\Exception | \Throwable $e) {
+                $this->connection->rollback();
+                throw $e;
+            }
+
+            return $count;
+        }
+
+        $sql = $this->builder->insertAll($this, $dataSet);
+        $bindParams = $this->getBind();
+        return $this->connection->createCommand($sql)->execute($sql, $bindParams);
     }
 
     /**
@@ -871,7 +846,10 @@ abstract class BaseQuery
      */
     public function selectInsert(array $fields, string $table): int
     {
-        return $this->connection->selectInsert($this, $fields, $table);
+        $this->parseOptions();
+        $sql = $this->builder->selectInsert($this, $fields, $table);
+        $bindParams = $this->getBind();
+        return $this->connection->createCommand($sql)->execute($sql, $bindParams);
     }
 
     /**
@@ -879,7 +857,7 @@ abstract class BaseQuery
      * @access public
      * @param mixed $data 数据
      * @return integer
-     * @throws Exception
+     * @throws DbException
      */
     public function update(array $data = []): int
     {
@@ -891,16 +869,15 @@ abstract class BaseQuery
             $this->parseUpdateData($this->options['data']);
         }
 
-        if (empty($this->options['where']) && $this->model) {
-            $this->where($this->model->getWhere());
-        }
-
         if (empty($this->options['where'])) {
             // 如果没有任何更新条件则不执行
-            throw new Exception('miss update condition');
+            throw new DbException('miss update condition');
         }
 
-        return $this->connection->update($this);
+        $this->parseOptions();
+        $sql = $this->builder->update($this);
+        $bindParams = $this->getBind();
+        return $this->connection->createCommand($sql)->update($bindParams);
     }
 
     /**
@@ -908,7 +885,7 @@ abstract class BaseQuery
      * @access public
      * @param mixed $data 表达式 true 表示强制删除
      * @return int
-     * @throws Exception
+     * @throws DbException
      */
     public function delete($data = null): int
     {
@@ -917,13 +894,9 @@ abstract class BaseQuery
             $this->parsePkWhere($data);
         }
 
-        if (empty($this->options['where']) && $this->model) {
-            $this->where($this->model->getWhere());
-        }
-
         if (true !== $data && empty($this->options['where'])) {
             // 如果条件为空 不进行删除操作 除非设置 1=1
-            throw new Exception('delete without condition');
+            throw new DbException('delete without condition');
         }
 
         if (!empty($this->options['soft_delete'])) {
@@ -933,13 +906,18 @@ abstract class BaseQuery
                 unset($this->options['soft_delete']);
                 $this->options['data'] = [$field => $condition];
 
-                return $this->connection->update($this);
+                $this->parseOptions();
+                $sql = $this->builder->update($this);
+                $bindParams = $this->getBind();
+                return $this->connection->createCommand($sql)->update($bindParams);
             }
         }
 
         $this->options['data'] = $data;
-
-        return $this->connection->delete($this);
+        $this->parseOptions();
+        $sql = $this->builder->delete($this);
+        $bindParams = $this->getBind();
+        return $this->connection->createCommand($sql)->delete($bindParams);
     }
 
     /**
@@ -947,9 +925,7 @@ abstract class BaseQuery
      * @access public
      * @param mixed $data 数据
      * @return Collection|array|static[]
-     * @throws Exception
-     * @throws ModelNotFoundException
-     * @throws DataNotFoundException
+     * @throws DbException
      */
     public function select($data = null): Collection
     {
@@ -958,22 +934,18 @@ abstract class BaseQuery
             $this->parsePkWhere($data);
         }
 
-        $resultSet = $this->connection->select($this);
+        $this->parseOptions();
+        $sql = $this->builder->select($this);
+        $bindParams = $this->getBind();
+
+        $resultSet = $this->connection->query($sql, $bindParams);
 
         // 返回结果处理
         if (!empty($this->options['fail']) && count($resultSet) == 0) {
             $this->throwNotFound();
         }
 
-        // 数据列表读取后的处理
-        if (!empty($this->model)) {
-            // 生成模型对象
-            $resultSet = $this->resultSetToModelCollection($resultSet);
-        } else {
-            $this->resultSet($resultSet);
-        }
-
-        return $resultSet;
+        return new Collection($resultSet);
     }
 
     /**
@@ -981,9 +953,6 @@ abstract class BaseQuery
      * @access public
      * @param mixed $data 查询数据
      * @return array|Model|null|static|mixed
-     * @throws Exception
-     * @throws ModelNotFoundException
-     * @throws DataNotFoundException
      */
     public function find($data = null)
     {
@@ -995,19 +964,11 @@ abstract class BaseQuery
         if (empty($this->options['where']) && empty($this->options['order'])) {
             $result = [];
         } else {
-            $result = $this->connection->find($this);
-        }
-
-        // 数据处理
-        if (empty($result)) {
-            return $this->resultToEmpty();
-        }
-
-        if (!empty($this->model)) {
-            // 返回模型对象
-            $this->resultToModel($result);
-        } else {
-            $this->result($result);
+            $this->parseOptions();
+            $sql = $this->builder->select($this);
+            $bindParams = $this->getBind();
+            $resultSet = $this->connection->query($sql, $bindParams);
+            $result = $resultSet[0] ?? [];
         }
 
         return $result;
@@ -1075,7 +1036,7 @@ abstract class BaseQuery
      * @access public
      * @param array $data 数据
      * @return bool
-     * @throws Exception
+     * @throws DbException
      */
     public function parseUpdateData(&$data): bool
     {
@@ -1094,7 +1055,7 @@ abstract class BaseQuery
                     $isUpdate = true;
                 } else {
                     // 如果缺少复合主键数据则不执行
-                    throw new Exception('miss complex primary data');
+                    throw new DbException('miss complex primary data');
                 }
                 unset($data[$field]);
             }
@@ -1108,7 +1069,7 @@ abstract class BaseQuery
      * @access public
      * @param array|string $data 主键数据
      * @return void
-     * @throws Exception
+     * @throws DbException
      */
     public function parsePkWhere($data): void
     {

@@ -24,7 +24,6 @@ abstract class Model implements ArrayAccess
     use Concern\ModelEvent;
     use Concern\Expression;
     use Concern\ParseSql;
-    use Concern\TableFieldInfo;
     use Concern\TimeStamp;
     use Concern\Util;
 
@@ -275,6 +274,20 @@ abstract class Model implements ArrayAccess
     public function getTableName(): string
     {
         return $this->table;
+    }
+
+    /**
+     * @return array
+     */
+    protected function getSchemaInfo(): array
+    {
+        if (empty($this->_schemaInfo)) {
+            $table = $this->table ? $this->table . $this->_suffix : $this->table;
+            $schemaInfo = $this->getConnection()->getSchemaInfo($table);
+            $this->_schemaInfo = $schemaInfo;
+        }
+
+        return $this->_schemaInfo;
     }
 
     /**

@@ -24,7 +24,6 @@ abstract class Model implements ArrayAccess
     use Concern\ModelEvent;
     use Concern\Expression;
     use Concern\ParseSql;
-    use Concern\TableFieldInfo;
     use Concern\TimeStamp;
     use Concern\Util;
 
@@ -275,6 +274,33 @@ abstract class Model implements ArrayAccess
     public function getTableName(): string
     {
         return $this->table;
+    }
+
+    /**
+     * @return BaseQuery
+     */
+    public function newQuery(): BaseQuery
+    {
+        if (method_exists($this->getConnection(), 'getObject')) {
+            $query = new Query($this->getConnection()->getObject());
+        }else {
+            $query = new Query($this->getConnection());
+        }
+        return $query;
+    }
+
+    /**
+     * @return array
+     */
+    protected function getSchemaInfo(): array
+    {
+        if (empty($this->_schemaInfo)) {
+            $table = $this->table ? $this->table . $this->_suffix : $this->table;
+            $schemaInfo = $this->getConnection()->getSchemaInfo($table);
+            $this->_schemaInfo = $schemaInfo;
+        }
+
+        return $this->_schemaInfo;
     }
 
     /**
@@ -912,7 +938,7 @@ abstract class Model implements ArrayAccess
     }
 
     // ArrayAccess
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         $this->setAttribute($offset, $value);
     }
@@ -929,7 +955,7 @@ abstract class Model implements ArrayAccess
     /**
      * @param mixed $offset
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         $this->__unset($offset);
     }

@@ -294,6 +294,14 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * @return PDOConnection
+     */
+    public function getConnection()
+    {
+        return $this;
+    }
+
+    /**
      * 创建PDO实例
      * @param $dsn
      * @param $username
@@ -414,10 +422,10 @@ abstract class PDOConnection implements ConnectionInterface
      * @param array $bindParams
      * @return array
      */
-    public function query(string $sql, array $bindParams = []): array
+    public function query(string $sql, array $bindParams = [], $fetchType = ''): array
     {
         $this->PDOStatementHandle($sql, $bindParams);
-        return $this->getResult() ?? [];
+        return $this->getResult($fetchType) ?? [];
     }
 
     /**
@@ -608,56 +616,16 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
-     * @param array $bindParams
-     */
-    public function count(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
-     * @param array $bindParams
-     * @return array
-     */
-    public function max(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
-     * @param array $bindParams
-     * @return array
-     */
-    public function min(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
-     * @param array $bindParams
-     * @return array
-     */
-    public function avg(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
-     * @param array $bindParams
-     * @return array
-     */
-    public function sum(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
      * 获得数据集数组
      * @return array
      */
-    protected function getResult(): array
+    protected function getResult($fetchType): array
     {
-        $result = $this->PDOStatement->fetchAll($this->fetchType);
+        if (empty($fetchType)) {
+            $fetchType = $this->fetchType;
+        }
+
+        $result = $this->PDOStatement->fetchAll($fetchType);
 
         $this->numRows = count($result);
 
@@ -701,14 +669,40 @@ abstract class PDOConnection implements ConnectionInterface
 
     /**
      * 获取数据表信息
-     * @param string $tableName 数据表名
+     * @param mixed $tableName 数据表名
      * @param string $fetch 获取信息类型 值包括 fields type bind pk
      * @return mixed
      */
-    public function getTableInfo(string $tableName, string $fetch = '')
+    public function getTableInfo($tableName, string $fetch = '')
     {
+        $tableName = $this->parseTableName($tableName);
+
+        if (empty($tableName)) {
+            return [];
+        }
+
         $info = $this->getSchemaInfo($tableName);
         return $fetch ? $info[$fetch] : $info;
+    }
+
+    /**
+     * @param $tableName
+     * @return mixed
+     */
+    public function parseTableName($tableName)
+    {
+        if (is_array($tableName)) {
+            $tableName = key($tableName) ?: current($tableName);
+        }
+
+        if (strpos($tableName, ',') || strpos($tableName, ')')) {
+            // 多表不获取字段信息
+            return [];
+        }
+
+        [$tableName] = explode(' ', $tableName);
+
+        return $tableName;
     }
 
     /**
@@ -749,9 +743,20 @@ abstract class PDOConnection implements ConnectionInterface
      * @param mixed $tableName 数据表名
      * @return string
      */
-    public function getAutoInc(string $tableName): string
+    public function getAutoInc($tableName): string
     {
         return $this->getTableInfo($tableName, 'autoinc');
+    }
+
+    /**
+     * 获取数据表的主键
+     * @access public
+     * @param mixed $tableName 数据表名
+     * @return string|array
+     */
+    public function getPk($tableName)
+    {
+        return $this->getTableInfo($tableName, 'pk');
     }
 
     /**
@@ -790,6 +795,17 @@ abstract class PDOConnection implements ConnectionInterface
         }
 
         return $this->info[$schema];
+    }
+
+    /**
+     * 获取数据表字段信息
+     * @access public
+     * @param mixed $tableName 数据表名
+     * @return array
+     */
+    public function getTableFields($tableName): array
+    {
+        return $this->getTableInfo($tableName, 'fields');
     }
 
     /**
@@ -1071,6 +1087,52 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * 执行数据库Xa事务
+     * @access public
+     * @param  callable $callback 数据操作方法回调
+     * @param  array    $dbs      多个查询对象或者连接对象
+     * @return mixed
+     * @throws \PDOException
+     * @throws \Exception
+     * @throws \Throwable
+     */
+    public function transactionXa(callable $callback, array $dbs = [])
+    {
+        $xid = uniqid('xa');
+
+        if (empty($dbs)) {
+            $dbs[] = $this;
+        }
+
+        foreach ($dbs as $key => $connection) {
+
+            $connection->startTransXa($connection->getUniqueXid('_' . $xid) );
+        }
+
+        try {
+            $result = null;
+            if (is_callable($callback)) {
+                $result = $callback($this);
+            }
+
+            foreach ($dbs as $connection) {
+                $connection->prepareXa($connection->getUniqueXid('_' . $xid));
+            }
+
+            foreach ($dbs as $connection) {
+                $connection->commitXa($connection->getUniqueXid('_' . $xid) );
+            }
+
+            return $result;
+        } catch (\Exception | \Throwable $e) {
+            foreach ($dbs as $connection) {
+                $connection->rollbackXa($connection->getUniqueXid('_' . $xid) );
+            }
+            throw $e;
+        }
+    }
+
+    /**
      * 启动XA事务
      * @param string $xid XA事务id
      * @return void
@@ -1157,19 +1219,19 @@ abstract class PDOConnection implements ConnectionInterface
     public function getRealSql(string $sql, array $bind = []): string
     {
         foreach ($bind as $key => $val) {
-            $value = is_array($val) ? $val[0] : $val;
-            $type = is_array($val) ? $val[1] : PDO::PARAM_STR;
+            $value = strval(is_array($val) ? $val[0] : $val);
+            $type  = is_array($val) ? $val[1] : PDO::PARAM_STR;
 
-            if ((self::PARAM_FLOAT == $type || PDO::PARAM_STR == $type) && is_string($value)) {
+            if (self::PARAM_FLOAT == $type || PDO::PARAM_STR == $type) {
                 $value = '\'' . addslashes($value) . '\'';
             } elseif (PDO::PARAM_INT == $type && '' === $value) {
-                $value = 0;
+                $value = '0';
             }
 
             // 判断占位符
             $sql = is_numeric($key) ?
                 substr_replace($sql, $value, strpos($sql, '?'), 1) :
-                substr_replace($sql, $value, strpos($sql, $key), strlen($key));
+                substr_replace($sql, $value, strpos($sql, ':' . $key), strlen(':' . $key));
         }
 
         return rtrim($sql);

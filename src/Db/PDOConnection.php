@@ -422,10 +422,10 @@ abstract class PDOConnection implements ConnectionInterface
      * @param array $bindParams
      * @return array
      */
-    public function query(string $sql, array $bindParams = []): array
+    public function query(string $sql, array $bindParams = [], $fetchType = ''): array
     {
         $this->PDOStatementHandle($sql, $bindParams);
-        return $this->getResult() ?? [];
+        return $this->getResult($fetchType) ?? [];
     }
 
     /**
@@ -663,9 +663,14 @@ abstract class PDOConnection implements ConnectionInterface
      * 获得数据集数组
      * @return array
      */
-    protected function getResult(): array
+    protected function getResult($fetchType): array
     {
-        $result = $this->PDOStatement->fetchAll($this->fetchType);
+
+        if (empty($fetchType)) {
+            $fetchType = $this->fetchType;
+        }
+
+        $result = $this->PDOStatement->fetchAll($fetchType);
 
         $this->numRows = count($result);
 
@@ -1123,6 +1128,52 @@ abstract class PDOConnection implements ConnectionInterface
     public function afterRollbackCallback(?callable $callback = null) {
         if(is_callable($callback)) {
             $this->afterRollBackCallbacks[] = $callback;
+        }
+    }
+
+    /**
+     * 执行数据库Xa事务
+     * @access public
+     * @param  callable $callback 数据操作方法回调
+     * @param  array    $dbs      多个查询对象或者连接对象
+     * @return mixed
+     * @throws \PDOException
+     * @throws \Exception
+     * @throws \Throwable
+     */
+    public function transactionXa(callable $callback, array $dbs = [])
+    {
+        $xid = uniqid('xa');
+
+        if (empty($dbs)) {
+            $dbs[] = $this;
+        }
+
+        foreach ($dbs as $key => $connection) {
+
+            $connection->startTransXa($connection->getUniqueXid('_' . $xid) );
+        }
+
+        try {
+            $result = null;
+            if (is_callable($callback)) {
+                $result = $callback($this);
+            }
+
+            foreach ($dbs as $connection) {
+                $connection->prepareXa($connection->getUniqueXid('_' . $xid));
+            }
+
+            foreach ($dbs as $connection) {
+                $connection->commitXa($connection->getUniqueXid('_' . $xid) );
+            }
+
+            return $result;
+        } catch (\Exception | \Throwable $e) {
+            foreach ($dbs as $connection) {
+                $connection->rollbackXa($connection->getUniqueXid('_' . $xid) );
+            }
+            throw $e;
         }
     }
 

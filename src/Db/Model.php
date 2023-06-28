@@ -277,6 +277,15 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * @return BaseQuery
+     */
+    public function getQuery(): BaseQuery
+    {
+        $query = new Query($this->getConnection()->getObject());
+        return $query;
+    }
+
+    /**
      * @return array
      */
     protected function getSchemaInfo(): array

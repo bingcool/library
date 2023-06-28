@@ -21,7 +21,10 @@ use Common\Library\Exception\DbException;
 
 abstract class BaseQuery
 {
+
     use Concern\WhereQuery;
+    use Concern\AggregateQuery;
+    use Concern\Transaction;
     use Concern\ResultOperation;
 
     /**
@@ -274,20 +277,115 @@ abstract class BaseQuery
      */
     public function value(string $field, $default = null)
     {
+        $options = $this->parseOptions();
 
+        if (isset($options['field'])) {
+            $this->removeOption('field');
+        }
+
+        if (isset($options['group'])) {
+            $this->group('');
+        }
+
+        $this->setOption('field', (array) $field);
+
+        // 生成查询SQL
+        $sql = $this->builder->select($this, true);
+
+        if (isset($options['field'])) {
+            $this->setOption('field', $options['field']);
+        } else {
+            $this->removeOption('field');
+        }
+
+        if (isset($options['group'])) {
+            $this->setOption('group', $options['group']);
+        }
+
+        $result = $this->connection->PDOStatementHandle($sql, $this->getBind())->fetchColumn();
+
+       return (false !== $result) ? $result : $default;
     }
 
     /**
      * 得到某个列的数组
      * @access public
-     * @param string|array $field 字段名 多个字段用逗号分隔
+     * @param string|array $column 字段名 多个字段用逗号分隔
      * @param string       $key   索引
      * @return array
      */
-    public function column($field, string $key = ''): array
+    public function column($column, string $key = ''): array
     {
-       //todo
-        return [];
+        $options = $this->parseOptions();
+
+        if (isset($options['field'])) {
+            $this->removeOption('field');
+        }
+
+        if (empty($key) || trim($key) === '') {
+            $key = null;
+        }
+
+        if (is_string($column)) {
+            $column = trim($column);
+            if ('*' !== $column) {
+                $column = array_map('trim', explode(',', $column));
+            }
+        } elseif (is_array($column)) {
+            if (in_array('*', $column)) {
+                $column = '*';
+            }
+        } else {
+            throw new DbException('not support type');
+        }
+
+        $field = $column;
+        if ('*' !== $column && $key && !in_array($key, $column)) {
+            $field[] = $key;
+        }
+
+        $this->setOption('field', $field);
+
+        // 生成查询SQL
+        $sql = $this->builder->select($this);
+
+        if (isset($options['field'])) {
+            $this->setOption('field', $options['field']);
+        } else {
+            $this->removeOption('field');
+        }
+
+        // 执行查询操作
+        $resultSet = $this->connection->query($sql, $this->getBind(), \PDO::FETCH_ASSOC);
+
+        if (is_string($key) && strpos($key, '.')) {
+            [$alias, $key] = explode('.', $key);
+        }
+
+        if (empty($resultSet)) {
+            $result = [];
+        } elseif ('*' !== $column && count($column) === 1) {
+            $column = array_shift($column);
+            if (strpos($column, ' ')) {
+                $column = substr(strrchr(trim($column), ' '), 1);
+            }
+
+            if (strpos($column, '.')) {
+                [$alias, $column] = explode('.', $column);
+            }
+
+            if (strpos($column, '->')) {
+                $column = $this->builder->parseKey($query, $column);
+            }
+
+            $result = array_column($resultSet, $column, $key);
+        } elseif ($key) {
+            $result = array_column($resultSet, null, $key);
+        } else {
+            $result = $resultSet;
+        }
+
+        return $result;
     }
 
     /**

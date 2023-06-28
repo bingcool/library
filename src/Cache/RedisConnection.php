@@ -39,6 +39,14 @@ class RedisConnection
     const MAX_SPEND_LOG_NUM = 50;
 
     /**
+     * @return RedisConnection
+     */
+    public function getConnection()
+    {
+        return $this;
+    }
+
+    /**
      * @param string $method
      * @param mixed $arguments
      * @param string $errorMsg

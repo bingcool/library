@@ -39,7 +39,7 @@ trait Transaction
      * @access public
      * @return void
      */
-    public function startTrans(): void
+    public function beginTransaction(): void
     {
         $this->getConnection()->beginTransaction();
     }

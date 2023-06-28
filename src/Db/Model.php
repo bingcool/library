@@ -279,9 +279,13 @@ abstract class Model implements ArrayAccess
     /**
      * @return BaseQuery
      */
-    public function getQuery(): BaseQuery
+    public function newQuery(): BaseQuery
     {
-        $query = new Query($this->getConnection()->getObject());
+        if (method_exists($this->getConnection(), 'getObject')) {
+            $query = new Query($this->getConnection()->getObject());
+        }else {
+            $query = new Query($this->getConnection());
+        }
         return $query;
     }
 

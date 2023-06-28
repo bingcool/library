@@ -616,56 +616,11 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
-     * @param array $bindParams
-     */
-    public function count(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
-     * @param array $bindParams
-     * @return array
-     */
-    public function max(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
-     * @param array $bindParams
-     * @return array
-     */
-    public function min(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
-     * @param array $bindParams
-     * @return array
-     */
-    public function avg(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
-     * @param array $bindParams
-     * @return array
-     */
-    public function sum(array $bindParams = [])
-    {
-        return $this->queryScalar($bindParams);
-    }
-
-    /**
      * 获得数据集数组
      * @return array
      */
     protected function getResult($fetchType): array
     {
-
         if (empty($fetchType)) {
             $fetchType = $this->fetchType;
         }

@@ -1069,6 +1069,29 @@ abstract class BaseQuery
     }
 
     /**
+     * 原生chax
+     *
+     * @param string $sql
+     * @param array $bindParams
+     * @return array
+     */
+    public function query(string $sql, array $bindParams = []): array
+    {
+        $result = $this->connection->query($sql, $bindParams, \Pdo::FETCH_ASSOC);
+        return $result;
+    }
+
+    /**
+     * @param string $sql
+     * @param array $bindParams
+     * @return int
+     */
+    public function execute(string $sql, array $bindParams = []): int
+    {
+        return $this->connection->execute($sql, $bindParams);
+    }
+
+    /**
      * 分析表达式（可用于查询或者写入操作）
      * @access public
      * @return array

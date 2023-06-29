@@ -26,10 +26,10 @@ interface ConnectionInterface
 
     /**
      * 获取数据库的配置参数
-     * @param string $config 配置名称
+     * @param string $name 配置名称
      * @return mixed
      */
-    public function getConfig(string $config = '');
+    public function getConfig(string $name = '');
 
     /**
      * 关闭数据库

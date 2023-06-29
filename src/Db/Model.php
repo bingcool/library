@@ -938,6 +938,7 @@ abstract class Model implements ArrayAccess
     }
 
     // ArrayAccess
+    #[\ReturnTypeWillChange]
     public function offsetSet($offset, $value): void
     {
         $this->setAttribute($offset, $value);
@@ -947,6 +948,7 @@ abstract class Model implements ArrayAccess
      * @param mixed $offset
      * @return bool
      */
+    #[\ReturnTypeWillChange]
     public function offsetExists($offset): bool
     {
         return $this->__isset($offset);
@@ -955,6 +957,7 @@ abstract class Model implements ArrayAccess
     /**
      * @param mixed $offset
      */
+    #[\ReturnTypeWillChange]
     public function offsetUnset($offset): void
     {
         $this->__unset($offset);
@@ -964,6 +967,7 @@ abstract class Model implements ArrayAccess
      * @param mixed $offset
      * @return mixed
      */
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         return $this->getAttribute($offset);

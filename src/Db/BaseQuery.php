@@ -373,7 +373,7 @@ abstract class BaseQuery
             }
 
             if (strpos($column, '->')) {
-                $column = $this->builder->parseKey($query, $column);
+                $column = $this->builder->parseKey($this, $column);
             }
 
             $result = array_column($resultSet, $column, $key);

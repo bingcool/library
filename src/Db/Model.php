@@ -961,7 +961,7 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * @param mixed $name
+     * @param mixed $offset
      * @return mixed
      */
     public function offsetGet($offset): mixed

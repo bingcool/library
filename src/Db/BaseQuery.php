@@ -218,8 +218,6 @@ abstract class BaseQuery
             return $this->options['table'];
         }
 
-
-
         $name = $name ?: $this->name;
 
         return $this->prefix . Str::snake($name);
@@ -612,14 +610,16 @@ abstract class BaseQuery
                 $tables = explode(',', $table);
                 $table  = [];
 
-                foreach ($tables as $item) {
-                    $item = trim($item);
-                    if (strpos($item, ' ')) {
-                        [$item, $alias] = explode(' ', $item);
+                foreach ($tables as $tableItem) {
+                    $tableItem = trim($tableItem);
+                    if (stripos($tableItem, ' as ') || strpos($tableItem, ' ')) {
+                        $items = explode(' ', $tableItem);
+                        $item = $items[0];
+                        $alias = array_pop($items);
                         $this->alias([$item => $alias]);
                         $table[$item] = $alias;
                     } else {
-                        $table[] = $item;
+                        $table[] = $tableItem;
                     }
                 }
             }
@@ -1069,7 +1069,7 @@ abstract class BaseQuery
     }
 
     /**
-     * 原生chax
+     * 原生查询
      *
      * @param string $sql
      * @param array $bindParams
@@ -1082,6 +1082,7 @@ abstract class BaseQuery
     }
 
     /**
+     * 原生插入或者更新
      * @param string $sql
      * @param array $bindParams
      * @return int

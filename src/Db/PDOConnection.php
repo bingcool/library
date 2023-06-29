@@ -386,6 +386,17 @@ abstract class PDOConnection implements ConnectionInterface
         return $this->PDOInstance;
     }
 
+    public function cursor(string $sql, array $bindParams, $fetchType = '')
+    {
+        $this->PDOStatementHandle($sql, $bindParams);
+        if (empty($fetchType)) {
+            $fetchType = $this->fetchType;
+        }
+        while ($result = $this->PDOStatement->fetch($fetchType)) {
+            yield $result;
+        }
+    }
+
     /**
      * 参数绑定
      * 支持 [':name'=>'value',':id'=>123] 对应命名占位符
@@ -475,6 +486,14 @@ abstract class PDOConnection implements ConnectionInterface
     {
         $this->queryStr = $sql;
         return $this;
+    }
+
+    /**
+     * @param array $bindParams
+     */
+    public function count(array $bindParams = [])
+    {
+        return $this->queryScalar($bindParams);
     }
 
     /**
@@ -634,7 +653,6 @@ abstract class PDOConnection implements ConnectionInterface
 
     /**
      * 解析pdo连接的dsn信息
-     * @param array $config 连接信息
      * @return string
      */
     abstract protected function parseDsn();

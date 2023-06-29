@@ -375,7 +375,13 @@ class Query extends BaseQuery
 
         $connection = clone $this->connection;
 
-        return $connection->cursor($this);
+        // 分析查询表达式
+        $options = $this->parseOptions();
+
+        // 生成查询SQL
+        $sql = $this->builder->select($this);
+        
+        return $connection->cursor($sql, $this->getBind());
     }
 
     /**

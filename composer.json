@@ -34,6 +34,7 @@
     "phpunit/phpunit": ">=7.2.0"
   },
   "autoload": {
+    "files": ["src/Helper.php"],
     "psr-4": {
       "Common\\Library\\": "src/"
     }

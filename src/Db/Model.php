@@ -17,6 +17,7 @@ use Common\Library\Exception\DbException;
 /**
  * Class Model
  * @package Common\Library\Db
+ * @mixin Query
  */
 abstract class Model implements ArrayAccess
 {
@@ -925,6 +926,22 @@ abstract class Model implements ArrayAccess
         if(in_array($method,['onAfterInsertCommitCallBack', 'onAfterUpdateCommitCallBack','onAfterDeleteCommitCallBack'])) {
             return $this->$method(...$arguments);
         }
+    }
+
+    /**
+     * @param $method
+     * @param $arguments
+     * @return Query
+     */
+    public static function __callStatic($method, $arguments)
+    {
+        $entity = new static();
+        if (method_exists($entity->getConnection(), 'getObject')) {
+            $query = (new Query($entity->getConnection()->getObject()))->table($entity->getTableName())->{$method}(...$arguments);
+        }else {
+            $query = (new Query($entity->getConnection()))->table($entity->getTableName())->{$method}(...$arguments);
+        }
+        return $query;
     }
 
     /**

@@ -11,26 +11,41 @@
 
 namespace Common\Library\Component;
 
-use Common\Library\Db\Collection;
+use Common\Library\Collection;
 
 abstract class ListItemFormatter
 {
+    /**
+     * @var array
+     */
     protected $data;
 
+    /**
+     * @var array
+     */
     protected $listData;
 
+    /**
+     * @var array
+     */
     protected $mapData = [];
 
+    /**
+     * @var bool
+     */
     protected $batchFlag = false;
 
     /**
      * 单个处理
      *
-     * @param $data
+     * @param array|Collection $data
      * @return void
      */
-    public function setData()
+    public function setData($data)
     {
+        if ($data instanceof Collection) {
+            $data = $data->toArray();
+        }
         $this->data = $data;
         $this->batchFlag = false;
     }
@@ -38,7 +53,7 @@ abstract class ListItemFormatter
     /**
      * 列表处理
      *
-     * @param $listData
+     * @param array|Collection $listData
      * @return $this
      */
     public function setListData($listData)
@@ -50,6 +65,14 @@ abstract class ListItemFormatter
         $this->listData = $listData;
         $this->batchFlag = true;
         return $this;
+    }
+
+    /**
+     * @return array
+     */
+    protected function getBuildData(): array
+    {
+        return $this->batchFlag ? $this->listData : [$this->data];
     }
 
     /**
@@ -107,26 +130,24 @@ abstract class ListItemFormatter
     {
         $result = [];
 
-        $this->buildMapData();
+        $this->buildMapData($this->getBuildData());
 
         if (!$this->batchFlag) {
             $data = $this->data;
             $result = $this->format($data);
-            return $result;
-        }
-
-        foreach ($this->listData as $data) {
-            $this->collectResult($result, $this->format($data));
+        }else {
+            foreach ($this->listData as $data) {
+                if ($data instanceof Collection) {
+                    $data = $data->toArray();
+                }
+                $this->collectResult($result, $this->format($data));
+            }
         }
 
         return $result;
     }
-    /**
-     * @return void
-     */
-    protected function buildMapData()
-    {
 
-    }
-    abstract protected function format($data);
+    abstract protected function buildMapData(array $list);
+
+    abstract protected function format(array $data): array;
 }

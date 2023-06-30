@@ -141,7 +141,7 @@ trait Attribute
     }
 
     /**
-     * 获取对象原始数据(原始出表或者对象设置即将如表的数据) 如果不存在指定字段返回false
+     * 获取对象原始数据(原始出表或者对象设置即将入表的数据) 如果不存在指定字段返回null
      * @param string $fieldName 字段名 留空获取全部
      * @return mixed
      */

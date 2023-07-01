@@ -30,6 +30,8 @@ abstract class PDOConnection implements ConnectionInterface
      * @var array
      */
     protected $config = [
+        // 类型
+        'tyee' => 'mysql',
         // 服务器地址
         'hostname' => '',
         // 数据库名
@@ -299,6 +301,14 @@ abstract class PDOConnection implements ConnectionInterface
     public function getConnection()
     {
         return $this;
+    }
+
+    /**
+     * @return Query
+     */
+    public function newQuery(): Query
+    {
+        return new Query($this);
     }
 
     /**

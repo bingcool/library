@@ -12,11 +12,13 @@
 namespace Common\Library\Db;
 
 use ArrayAccess;
+use Common\Library\Component\ListItemFormatter;
 use Common\Library\Exception\DbException;
 
 /**
  * Class Model
  * @package Common\Library\Db
+ * @mixin Query
  */
 abstract class Model implements ArrayAccess
 {
@@ -118,6 +120,11 @@ abstract class Model implements ArrayAccess
      * @var array
      */
     private $_macro = [];
+
+    /**
+     * @var ListItemFormatter
+     */
+    protected $formatter;
 
     /**
      * Model constructor.
@@ -277,9 +284,9 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * @return BaseQuery
+     * @return Query
      */
-    public function newQuery(): BaseQuery
+    public function newQuery(): Query
     {
         if (method_exists($this->getConnection(), 'getObject')) {
             $query = new Query($this->getConnection()->getObject());
@@ -814,10 +821,11 @@ abstract class Model implements ArrayAccess
 
     /**
      * 获取当前对象经过属性的getter函数处理后的业务目标数据
-     * @return array|null
+     * @return array
      */
-    public function getAttributes()
+    public function getAttributes(): array
     {
+        $attributes = [];
         if ($this->_data) {
             foreach ($this->_data as $fieldName => $value) {
                 if (in_array($fieldName, $this->getAllowFields())) {
@@ -827,8 +835,14 @@ abstract class Model implements ArrayAccess
                 }
             }
         }
-        $this->_attributes = $attributes ?? [];
-        return $this->_attributes;
+
+        // formater
+        if (is_object($this->formatter) && $this->formatter instanceof ListItemFormatter) {
+            $this->formatter->setData($attributes);
+            $attributes = $this->formatter->result();
+        }
+
+        return $attributes;
     }
 
     /**
@@ -836,7 +850,7 @@ abstract class Model implements ArrayAccess
      *
      * @return array
      */
-    public function getOldAttributes()
+    public function getOldAttributes(): array
     {
         if ($this->isExists() && $this->_origin) {
             foreach ($this->_origin as $fieldName => $value) {
@@ -907,6 +921,16 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * @param ListItemFormatter $formatter
+     * @return this
+     */
+    public function setFormatter(ListItemFormatter $formatter)
+    {
+        $this->formatter = $formatter;
+        return $this;
+    }
+
+    /**
      * 调用注入绑定的method
      *
      * @param $method
@@ -928,8 +952,24 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * @param $method
+     * @param $arguments
+     * @return Query
+     */
+    public static function __callStatic($method, $arguments)
+    {
+        $entity = new static();
+        if (method_exists($entity->getConnection(), 'getObject')) {
+            $query = (new Query($entity->getConnection()->getObject()))->table($entity->getTableName())->{$method}(...$arguments);
+        }else {
+            $query = (new Query($entity->getConnection()))->table($entity->getTableName())->{$method}(...$arguments);
+        }
+        return $query;
+    }
+
+    /**
      * 销毁数据对象的值
-     * @param string $name 名称
+     * @param string $name
      * @return void
      */
     public function __unset(string $name): void
@@ -975,7 +1015,7 @@ abstract class Model implements ArrayAccess
 
     /**
      * 转换当前模型对象源数据转为JSON字符串
-     * @param integer $options json参数
+     * @param int $options json参数
      * @return string
      */
     public function toJson(int $options = JSON_UNESCAPED_UNICODE): string
@@ -986,7 +1026,7 @@ abstract class Model implements ArrayAccess
     /**
      * @return array
      */
-    public function toArray()
+    public function toArray(): array
     {
         return $this->_data;
     }

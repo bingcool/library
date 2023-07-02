@@ -31,7 +31,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     protected $config = [
         // 类型
-        'tyee' => 'mysql',
+        'type' => 'mysql',
         // 服务器地址
         'hostname' => '',
         // 数据库名
@@ -232,10 +232,9 @@ abstract class PDOConnection implements ConnectionInterface
      * @param bool $isDebug
      * @return void
      */
-    public function setDebug(bool $isDebug)
+    public function setDebug(bool $isDebug = true)
     {
-        $this->debug = (int)$isDebug;
-        $this->config['debug'] = $this->debug;
+        $this->debug = (int) $isDebug;
     }
 
     /**
@@ -256,7 +255,6 @@ abstract class PDOConnection implements ConnectionInterface
 
         $this->config = array_merge($this->config, $config);
         $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
-        $this->debug = (int)$this->config['debug'] ?? 1;
         if (isset($this->config['params']) && is_array($this->config['params'])) {
             $params = $this->config['params'] + $this->params;
         } else {

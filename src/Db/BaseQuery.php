@@ -1082,6 +1082,16 @@ abstract class BaseQuery
     }
 
     /**
+     * @param bool $debug
+     * @return $this
+     */
+    public function setDebug(bool $debug = true)
+    {
+        $this->connection->setDebug($debug);
+        return $this;
+    }
+
+    /**
      * 原生插入或者更新
      * @param string $sql
      * @param array $bindParams
@@ -1224,5 +1234,14 @@ abstract class BaseQuery
     protected function getModelUpdateCondition(array $options)
     {
         return $options['where']['AND'] ?? null;
+    }
+
+    /**
+     * __destruct
+     */
+    public function __destruct()
+    {
+        $debug = (int) $this->connection->getConfig('debug');
+        $this->connection->setDebug($debug);
     }
 }

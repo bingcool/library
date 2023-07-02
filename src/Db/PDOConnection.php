@@ -1257,9 +1257,15 @@ abstract class PDOConnection implements ConnectionInterface
             }
 
             // 判断占位符
-            $sql = is_numeric($key) ?
-                substr_replace($sql, $value, strpos($sql, '?'), 1) :
-                substr_replace($sql, $value, strpos($sql, ':' . $key), strlen(':' . $key));
+            if (is_numeric($key)) {
+                $sql = substr_replace($sql, $value, strpos($sql, '?'), 1);
+            }else {
+                if (strpos($key,':') === 0) {
+                    $sql = substr_replace($sql, $value, strpos($sql, $key), strlen($key));
+                }else {
+                    $sql = substr_replace($sql, $value, strpos($sql, ':' . $key), strlen(':' . $key));
+                }
+            }
         }
 
         return rtrim($sql);

@@ -922,7 +922,7 @@ abstract class Model implements ArrayAccess
 
     /**
      * @param ListItemFormatter $formatter
-     * @return this
+     * @return $this
      */
     public function setFormatter(ListItemFormatter $formatter)
     {

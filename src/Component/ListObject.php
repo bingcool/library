@@ -16,15 +16,16 @@ use Common\Library\Exception\ListFormatException;
 
 abstract class ListObject
 {
-    /**
-     * @var int
-     */
-    protected $offset;
 
     /**
      * @var int
      */
-    protected $pageSize;
+    protected $page = 1;
+
+    /**
+     * @var int
+     */
+    protected $pageSize = 20;
 
     /**
      * @var array
@@ -66,6 +67,17 @@ abstract class ListObject
     }
 
     /**
+     * @param int $offset
+     * @return void
+     */
+    public function setPage(int $page)
+    {
+        $this->isEnablePage = true;
+        $this->showAll = false;
+        $this->page = $page;
+    }
+
+    /**
      * @param int $pageSize
      * @return void
      */
@@ -76,16 +88,6 @@ abstract class ListObject
         $this->pageSize = $pageSize;
     }
 
-    /**
-     * @param int $offset
-     * @return void
-     */
-    public function setOffset(int $offset)
-    {
-        $this->isEnablePage = true;
-        $this->showAll = false;
-        $this->offset = $offset;
-    }
 
     /**
      * @return void
@@ -140,7 +142,7 @@ abstract class ListObject
     protected function buildLimit()
     {
         if (!empty($this->pageSize) && $this->isEnablePage && !$this->showAll) {
-            $this->query->limit($this->offset, $this->pageSize);
+            $this->query->limit(($this->page - 1) * $this->pageSize, $this->pageSize);
         }
     }
 

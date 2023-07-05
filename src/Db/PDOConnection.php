@@ -1200,7 +1200,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function close()
     {
-        $this->logs = [];
+        $this->lastLogs = [];
         $this->free();
         return $this;
     }

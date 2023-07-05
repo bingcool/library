@@ -36,6 +36,11 @@ abstract class ListItemFormatter
     protected $batchFlag = false;
 
     /**
+     * @var mixed
+     */
+    protected $formatterType;
+
+    /**
      * 单个处理
      *
      * @param array|Collection $data
@@ -109,6 +114,23 @@ abstract class ListItemFormatter
     public function getMapData(string $mapKey, string $key)
     {
         return $this->mapData[$mapKey][$key] ?? null;
+    }
+
+    /**
+     * @param mixed $formatterType
+     * @return void
+     */
+    public function setFormatterType($formatterType)
+    {
+        $this->formatterType = $formatterType;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFormatterType()
+    {
+        return $this->formatterType;
     }
 
     /**

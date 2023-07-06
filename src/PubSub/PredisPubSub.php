@@ -93,8 +93,8 @@ class PredisPubSub extends AbstractPubSub
                         try {
                             return call_user_func($callback, $this->redis, $channel, $msg);
                         } catch (\Throwable $throwable) {
-                            if (class_exists("Workerfy\\AbstractProcess")) {
-                                \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($throwable);
+                            if (class_exists("Swoolefy\Worker\AbstractBaseWorker")) {
+                                \Swoolefy\Worker\AbstractBaseWorker::getProcessInstance()->onHandleException($throwable);
                             } else {
                                 $exception = $throwable;
                             }
@@ -116,8 +116,8 @@ class PredisPubSub extends AbstractPubSub
                         try {
                             return call_user_func($callback, $this->redis, $pattern, $channel, $msg);
                         } catch (\Exception $e) {
-                            if (class_exists("Workerfy\\AbstractProcess")) {
-                                \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
+                            if (class_exists("Swoolefy\Worker\AbstractBaseWorker")) {
+                                \Swoolefy\Worker\AbstractBaseWorker::getProcessInstance()->onHandleException($e);
                             }
                         }
                     });
@@ -142,7 +142,7 @@ class PredisPubSub extends AbstractPubSub
 
     /**
      * @param array $channels
-     * @return mixed
+     * @return void
      */
     public function unsubscribe(array $channels)
     {
@@ -152,7 +152,7 @@ class PredisPubSub extends AbstractPubSub
 
     /**
      * @param array $patterns
-     * @return mixed
+     * @return void
      */
     public function punsubscribe(array $patterns)
     {

@@ -45,7 +45,7 @@ class RedisPubSub extends AbstractPubSub
     /**
      * @param array $channels
      * @param $callback
-     * @return void
+     * @return mixed
      */
     public function subscribe(array $channels, $callback)
     {
@@ -66,8 +66,8 @@ class RedisPubSub extends AbstractPubSub
                     try {
                         return call_user_func($callback, $redis, $chan, $msg);
                     } catch (\Throwable $throwable) {
-                        if (class_exists("Workerfy\\AbstractProcess")) {
-                            \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($throwable);
+                        if (class_exists("Swoolefy\Worker\AbstractBaseWorker")) {
+                            \Swoolefy\Worker\AbstractBaseWorker::getProcessInstance()->onHandleException($throwable);
                         } else {
                             $exception = $throwable;
                         }
@@ -100,8 +100,8 @@ class RedisPubSub extends AbstractPubSub
                     try {
                         return call_user_func($callback, $redis, $pattern, $chan, $msg);
                     } catch (\Exception $e) {
-                        if (class_exists("Workerfy\\AbstractProcess")) {
-                            \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
+                        if (class_exists("Swoolefy\Worker\AbstractBaseWorker")) {
+                            \Swoolefy\Worker\AbstractBaseWorker::getProcessInstance()->onHandleException($e);
                         }
                     }
                 });

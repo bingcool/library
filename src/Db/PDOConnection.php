@@ -1376,7 +1376,7 @@ abstract class PDOConnection implements ConnectionInterface
     protected function callSlowSqlFn($realRunTime, $realSql)
     {
         if (class_exists('swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
-            \Swoole\Coroutine::create(function () use($realRunTime, $realSql) {
+            goApp(function () use($realRunTime, $realSql) {
                 try {
                     $fn = static::$slowSqlNoticeCallback['fn'];
                     $fn($realRunTime, $realSql);

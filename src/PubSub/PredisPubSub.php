@@ -87,43 +87,14 @@ class PredisPubSub extends AbstractPubSub
             $channel = $message->channel;
             $msg = $message->payload;
             if ($kind == 'message') {
-                if ($this->isCoroutine) {
-                    $exception = '';
-                    \Swoole\Coroutine::create(function () use ($callback, $channel, $msg, & $exception) {
-                        try {
-                            return call_user_func($callback, $this->redis, $channel, $msg);
-                        } catch (\Throwable $throwable) {
-                            if (class_exists("Swoolefy\Worker\AbstractBaseWorker")) {
-                                \Swoolefy\Worker\AbstractBaseWorker::getProcessInstance()->onHandleException($throwable);
-                            } else {
-                                $exception = $throwable;
-                            }
-                        }
-                    });
-
-                    if ($exception instanceof \Throwable) {
-                        throw $exception;
-                    }
-                } else {
+                goApp(function () use ($callback, $channel, $msg) {
                     return call_user_func($callback, $this->redis, $channel, $msg);
-                }
-
+                });
             } else if ($kind == 'pmessage') {
                 $pattern = $message->pattern ?? '';
-
-                if ($this->isCoroutine) {
-                    \Swoole\Coroutine::create(function () use ($callback, $pattern, $channel, $msg) {
-                        try {
-                            return call_user_func($callback, $this->redis, $pattern, $channel, $msg);
-                        } catch (\Exception $e) {
-                            if (class_exists("Swoolefy\Worker\AbstractBaseWorker")) {
-                                \Swoolefy\Worker\AbstractBaseWorker::getProcessInstance()->onHandleException($e);
-                            }
-                        }
-                    });
-                } else {
+                goApp(function () use ($callback, $pattern, $channel, $msg) {
                     return call_user_func($callback, $this->redis, $pattern, $channel, $msg);
-                }
+                });
             }
         }
     }

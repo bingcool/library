@@ -45,7 +45,7 @@ class RedisPubSub extends AbstractPubSub
     /**
      * @param array $channels
      * @param $callback
-     * @return void
+     * @return mixed
      */
     public function subscribe(array $channels, $callback)
     {
@@ -60,26 +60,11 @@ class RedisPubSub extends AbstractPubSub
     protected function handleSubscribe(array $channels, $callback)
     {
         if ($this->isCoroutine) {
-            $exception = '';
-            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use ($callback, & $exception) {
-                \Swoole\Coroutine::create(function () use ($callback, $redis, $chan, $msg, & $exception) {
-                    try {
-                        return call_user_func($callback, $redis, $chan, $msg);
-                    } catch (\Throwable $throwable) {
-                        if (class_exists("Workerfy\\AbstractProcess")) {
-                            \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($throwable);
-                        } else {
-                            $exception = $throwable;
-                        }
-                    }
-                });
-
-                if ($exception instanceof \Throwable) {
-                    throw $exception;
-                }
-
+            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use ($callback) {
+               goApp(function () use ($callback, $redis, $chan, $msg) {
+                   return call_user_func($callback, $redis, $chan, $msg);
+               });
             });
-
         } else {
             $this->redis->subscribe($channels, function ($redis, $chan, $msg) use ($callback) {
                 return call_user_func($callback, $redis, $chan, $msg);
@@ -96,17 +81,10 @@ class RedisPubSub extends AbstractPubSub
     {
         if ($this->isCoroutine) {
             $this->redis->psubscribe($patterns, function ($redis, $pattern, $chan, $msg) use ($callback) {
-                \Swoole\Coroutine::create(function () use ($callback, $redis, $pattern, $chan, $msg) {
-                    try {
-                        return call_user_func($callback, $redis, $pattern, $chan, $msg);
-                    } catch (\Exception $e) {
-                        if (class_exists("Workerfy\\AbstractProcess")) {
-                            \Workerfy\AbstractProcess::getProcessInstance()->onHandleException($e);
-                        }
-                    }
+                goApp(function () use ($callback, $redis, $pattern, $chan, $msg) {
+                    return call_user_func($callback, $redis, $pattern, $chan, $msg);
                 });
             });
-
         } else {
             $this->redis->psubscribe($patterns, function ($redis, $pattern, $chan, $msg) use ($callback) {
                 return call_user_func($callback, $redis, $pattern, $chan, $msg);

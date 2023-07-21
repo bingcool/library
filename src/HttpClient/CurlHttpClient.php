@@ -102,6 +102,9 @@ class CurlHttpClient implements HttpClientInterface
     )
     {
         $method = strtoupper($method);
+        if ($connectTimeOut >= $timeOut) {
+            $timeOut += 3;
+        }
         $this->openConnection($url, $method, $body, $this->headers, $connectTimeOut, $timeOut);
         $this->sendRequest();
         $curlErrorCode = $this->baseCurl->errno();
@@ -225,7 +228,9 @@ class CurlHttpClient implements HttpClientInterface
         int $timeOut = 10
     )
     {
-        $url = $this->parseUrl($url, $params);
+        if (!empty($params)) {
+            $url = $this->parseUrl($url, $params);
+        }
         $this->options[CURLOPT_HTTPGET] = "GET";
         return $this->send($url, 'GET', '', $connectTimeOut, $timeOut);
     }

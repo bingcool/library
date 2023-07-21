@@ -85,15 +85,7 @@ class RedisConnection
      */
     protected function sleep(float $time = 0.5)
     {
-        if (class_exists('Swoole\Coroutine\System') && \Swoole\Coroutine::getCid() > 0) {
-            \Swoole\Coroutine\System::sleep($time);
-        } else {
-            if ($time < 1) {
-                usleep($time * 1000000);
-            } else {
-                sleep(floor($time));
-            }
-        }
+        \Swoole\Coroutine\System::sleep($time);
     }
 
     /**

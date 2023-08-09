@@ -11,6 +11,7 @@
 
 namespace Common\Library\Uuid;
 
+use SplQueue;
 use Swoole\Coroutine\Channel;
 use Common\Library\Cache\RedisConnection;
 
@@ -53,9 +54,9 @@ class UuidManager
     protected $isPredisDriver;
 
     /**
-     * @var Channel
+     * @var SplQueue
      */
-    protected $channel;
+    protected static $poolIdsQueue;
 
     /**
      * when master redis return empty|null value, report to record log
@@ -98,20 +99,17 @@ class UuidManager
      * @param mixed ...$args
      * @return static
      */
-    public static function getInstance(...$args)
+    public static function getInstance(RedisConnection $redis, string $incrKey, ...$args)
     {
-        if (!isset(self::$instance)) {
-            self::$instance = new static(...$args);
-        }
-        return self::$instance;
+        return new static($redis, $incrKey, ...$args);
     }
 
     /**
-     * @return Channel
+     * @return SplQueue
      */
-    public function getChannel()
+    public function getPoolIdsQueue()
     {
-        return $this->channel;
+        return self::$poolIdsQueue;
     }
 
     /**
@@ -123,7 +121,10 @@ class UuidManager
      */
     public function tickPreBatchGenerateIds(float $timeOut, int $poolSize)
     {
-        $this->channel    = new Channel($poolSize);
+        if (!(self::$poolIdsQueue instanceof SplQueue)) {
+            self::$poolIdsQueue = new SplQueue();
+        }
+
         $pushTickChannel  = new Channel(1);
         $this->startTime  = time();
 
@@ -135,13 +136,10 @@ class UuidManager
             // generateId
             while(!$pushTickChannel->pop($timeOut)) {
                 try {
-
                     if(time() >= $this->startTime + $timeOut * 3) {
                         $this->startTime = time();
-                        if($this->channel->length() > 0) {
-                            while ($this->channel->pop(0.05)) {
-                                continue;
-                            }
+                        if(count(self::$poolIdsQueue) > 0) {
+                            self::$poolIdsQueue = new SplQueue();
                         }
                     }
 
@@ -149,10 +147,7 @@ class UuidManager
                     $minId = $maxId - $poolSize;
                     if ($minId > 0) {
                         for ($i = 0; $i < $poolSize; $i++) {
-                            $value = $this->channel->push($minId + $i, 2);
-                            if(empty($value)) {
-                                break;
-                            }
+                            self::$poolIdsQueue->push($minId + $i);
                         }
                     }
                 }catch (\Throwable $throwable){
@@ -225,19 +220,23 @@ class UuidManager
     /**
      * @param RedisConnection $redis
      * @param int $num
-     * @param float $timeOut
      * @return array
      */
-    public function getIncrIds(?RedisConnection $redis, int $num = 1, float $timeOut = 0.5)
+    public function getIncrIds(int $num = 1)
     {
+        if (!(self::$poolIdsQueue instanceof SplQueue)) {
+            self::$poolIdsQueue = new SplQueue();
+        }
+
         $poolIds = [];
-        if($this->channel->length() > $num+1) {
-            for ($i = 0; $i < $num; $i++) {
-                $unId = $this->channel->pop($timeOut);
-                if(empty($id)) {
+        if(count(self::$poolIdsQueue) > ($num + 1) ) {
+            $popNum = 0;
+            foreach (self::$poolIdsQueue as $uuid) {
+                if ($popNum >= $num) {
                     break;
                 }
-                $poolIds[] = $unId;
+                $popNum++;
+                $poolIds[] = $uuid;
             }
         }
 
@@ -245,7 +244,7 @@ class UuidManager
         $hasNum  = count($poolIds);
         if($hasNum < $num) {
             $remainNum = $num - $hasNum;
-            $maxId = $this->generateId($remainNum, $redis);
+            $maxId = $this->generateId($remainNum, $this->redis);
             $minId = $maxId - $remainNum;
             if ($minId > 0) {
                 for ($i = 0; $i < $remainNum; $i++) {
@@ -254,6 +253,15 @@ class UuidManager
             }
         }
         return $poolIds;
+    }
+
+    /**
+     * @return int
+     */
+    public function getOneId()
+    {
+        $poolIds = $this->getIncrIds(1);
+        return current($poolIds);
     }
 
     /**

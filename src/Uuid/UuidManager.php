@@ -54,7 +54,7 @@ class UuidManager
     protected $isPredisDriver;
 
     /**
-     * @var SplQueue
+     * @var Channel
      */
     protected static $poolIdsQueue;
 
@@ -105,7 +105,7 @@ class UuidManager
     }
 
     /**
-     * @return SplQueue
+     * @return Channel
      */
     public function getPoolIdsQueue()
     {
@@ -121,8 +121,8 @@ class UuidManager
      */
     public function tickPreBatchGenerateIds(float $timeOut, int $poolSize)
     {
-        if (!(self::$poolIdsQueue instanceof SplQueue)) {
-            self::$poolIdsQueue = new SplQueue();
+        if (!(self::$poolIdsQueue instanceof Channel)) {
+            self::$poolIdsQueue = new Channel($poolSize);
         }
 
         $pushTickChannel  = new Channel(1);
@@ -138,8 +138,10 @@ class UuidManager
                 try {
                     if(time() >= $this->startTime + $timeOut * 3) {
                         $this->startTime = time();
-                        if(count(self::$poolIdsQueue) > 0) {
-                            self::$poolIdsQueue = new SplQueue();
+                        if(self::$poolIdsQueue->length() > 0) {
+                            while (self::$poolIdsQueue->pop(0.02)) {
+
+                            }
                         }
                     }
 
@@ -147,7 +149,7 @@ class UuidManager
                     $minId = $maxId - $poolSize;
                     if ($minId > 0) {
                         for ($i = 0; $i < $poolSize; $i++) {
-                            self::$poolIdsQueue->push($minId + $i);
+                            self::$poolIdsQueue->push($minId + $i, 0.05);
                         }
                     }
                 }catch (\Throwable $throwable){
@@ -224,14 +226,14 @@ class UuidManager
      */
     public function getIncrIds(int $num = 1)
     {
-        if (!(self::$poolIdsQueue instanceof SplQueue)) {
-            self::$poolIdsQueue = new SplQueue();
+        if (!(self::$poolIdsQueue instanceof Channel)) {
+            self::$poolIdsQueue = new Channel(100);
         }
 
         $poolIds = [];
-        if(count(self::$poolIdsQueue) > ($num + 1) ) {
+        if(self::$poolIdsQueue->length() > ($num + 1) ) {
             $popNum = 0;
-            foreach (self::$poolIdsQueue as $uuid) {
+            while ($uuid = self::$poolIdsQueue->pop(0.05)) {
                 if ($popNum >= $num) {
                     break;
                 }

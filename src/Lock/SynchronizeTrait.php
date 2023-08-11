@@ -33,21 +33,23 @@ trait SynchronizeTrait
                 try {
                     $result = $this->releaseLock();
                 } catch (LockReleaseException $lockReleaseException) {
-                    BaseServer::catchException($lockReleaseException);
                 }
                 $waitChannel->push(1);
             });
 
             try {
                 $codeResult = $code($this);
-                $resultChannel->push($codeResult);
+                $resultChannel->push($codeResult, 0.1);
             }catch (\Throwable $exception) {
-                BaseServer::catchException($exception);
+                $resultChannel->push($exception);
             }
         });
 
         $waitChannel->pop($this->timeOut);
         $codeResult = $resultChannel->pop(0.1);
+        if ($codeResult instanceof \Throwable) {
+            throw $codeResult;
+        }
         return $codeResult;
     }
 

@@ -1,10 +1,5 @@
 <?php
 
-namespace Common\Library\Lock;
-
-use malkusch\lock\exception\LockReleaseException;
-use Throwable;
-
 /**
  * +----------------------------------------------------------------------
  * | Common library of swoole
@@ -14,8 +9,16 @@ use Throwable;
  * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
  * +----------------------------------------------------------------------
  */
+
+namespace Common\Library\Lock;
+
+use malkusch\lock\exception\LockReleaseException;
+use Throwable;
+
 class PredisMutex extends \malkusch\lock\mutex\PredisMutex
 {
+    use SynchronizeTrait;
+    
     /**
      * The prefix for the lock key.
      */
@@ -43,77 +46,4 @@ class PredisMutex extends \malkusch\lock\mutex\PredisMutex
         parent::__construct($redisAPIs, $name, $timeout);
     }
 
-    /**
-     * @param callable $code
-     * @return callable|mixed
-     * @throws Throwable
-     */
-    public function synchronized(callable $code)
-    {
-        $this->lock();
-
-        $codeResult = null;
-        $codeException = null;
-        try {
-            if ($this->isCoroutine()) {
-                $chan = new \Swoole\Coroutine\Channel(1);
-            }
-
-            $codeResult = $code();
-
-            if ($chan ?? null) {
-                $chan->pop($this->timeOut + 1);
-                $chan->close();
-            }
-        } catch (Throwable $exception) {
-            $codeException = $exception;
-
-            throw $exception;
-        } finally {
-            try {
-                $this->unlock();
-            } catch (LockReleaseException $lockReleaseException) {
-                $lockReleaseException->setCodeResult($codeResult);
-                if ($codeException !== null) {
-                    $lockReleaseException->setCodeException($codeException);
-                }
-
-                throw $lockReleaseException;
-            }
-        }
-
-        return $codeResult;
-    }
-
-    /**
-     * @return bool
-     */
-    public function acquireLock(): bool
-    {
-        return $this->acquire($this->key, $this->timeOut);
-    }
-
-    /**
-     * @return bool
-     */
-    public function releaseLock(): bool
-    {
-        if (!$this->release($this->key)) {
-            throw new LockReleaseException('Failed to release the lock.');
-        }
-
-        return true;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isCoroutine()
-    {
-        if (class_exists('Swoole\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
-            return true;
-        }
-
-        return false;
-    }
 }

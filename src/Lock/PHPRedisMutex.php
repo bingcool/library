@@ -1,10 +1,4 @@
 <?php
-
-namespace Common\Library\Lock;
-
-use malkusch\lock\exception\LockReleaseException;
-use Throwable;
-
 /**
  * +----------------------------------------------------------------------
  * | Common library of swoole
@@ -14,8 +8,24 @@ use Throwable;
  * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
  * +----------------------------------------------------------------------
  */
-class PHPRedisMutex extends \malkusch\lock\mutex\PredisMutex
+
+namespace Common\Library\Lock;
+
+use malkusch\lock\exception\LockAcquireException;
+use malkusch\lock\exception\LockReleaseException;
+use Swoole\Coroutine\Channel;
+use Swoolefy\Core\BaseObject;
+use Swoolefy\Core\BaseServer;
+use Swoolefy\Core\EventController;
+use Throwable;
+use \RedisException;
+use \RedisCluster;
+use \Redis;
+
+class PHPRedisMutex extends \malkusch\lock\mutex\RedisMutex
 {
+    use SynchronizeTrait;
+    
     /**
      * The prefix for the lock key.
      */
@@ -43,48 +53,7 @@ class PHPRedisMutex extends \malkusch\lock\mutex\PredisMutex
         parent::__construct($redisAPIs, $name, $timeout);
     }
 
-    /**
-     * @param callable $code
-     * @return callable|mixed
-     * @throws Throwable
-     */
-    public function synchronized(callable $code)
-    {
-        $this->lock();
-
-        $codeResult = null;
-        $codeException = null;
-        try {
-            if ($this->isCoroutine()) {
-                $chan = new \Swoole\Coroutine\Channel(1);
-            }
-
-            $codeResult = $code();
-
-            if ($chan ?? null) {
-                $chan->pop($this->timeOut + 1);
-                $chan->close();
-            }
-        } catch (Throwable $exception) {
-            $codeException = $exception;
-
-            throw $exception;
-        } finally {
-            try {
-                $this->unlock();
-            } catch (LockReleaseException $lockReleaseException) {
-                $lockReleaseException->setCodeResult($codeResult);
-                if ($codeException !== null) {
-                    $lockReleaseException->setCodeException($codeException);
-                }
-
-                throw $lockReleaseException;
-            }
-        }
-
-        return $codeResult;
-    }
-
+   
     /**
      * @return bool
      */
@@ -103,6 +72,78 @@ class PHPRedisMutex extends \malkusch\lock\mutex\PredisMutex
         }
 
         return true;
+    }
+
+    /**
+     * @param $redisAPI
+     * @param string $key
+     * @param string $value
+     * @param int $expire
+     * @return bool
+     * @throws \RedisException
+     */
+    protected function add($redisAPI, string $key, string $value, int $expire): bool
+    {
+        /** @var \Redis $redisAPI */
+        try {
+            //  Will set the key, if it doesn't exist, with a ttl of $expire seconds
+            return $redisAPI->set($key, $value, ['nx', 'ex' => $expire]);
+        } catch (\RedisException $e) {
+            $message = sprintf(
+                "Failed to acquire lock for key '%s'",
+                $key
+            );
+            throw new LockAcquireException($message, 0, $e);
+        }
+    }
+
+    /**
+     * @param \Redis $redisAPI
+     * @param string $script
+     * @param int $numkeys
+     * @param array $arguments
+     * @return mixed
+     */
+    protected function evalScript($redisAPI, string $script, int $numkeys, array $arguments)
+    {
+        for ($i = $numkeys; $i < count($arguments); $i++) {
+            /*
+             * If a serialization mode such as "php" or "igbinary" is enabled, the arguments must be
+             * serialized by us, because phpredis does not do this for the eval command.
+             *
+             * The keys must not be serialized.
+             */
+            $arguments[$i] = $redisAPI->_serialize($arguments[$i]);
+
+            /*
+             * If LZF compression is enabled for the redis connection and the runtime has the LZF
+             * extension installed, compress the arguments as the final step.
+             */
+            if ($this->hasLzfCompression($redisAPI)) {
+                $arguments[$i] = lzf_compress($arguments[$i]);
+            }
+        }
+
+        try {
+            return $redisAPI->eval($script, $arguments, $numkeys);
+        } catch (\RedisException $e) {
+            throw new LockReleaseException('Failed to release lock', 0, $e);
+        }
+    }
+
+    /**
+     * Determines if lzf compression is enabled for the given connection.
+     *
+     * @param  \Redis|\RedisCluster $redis The Redis or RedisCluster connection.
+     * @return bool TRUE if lzf compression is enabled, false otherwise.
+     */
+    private function hasLzfCompression($redis): bool
+    {
+        if (!\defined('Redis::COMPRESSION_LZF')) {
+            return false;
+        }
+
+        return Redis::COMPRESSION_LZF === $redis->getOption(Redis::OPT_COMPRESSION);
     }
 
     /**

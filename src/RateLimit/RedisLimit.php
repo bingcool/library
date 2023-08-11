@@ -31,19 +31,19 @@ class RedisLimit
      */
     protected $rateKey;
 
-    /** 滑动窗口单位数量
+    /** 滑动窗口单位数量,单位秒
      * @var int
      */
     protected $limitNum;
 
     /**
-     * 滑动窗口时间，小时|分钟|秒 级别
+     * 滑动窗口时间，小时|分钟|秒 ,单位秒
      * @var int
      */
     protected $limitTime;
 
     /**
-     * sort set 保留请求id数据最长时长
+     * sort set 保留请求id数据最长时长,单位秒
      * 有时需要统计可能是小时级别，也可能是分钟级别，秒级别
      * 如果有小时级别流量控制，那么设置为24小时(86400s)即可
      * 如果最大级别只有分钟流量控制，那么设置为1小时(3600s)即可
@@ -95,9 +95,13 @@ class RedisLimit
      * @param int $ttl
      * @return bool
      */
-    public function checkLimit(): bool
+    public function isLimit(): bool
     {
-        if (empty($this->rateKey) || empty($this->limitNum) || empty($this->limitTime) || empty($this->ttl)) {
+        if (empty($this->rateKey)) {
+            throw new RateLimitException("RateKey Missing Setting");
+        }
+
+        if (empty($this->limitNum) || empty($this->limitTime) || empty($this->ttl)) {
             throw new RateLimitException("RateLimit Missing Set Params");
         }
 

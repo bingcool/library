@@ -24,7 +24,7 @@
     "ext-json": "*",
     "ext-redis": "*",
     "psr/clock": "*",
-    "predis/predis": "~1.1.7",
+    "predis/predis": "~2.2.1",
     "malkusch/lock": "~2.2.0",
     "php-amqplib/php-amqplib": "~3.5.0",
     "topthink/think-orm": "2.0.61"

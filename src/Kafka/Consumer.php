@@ -210,7 +210,7 @@ class Consumer extends AbstractKafka
     protected function setTopicConfToConf()
     {
         $topicConf = $this->getTopicConf();
-        $this->conf->setDefaultTopicConf($topicConf);
+        //$this->conf->setDefaultTopicConf($topicConf);
     }
 
     /**

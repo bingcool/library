@@ -44,6 +44,11 @@ abstract class AbstractKafka
     /**
      * @var array
      */
+    protected $globalProperty = [];
+
+    /**
+     * @var array
+     */
     protected $defaultTopicProperty = [];
 
     /**
@@ -78,6 +83,7 @@ abstract class AbstractKafka
     public function setGlobalProperty(array $property = [])
     {
         $properties = array_merge($this->defaultProperty, $property);
+        $this->globalProperty = $properties;
         foreach ($properties as $key => $value) {
             $this->conf->set($key, $value);
             if ($key == 'auto.offset.reset') {

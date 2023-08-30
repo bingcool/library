@@ -210,7 +210,7 @@ class Consumer extends AbstractKafka
     protected function setTopicConfToConf()
     {
         $topicConf = $this->getTopicConf();
-        $this->conf->setDefaultTopicConf($topicConf);
+        //$this->conf->setDefaultTopicConf($topicConf);
     }
 
     /**
@@ -221,5 +221,17 @@ class Consumer extends AbstractKafka
         $this->setTopicConfToConf();
         $this->rdKafkaConsumer = new KafkaConsumer($this->conf);
         return $this->rdKafkaConsumer;
+    }
+
+    /**
+     * 手动提交偏移量offset
+     * 
+     * @return void
+     */
+    public function commit(\RdKafka\Message $message)
+    {
+        if (isset($this->globalProperty['enable.auto.commit']) && empty($this->globalProperty['enable.auto.commit'])) {
+            $this->rdKafkaConsumer->commit($message);
+        }
     }
 }

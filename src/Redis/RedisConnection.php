@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Cache;
+namespace Common\Library\Redis;
 
 /**
  * Class RedisConnection
- * @package Common\Library\Cache
+ * @package Common\Library\Redis
  */
 class RedisConnection
 {

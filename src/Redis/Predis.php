@@ -9,13 +9,13 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Cache;
+namespace Common\Library\Redis;
 
 use Predis\Client;
 
 /**
  * Class Predis
- * @package Common\Library\Cache
+ * @package Common\Library\Redis
  * @see \Predis\Client
  * @mixin \Predis\Client
  * @codeCoverageIgnore

@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Cache;
+namespace Common\Library\Redis;
 
 /**
  * @see \Redis

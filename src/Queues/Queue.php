@@ -11,8 +11,8 @@
 
 namespace Common\Library\Queues;
 
-use Common\Library\Cache\RedisConnection;
-use Common\Library\Cache\Predis;
+use Common\Library\Redis\RedisConnection;
+use Common\Library\Redis\Predis;
 
 class Queue
 {

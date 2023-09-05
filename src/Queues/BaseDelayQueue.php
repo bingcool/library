@@ -11,7 +11,7 @@
 
 namespace Common\Library\Queues;
 
-use Common\Library\Cache\RedisConnection;
+use Common\Library\Redis\RedisConnection;
 use Common\Library\Exception\QueueException;
 use Common\Library\Queues\Interfaces\AbstractDelayQueueInterface;
 

@@ -11,7 +11,7 @@
 
 namespace Common\Library\RateLimit;
 
-use Common\Library\Cache\RedisConnection;
+use Common\Library\Redis\RedisConnection;
 use Common\Library\Exception\RateLimitException;
 
 class RedisLimit
@@ -180,7 +180,7 @@ LUA;
      */
     public function isPredisDriver()
     {
-        if ($this->redis instanceof \Common\Library\Cache\Predis) {
+        if ($this->redis instanceof \Common\Library\Redis\Predis) {
             $this->isPredisDriver = true;
         }
         return $this->isPredisDriver;

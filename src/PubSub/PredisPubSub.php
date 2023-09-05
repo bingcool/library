@@ -11,7 +11,7 @@
 
 namespace Common\Library\PubSub;
 
-use Common\Library\Cache\RedisConnection;
+use Common\Library\Redis\RedisConnection;
 use Predis\PubSub\Consumer as PubSubConsumer;
 
 class PredisPubSub extends AbstractPubSub

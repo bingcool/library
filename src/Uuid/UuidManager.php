@@ -13,7 +13,7 @@ namespace Common\Library\Uuid;
 
 use SplQueue;
 use Swoole\Coroutine\Channel;
-use Common\Library\Cache\RedisConnection;
+use Common\Library\Redis\RedisConnection;
 
 class UuidManager
 {
@@ -294,7 +294,7 @@ class UuidManager
      */
     public function isPredisDriver()
     {
-        if ($this->redis instanceof \Common\Library\Cache\Predis) {
+        if ($this->redis instanceof \Common\Library\Redis\Predis) {
             $this->isPredisDriver = true;
         }
         return $this->isPredisDriver;

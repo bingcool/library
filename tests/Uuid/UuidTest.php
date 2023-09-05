@@ -9,7 +9,7 @@ class ClientTest extends TestCase
 {
     public function testRedisIncr()
     {
-        $redis = new \Common\Library\Cache\Predis([
+        $redis = new \Common\Library\Redis\Predis([
             'scheme' => 'tcp',
             'host' => '127.0.0.1',
             'port' => 6379,
@@ -45,7 +45,7 @@ class ClientTest extends TestCase
     // 批量获取处理
     public function testRedisIncr1()
     {
-//        $redis = new \Common\Library\Cache\Redis();
+//        $redis = new \Common\Library\Redis\Redis();
 //        $redis->connect('127.0.0.1');
 //
 //        $UUID = new \Common\Library\Uuid\UuidIncrement($redis,'order_incr_id');

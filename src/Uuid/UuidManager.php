@@ -132,7 +132,7 @@ class UuidManager
             $poolSize = 1;
         }
 
-        \Swoole\Coroutine::create(function () use($poolSize, $timeOut, $pushTickChannel) {
+        goApp(function () use($poolSize, $timeOut, $pushTickChannel) {
             // generateId
             while(!$pushTickChannel->pop($timeOut)) {
                 try {

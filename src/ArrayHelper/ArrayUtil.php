@@ -40,7 +40,7 @@ class ArrayUtil extends BaseArrayHelper
      * 二维数组按照某个字段排序,并取出某个范围的数据，默认返回全部
      * @param array $data
      * @param string $sort_field
-     * @param string $sort_type
+     * @param string $sort_order
      * @param bool $preserve_key //是否保留数组原key
      * @param int $start
      * @param int $length

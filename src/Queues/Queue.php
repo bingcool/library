@@ -150,10 +150,9 @@ class Queue
      */
     public function setRetryTimes(int $retryTimes)
     {
-        if ($retryTimes <= 0) {
-            return;
+        if ($retryTimes > 0) {
+            $this->retryTimes = $retryTimes;
         }
-        $this->retryTimes = $retryTimes;
     }
 
     /**

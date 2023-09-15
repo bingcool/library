@@ -147,6 +147,15 @@ abstract class ListObject
     }
 
     /**
+     * @param ListItemFormatter $formatter
+     * @return void
+     */
+    public function setFormatter(ListItemFormatter $formatter)
+    {
+        $this->formatter = $formatter;
+    }
+
+    /**
      * @return ListItemFormatter|null
      */
     public function getFormatter(): ?ListItemFormatter

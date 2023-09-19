@@ -62,11 +62,14 @@ class Validate
      */
     protected $typeMsg = [
         'require' => ':attribute require',
+        'required' => ':attribute require',
         'must' => ':attribute must',
         'number' => ':attribute must be numeric',
         'integer' => ':attribute must be integer',
+        'int' => ':attribute must be integer',
         'float' => ':attribute must be float',
         'boolean' => ':attribute must be bool',
+        'bool' => ':attribute must be bool',
         'email' => ':attribute not a valid email address',
         'mobile' => ':attribute not a valid mobile',
         'array' => ':attribute must be a array',
@@ -751,6 +754,7 @@ class Validate
     {
         switch (StringUtil::camel($rule)) {
             case 'require':
+            case 'required':
                 // 必须
                 $result = !empty($value) || '0' == $value;
                 break;
@@ -773,6 +777,13 @@ class Validate
                 break;
             case 'number':
                 $result = ctype_digit((string)$value);
+                break;
+            case 'integer':
+            case 'int':
+                $result = is_int((int) $value);
+                break;
+            case 'float':
+                $result = is_float((float) $value);
                 break;
             case 'alphaNum':
                 $result = ctype_alnum($value);

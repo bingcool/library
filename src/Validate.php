@@ -73,6 +73,7 @@ class Validate
         'email' => ':attribute not a valid email address',
         'mobile' => ':attribute not a valid mobile',
         'array' => ':attribute must be a array',
+        'json'  => ':attribute must be a json string',
         'accepted' => ':attribute must be yes,on or 1',
         'date' => ':attribute not a valid datetime',
         'file' => ':attribute not a valid file',
@@ -559,7 +560,7 @@ class Validate
 
                 if (isset($this->type[$type])) {
                     $result = call_user_func_array($this->type[$type], [$value, $rule, $data, $field, $title]);
-                } elseif ('must' == $info || 0 === strpos($info, 'require') || (!is_null($value) && '' !== $value)) {
+                } elseif ('must' == $info || 0 === strpos($info, 'require') || 0 === strpos($info, 'required') || (!is_null($value) && '' !== $value)) {
                     $result = call_user_func_array([$this, $type], [$value, $rule, $data, $field, $title]);
                 } else {
                     $result = true;
@@ -780,10 +781,10 @@ class Validate
                 break;
             case 'integer':
             case 'int':
-                $result = is_int((int) $value);
+                $result = filter_var($value, FILTER_VALIDATE_INT) !== false;
                 break;
             case 'float':
-                $result = is_float((float) $value);
+                $result = filter_var($value, FILTER_VALIDATE_FLOAT) !== false;
                 break;
             case 'alphaNum':
                 $result = ctype_alnum($value);
@@ -827,6 +828,28 @@ class Validate
         }
 
         return checkdnsrr($value, $rule);
+    }
+
+    /**
+     * Validate the attribute is a valid JSON string.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @return bool
+     */
+    public function json(string $value, string $rule)
+    {
+        if (is_array($value)) {
+            return false;
+        }
+
+        if (! is_scalar($value) && ! is_null($value) && ! method_exists($value, '__toString')) {
+            return false;
+        }
+
+        json_decode($value);
+
+        return json_last_error() === JSON_ERROR_NONE;
     }
 
     /**

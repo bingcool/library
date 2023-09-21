@@ -749,69 +749,95 @@ class Validate
      * @param mixed $value 字段值
      * @param string $rule 验证规则
      * @param array $data 数据
+     * @param mixed $field 字段
+     * @param mixed $title
      * @return bool
      */
-    public function is($value, string $rule, array $data = []): bool
+    public function is($value, string $rule, array $data = [], $field = '', $title = ''): bool
     {
-        switch (StringUtil::camel($rule)) {
-            case 'require':
-            case 'required':
-                // 必须
-                $result = !empty($value) || '0' == $value;
-                break;
-            case 'accepted':
-                // 接受
-                $result = in_array($value, ['1', 'on', 'yes']);
-                break;
-            case 'date':
-                // 是否是一个有效日期
-                $result = false !== strtotime($value);
-                break;
-            case 'activeUrl':
-                // 是否为有效的网址
-                $result = checkdnsrr($value);
-                break;
-            case 'boolean':
-            case 'bool':
-                // 是否为布尔值
-                $result = in_array($value, [true, false, 0, 1, '0', '1'], true);
-                break;
-            case 'number':
-                $result = ctype_digit((string)$value);
-                break;
-            case 'integer':
-            case 'int':
-                $result = filter_var($value, FILTER_VALIDATE_INT) !== false;
-                break;
-            case 'float':
-                $result = filter_var($value, FILTER_VALIDATE_FLOAT) !== false;
-                break;
-            case 'alphaNum':
-                $result = ctype_alnum($value);
-                break;
-            case 'array':
-                // 是否为数组
-                $result = is_array($value);
-                break;
+        $fn = function ($value, $rule, $isDefaultHandle) {
+            switch (StringUtil::camel($rule)) {
+                case 'require':
+                case 'required':
+                    // 必须
+                    $result = !empty($value) || '0' == $value;
+                    break;
+                case 'accepted':
+                    // 接受
+                    $result = in_array($value, ['1', 'on', 'yes']);
+                    break;
+                case 'date':
+                    // 是否是一个有效日期
+                    $result = false !== strtotime($value);
+                    break;
+                case 'activeUrl':
+                    // 是否为有效的网址
+                    $result = checkdnsrr($value);
+                    break;
+                case 'boolean':
+                case 'bool':
+                    // 是否为布尔值
+                    $result = in_array($value, [true, false, 0, 1, '0', '1'], true);
+                    break;
+                case 'number':
+                    $result = ctype_digit((string)$value);
+                    break;
+                case 'integer':
+                case 'int':
+                    $result = filter_var($value, FILTER_VALIDATE_INT) !== false;
+                    break;
+                case 'float':
+                    $result = filter_var($value, FILTER_VALIDATE_FLOAT) !== false;
+                    break;
+                case 'alphaNum':
+                    $result = ctype_alnum($value);
+                    break;
+                case 'array':
+                    // 是否为数组
+                    $result = is_array($value);
+                    break;
 
-            default:
-                if (isset($this->type[$rule])) {
-                    // 注册的验证规则
-                    $result = call_user_func_array($this->type[$rule], [$value]);
-                } elseif (function_exists('ctype_' . $rule)) {
-                    // ctype验证规则
-                    $ctypeFun = 'ctype_' . $rule;
-                    $result = $ctypeFun($value);
-                } elseif (isset($this->filter[$rule])) {
-                    // Filter_var验证规则
-                    $result = $this->filter($value, $this->filter[$rule]);
-                } else {
-                    // 正则验证
-                    $result = $this->regex($value, $rule);
+                default:
+                    if ($isDefaultHandle) {
+                        if (isset($this->type[$rule])) {
+                            // 注册的验证规则
+                            $result = call_user_func_array($this->type[$rule], [$value]);
+                        } elseif (function_exists('ctype_' . $rule)) {
+                            // ctype验证规则
+                            $ctypeFun = 'ctype_' . $rule;
+                            $result = $ctypeFun($value);
+                        } elseif (isset($this->filter[$rule])) {
+                            // Filter_var验证规则
+                            $result = $this->filter($value, $this->filter[$rule]);
+                        } else {
+                            // 正则验证
+                            $result = $this->regex($value, $rule);
+                        }
+                    }else {
+                        $result = true;
+                    }
+            }
+
+            return $result;
+        };
+
+
+        if (strpos($field, '.')) {
+            $fields = explode('.', $field);
+            if (in_array('*', $fields) && is_array($value)) {
+                foreach($value as $item) {
+                    $result = $fn($item, $rule,0);
+                    if ($result === false) {
+                        return $result;
+                    }
                 }
+                return true;
+            }else {
+                return $fn($value, $rule, 1);
+            }
+        }else {
+            return $fn($value, $rule, 1);
         }
-
-        return $result;
     }
 
     /**
@@ -1245,13 +1271,30 @@ class Validate
         if (is_numeric($key)) {
             $value = $key;
         } elseif (is_string($key) && strpos($key, '.')) {
-            // 支持多维数组验证
-            foreach (explode('.', $key) as $key) {
-                if (!isset($data[$key])) {
-                    $value = null;
-                    break;
+            $keys = explode('.', $key);
+            if (!in_array('*', $keys)) {
+                // 支持多维数组验证
+                foreach (explode('.', $key) as $key) {
+                    if (!isset($data[$key])) {
+                        $value = null;
+                        break;
+                    }
+                    $value = $data = $data[$key];
                 }
-                $value = $data = $data[$key];
+            }else {
+                $value = null;
+                if (count($keys) == 2 && $keys[1] === '*') {
+                    if (isset($data[$keys[0]])) {
+                        $value = $data[$keys[0]];
+                    }
+                }else if(count($keys) == 3 && $keys[1] === '*') {
+                    if (isset($data[$keys[0]])) {
+                        $data = $data[$keys[0]];
+                        if (is_array($data) && isset($data[0][$keys[2]])) {
+                            $value = array_column($data, $keys[2]);
+                        }
+                    }
+                }
             }
         } else {
             $value = $data[$key] ?? null;

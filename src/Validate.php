@@ -62,14 +62,18 @@ class Validate
      */
     protected $typeMsg = [
         'require' => ':attribute require',
+        'required' => ':attribute require',
         'must' => ':attribute must',
         'number' => ':attribute must be numeric',
         'integer' => ':attribute must be integer',
+        'int' => ':attribute must be integer',
         'float' => ':attribute must be float',
         'boolean' => ':attribute must be bool',
+        'bool' => ':attribute must be bool',
         'email' => ':attribute not a valid email address',
         'mobile' => ':attribute not a valid mobile',
         'array' => ':attribute must be a array',
+        'json'  => ':attribute must be a json string',
         'accepted' => ':attribute must be yes,on or 1',
         'date' => ':attribute not a valid datetime',
         'file' => ':attribute not a valid file',
@@ -556,7 +560,7 @@ class Validate
 
                 if (isset($this->type[$type])) {
                     $result = call_user_func_array($this->type[$type], [$value, $rule, $data, $field, $title]);
-                } elseif ('must' == $info || 0 === strpos($info, 'require') || (!is_null($value) && '' !== $value)) {
+                } elseif ('must' == $info || 0 === strpos($info, 'require') || 0 === strpos($info, 'required') || (!is_null($value) && '' !== $value)) {
                     $result = call_user_func_array([$this, $type], [$value, $rule, $data, $field, $title]);
                 } else {
                     $result = true;
@@ -751,6 +755,7 @@ class Validate
     {
         switch (StringUtil::camel($rule)) {
             case 'require':
+            case 'required':
                 // 必须
                 $result = !empty($value) || '0' == $value;
                 break;
@@ -773,6 +778,13 @@ class Validate
                 break;
             case 'number':
                 $result = ctype_digit((string)$value);
+                break;
+            case 'integer':
+            case 'int':
+                $result = filter_var($value, FILTER_VALIDATE_INT) !== false;
+                break;
+            case 'float':
+                $result = filter_var($value, FILTER_VALIDATE_FLOAT) !== false;
                 break;
             case 'alphaNum':
                 $result = ctype_alnum($value);
@@ -816,6 +828,28 @@ class Validate
         }
 
         return checkdnsrr($value, $rule);
+    }
+
+    /**
+     * Validate the attribute is a valid JSON string.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @return bool
+     */
+    public function json(string $value, string $rule)
+    {
+        if (is_array($value)) {
+            return false;
+        }
+
+        if (! is_scalar($value) && ! is_null($value) && ! method_exists($value, '__toString')) {
+            return false;
+        }
+
+        json_decode($value);
+
+        return json_last_error() === JSON_ERROR_NONE;
     }
 
     /**

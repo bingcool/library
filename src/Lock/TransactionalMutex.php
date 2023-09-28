@@ -97,15 +97,15 @@ class TransactionalMutex extends \malkusch\lock\mutex\TransactionalMutex
      * If the code throws any other exception, the transaction is rolled back
      * and won't  be replayed.
      *
-     * @param callable $code The synchronized execution block.
+     * @param callable $fn The synchronized execution block.
      * @return mixed The return value of the execution block.
      * @SuppressWarnings(PHPMD)
      * @throws LockAcquireException The transaction was not commited.
      * @throws \Exception The execution block threw an exception.
      */
-    public function synchronized(callable $code)
+    public function synchronized(callable $fn)
     {
-        return $this->loop->execute(function () use ($code) {
+        return $this->loop->execute(function () use ($fn) {
             try {
                 // BEGIN
                 $this->pdo->beginTransaction();
@@ -115,7 +115,7 @@ class TransactionalMutex extends \malkusch\lock\mutex\TransactionalMutex
 
             try {
                 // Unit of work
-                $result = $code();
+                $result = $fn();
                 $this->pdo->commit();
                 $this->loop->end();
 
@@ -155,7 +155,7 @@ class TransactionalMutex extends \malkusch\lock\mutex\TransactionalMutex
      *
      * @param \Exception $exception The causing exception.
      *
-     * @throws LockAcquireException The roll back failed.
+     * @throws LockAcquireException The rollback failed.
      */
     private function rollBack(\Exception $exception)
     {

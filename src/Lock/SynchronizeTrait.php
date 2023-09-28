@@ -18,17 +18,17 @@ use malkusch\lock\exception\LockReleaseException;
 trait SynchronizeTrait
 {
     /**
-     * @param callable $code
+     * @param callable $fn
      * @return callable|mixed
      * @throws Throwable
      */
-    public function synchronized(callable $code)
+    public function synchronized(callable $fn)
     {
         $this->lock();
         $codeResult = null;
         $waitChannel = new \Swoole\Coroutine\Channel(1);
         $resultChannel = new \Swoole\Coroutine\Channel(1);
-        goApp(function () use ($code, $waitChannel, $resultChannel) {
+        goApp(function () use ($fn, $waitChannel, $resultChannel) {
             \Swoole\Coroutine::defer(function () use ($waitChannel, $resultChannel) {
                 try {
                     $result = $this->releaseLock();
@@ -38,7 +38,7 @@ trait SynchronizeTrait
             });
 
             try {
-                $codeResult = $code($this);
+                $codeResult = $fn($this);
                 $resultChannel->push($codeResult, 0.1);
             }catch (\Throwable $exception) {
                 $resultChannel->push($exception);

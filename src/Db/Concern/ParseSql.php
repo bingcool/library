@@ -147,6 +147,25 @@ trait ParseSql
     }
 
     /**
+     * 获取一条数据
+     *
+     * @param array $whereMap
+     * @return $this
+     */
+    public function loadOne(array $whereMap)
+    {
+        $whereArr = $bindParams = [];
+        foreach ($whereMap as $field => $value) {
+            $newField = ":{$field}";
+            $whereArr[] = "{$field}=$newField";
+            $bindParams[$newField] = $value;
+        }
+
+        $where = implode(' and ', $whereArr);
+        return $this->findOne($where, $bindParams);
+    }
+
+    /**
      * @param array $attributes
      */
     protected function parseOrigin(array $attributes = [])

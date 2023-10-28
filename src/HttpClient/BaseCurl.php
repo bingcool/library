@@ -18,7 +18,7 @@ namespace Common\Library\HttpClient;
 class BaseCurl
 {
     /**
-     * @var resource Curl resource instance
+     * @var \CurlHandle|resource Curl resource instance
      */
     protected $curl;
 

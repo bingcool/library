@@ -95,7 +95,7 @@ abstract class BaseQuery
      */
     protected function parseBuilderClass()
     {
-        $config = $this->connection->getConfig('type');
+        $config = $this->connection->getConfig();
         $type = !empty($config['type']) ? $config['type'] : 'mysql';
         if (false !== strpos($type, '\\')) {
             $class = $type;

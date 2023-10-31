@@ -1272,21 +1272,25 @@ abstract class PDOConnection implements ConnectionInterface
     /**
      * 获取最近插入的ID
      * @param string $sequence 自增序列名
-     * @return mixed
-     * @throws \Throwable
+     * @param int|string $pkValue 自定义的主键唯一值
+     * @return int|string
      */
-    public function getLastInsID($sequence = null)
+    public function getLastInsID($sequence = null, $pkValue = 0)
     {
         try {
-            $insertId = $this->PDOInstance->lastInsertId($sequence);
-        } catch (\Exception $exception) {
-            $insertId = $this->PDOInstance->lastInsertId();
-        } catch (\Throwable $throwable) {
-            throw $throwable;
+            $insertId = $this->PDOInstance->lastInsertId('order_id');
+        } catch (\Throwable $exception) {
+            $insertId = 0;
         }
-        if (is_numeric($insertId)) {
-            $insertId = (int)$insertId;
+
+        if ($insertId > 0) {
+            if (is_numeric($insertId)) {
+                $insertId = (int)$insertId;
+            }
+        }else {
+            $insertId = $pkValue;
         }
+
         return $insertId ?? null;
     }
 

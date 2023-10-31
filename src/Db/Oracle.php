@@ -100,16 +100,17 @@ class Oracle extends PDOConnection
      * 获取最近插入的ID
      * @access public
      * @param string|null $sequence 自增序列名
+     * @param int|string $pkValue 自定义的主键唯一值
      * @return mixed
      */
-    public function getLastInsID(string $sequence = null)
+    public function getLastInsID(string $sequence = null, $pkValue = 0)
     {
         if(!is_null($sequence)) {
             $pdo    = $this->PDOStatementHandle("select {$sequence}.currval as id from dual");
             $result = $pdo->fetchColumn();
         }
 
-        return $result ?? null;
+        return $result ?? $pkValue;
     }
 
     protected function supportSavepoint(): bool

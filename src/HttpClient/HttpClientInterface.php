@@ -23,11 +23,12 @@ interface HttpClientInterface
      * @param string $url The endpoint to send the request to.
      * @param string $method The request method.
      * @param string $body The body of the request.
+     * @param int $connectTimeOut connect time out
      * @param int $timeOut The timeout in seconds for the request.
      *
      * @return RawResponse Raw response from the server.
      *
      * @throws \Common\Library\Exception\CurlException
      */
-    public function send(string $url, string $method, $body, int $timeOut);
+    public function send(string $url, string $method, $body, int $connectTimeOut, int $timeOut);
 }

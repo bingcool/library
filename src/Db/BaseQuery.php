@@ -58,6 +58,11 @@ abstract class BaseQuery
     protected $prefix = '';
 
     /**
+     * @var int
+     */
+    protected $lastInsId = 0;
+
+    /**
      * 当前查询参数
      * @var array
      */
@@ -95,7 +100,7 @@ abstract class BaseQuery
      */
     protected function parseBuilderClass()
     {
-        $config = $this->connection->getConfig('type');
+        $config = $this->connection->getConfig();
         $type = !empty($config['type']) ? $config['type'] : 'mysql';
         if (false !== strpos($type, '\\')) {
             $class = $type;
@@ -263,7 +268,11 @@ abstract class BaseQuery
      */
     public function getLastInsID(string $sequence = null)
     {
-        return $this->connection->getLastInsID($this, $sequence);
+        $lastInsId = $this->connection->getLastInsID($sequence);
+        if ($lastInsId == 0) {
+            return $this->lastInsId;
+        }
+        return $lastInsId;
     }
 
     /**
@@ -843,7 +852,7 @@ abstract class BaseQuery
      * 插入记录
      * @access public
      * @param array   $data         数据
-     * @param boolean $getLastInsID 返回自增主键
+     * @param bool $getLastInsID 返回自增主键
      * @return integer|string
      */
     public function insert(array $data = [], bool $getLastInsID = true)
@@ -858,10 +867,18 @@ abstract class BaseQuery
         $this->connection->createCommand($sql)->insert($bindParams);
 
         if ($getLastInsID) {
-            $lastInsID = $this->connection->getLastInsID();
+            $pkValue = 0;
+            $tableName = $this->getTable();
+            if ($pk = $this->connection->getPk($tableName)) {
+                if (isset($data[$pk])) {
+                    $pkValue = $data[$pk];
+                }
+            }
+            $lastInsID = $this->connection->getLastInsID(null, $pkValue);
+            $this->lastInsId = $lastInsID;
         }
 
-        return $lastInsID ?? '';
+        return $this->lastInsId;
     }
 
     /**

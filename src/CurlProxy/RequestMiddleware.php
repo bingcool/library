@@ -72,7 +72,8 @@ final class RequestMiddleware
                         'path'   => $path,
                         'trace_id' => $traceId ,
                     ]);
-                    $logger->info("【请求】 api={$path}, traceId={$traceId}, 请求参数：" . print_r($jsonData, true));
+
+                    $logger->info("【请求】 api={$path}, traceId={$traceId}, 请求参数：" . json_encode($jsonData, JSON_UNESCAPED_UNICODE));
                 }
             } catch (Throwable $exception) {
             }

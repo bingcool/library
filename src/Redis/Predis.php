@@ -244,21 +244,15 @@ class Predis extends RedisConnection
     public function __call(string $method, array $arguments)
     {
         try {
-            $this->log($method, $arguments, "start to exec method={$method}");
             $result = $this->redis->{$method}(...$arguments);
-            $this->log($method, $arguments);
             return $result;
         } catch (\Exception $exception) {
-            $this->log($method, $arguments, $exception->getMessage());
             $this->redis->disconnect();
             $this->sleep(0.5);
-            $this->log($method, $arguments, 'start to try again');
             $this->redis = new \Predis\Client($this->parameters, $this->options);
             $result = $this->redis->{$method}(...$arguments);
-            $this->log($method, $arguments, 'retry ok');
             return $result;
         } catch (\Throwable $throwable) {
-            $this->log($method, $arguments, 'retry failed,errorMsg=' . $throwable->getMessage());
             throw $throwable;
         }
     }

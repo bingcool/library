@@ -143,22 +143,16 @@ class Redis extends RedisConnection
     public function __call(string $method, array $arguments)
     {
         try {
-            $this->log($method, $arguments, "start to exec method={$method}");
             $result = $this->redis->{$method}(...$arguments);
             $this->log($method, $arguments);
             return $result;
         } catch (\RedisException|\Exception $exception) {
-            $this->log($method, $arguments, $exception->getMessage());
-            $this->log($method, $arguments, 'start to reConnect');
             $this->sleep(0.5);
             $this->redis->close();
             $this->reConnect();
-            $this->log($method, $arguments, "reConnect successful, start to try exec method={$method} again");
             $result = $this->redis->{$method}(...$arguments);
-            $this->log($method, $arguments, 'retry ok');
             return $result;
         } catch (\Throwable $throwable) {
-            $this->log($method, $arguments, 'retry failed,errorMsg=' . $throwable->getMessage());
             throw $throwable;
         }
     }

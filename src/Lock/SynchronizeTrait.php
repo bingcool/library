@@ -12,7 +12,6 @@
 namespace Common\Library\Lock;
 
 use Throwable;
-use Swoolefy\Core\BaseServer;
 use malkusch\lock\exception\LockReleaseException;
 
 trait SynchronizeTrait
@@ -79,7 +78,7 @@ trait SynchronizeTrait
      */
     public function isCoroutine()
     {
-        if (class_exists('Swoole\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
+        if (class_exists('Swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
             return true;
         }
 

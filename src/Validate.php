@@ -70,6 +70,7 @@ class Validate
         'float' => ':attribute must be float',
         'boolean' => ':attribute must be bool',
         'bool' => ':attribute must be bool',
+        'string' => ':attribute must be string',
         'email' => ':attribute not a valid email address',
         'mobile' => ':attribute not a valid mobile',
         'array' => ':attribute must be a array',
@@ -77,6 +78,7 @@ class Validate
         'accepted' => ':attribute must be yes,on or 1',
         'date' => ':attribute not a valid datetime',
         'file' => ':attribute not a valid file',
+        'nullable' => ':attribute can not set or null value',
         'image' => ':attribute not a valid image',
         'alpha' => ':attribute must be alpha',
         'alphaNum' => ':attribute must be alpha-numeric',
@@ -789,6 +791,9 @@ class Validate
                 case 'float':
                     $result = filter_var($value, FILTER_VALIDATE_FLOAT) !== false;
                     break;
+                case 'string':
+                    $result = is_string($value);
+                    break;
                 case 'alphaNum':
                     $result = ctype_alnum($value);
                     break;
@@ -1226,6 +1231,17 @@ class Validate
     {
         return !in_array($value, is_array($rule) ? $rule : explode(',', $rule));
     }
+
+    /**
+     * 验证字段可传可不传
+     *
+     * @return bool
+     */
+    public function nullable(): bool
+    {
+        return true;
+    }
+
 
     /**
      * 使用正则验证数据

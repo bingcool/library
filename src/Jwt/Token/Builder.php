@@ -28,7 +28,7 @@ final class Builder implements BuilderInterface
     private $headers = ['typ' => 'JWT', 'alg' => null];
 
     /** @var array<string, mixed> */
-    private$claims = [];
+    private $claims = [];
 
     /**
      * @var Encoder

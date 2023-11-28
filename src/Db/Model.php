@@ -836,7 +836,7 @@ abstract class Model implements ArrayAccess
             }
         }
 
-        // formater
+        // formatter
         if (is_object($this->formatter) && $this->formatter instanceof ListItemFormatter) {
             $this->formatter->setData($attributes);
             $attributes = $this->formatter->result();

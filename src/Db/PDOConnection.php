@@ -133,7 +133,12 @@ abstract class PDOConnection implements ConnectionInterface
     /**
      * @var int
      */
-    protected $debug = 1;
+    public $debug = 1;
+
+    /**
+     * @var null|int
+     */
+    public $dynamicDebug = null;
 
     /**
      * @var array
@@ -226,6 +231,7 @@ abstract class PDOConnection implements ConnectionInterface
         $this->config = array_merge($this->config, $config);
         $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
         $this->debug = (int)$this->config['debug'] ?? 1;
+        $this->enableDynamicDebug();
     }
 
     /**
@@ -235,6 +241,26 @@ abstract class PDOConnection implements ConnectionInterface
     public function setDebug(bool $isDebug = true)
     {
         $this->debug = (int) $isDebug;
+    }
+
+    /**
+     * enableDynamicDebug
+     *
+     * @param bool $isDynamicDebug
+     * @return void
+     */
+    public function enableDynamicDebug()
+    {
+        if (\Swoolefy\Core\Coroutine\Context::has('db_debug')) {
+            $debug = \Swoolefy\Core\Coroutine\Context::get('db_debug');
+            $debug = (int) $debug;
+            if ($debug) {
+                $this->debug = $debug;
+                $this->dynamicDebug = $debug;
+            }else {
+                $this->dynamicDebug = $debug;
+            }
+        }
     }
 
     /**

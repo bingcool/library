@@ -96,17 +96,17 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     /**
      * 由于是延迟队列，一般score存入当前时间戳，$delayTime为延迟时间，单位秒
      * @param int $score
-     * @param $member
+     * @param $memberValue
      * @param int $delayTime
      * @return $this
      */
-    public function addItem(int $score, $member, int $delayTime)
+    public function addItem(int $score, $memberValue, int $delayTime)
     {
         if ($score < 0) {
             $score = time();
         }
         $this->sortData[] = $score + $delayTime;
-        $this->sortData[] = is_array($member) ? json_encode($member) : $member;
+        $this->sortData[] = is_array($memberValue) ? json_encode($memberValue) : $memberValue;
 
         if (count($this->sortData) >= 200) {
             $this->push();

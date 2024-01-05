@@ -74,7 +74,7 @@ class Validate
         'email' => ':attribute not a valid email address',
         'mobile' => ':attribute not a valid mobile',
         'array' => ':attribute must be a array',
-        'json'  => ':attribute must be a json string',
+        'json'  => ':attribute must be a validate json string',
         'accepted' => ':attribute must be yes,on or 1',
         'date' => ':attribute not a valid datetime',
         'file' => ':attribute not a valid file',
@@ -801,7 +801,6 @@ class Validate
                     // 是否为数组
                     $result = is_array($value);
                     break;
-
                 default:
                     if ($isDefaultHandle) {
                         if (isset($this->type[$rule])) {
@@ -878,9 +877,12 @@ class Validate
             return false;
         }
 
-        json_decode($value);
+        $result = json_decode($value, true);
 
-        return json_last_error() === JSON_ERROR_NONE;
+        if (is_array($result)) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1233,8 +1235,6 @@ class Validate
     }
 
     /**
-     * 验证字段可传可不传
-     *
      * @return bool
      */
     public function nullable(): bool

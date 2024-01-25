@@ -23,6 +23,11 @@
 - [X] symfony/filesystem
 - [x] symfony/polyfill-uuid  
 - [x] symfony/finder    
+- [x] symfony/yaml     
+- [x] symfony/symfony/polyfill-php80     
+- [x] symfony/symfony/polyfill-php81    
+- [x] symfony/symfony/polyfill-php82    
+- [x] symfony/symfony/polyfill-php83
 - [x] xlswriter   
 - [x] Guzzle 
 - [x] catfan/Medoo    

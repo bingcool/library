@@ -1368,7 +1368,7 @@ abstract class PDOConnection implements ConnectionInterface
             if($this->isCoroutine()) {
                 $cid = \Swoole\Coroutine::getCid();
                 $sqlFlag = "【sql-cid-{$cid}】";
-                $logger = \Swoolefy\Core\Log\LogManager::getInstance()->getLogger('sql_log');
+                $logger = LogManager::getInstance()->getLogger(LogManager::SQL_LOG);
                 if ($logger) {
                     $logFilePath = $logger->getLogFilePath();
                     if (!file_exists($logFilePath)) {

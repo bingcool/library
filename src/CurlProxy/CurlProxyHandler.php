@@ -16,6 +16,7 @@ use GuzzleHttp\Handler\CurlFactoryInterface;
 use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\RequestInterface;
 use Swoolefy\Core\Coroutine\Context;
+use Swoolefy\Core\Log\LogManager;
 
 class CurlProxyHandler
 {
@@ -61,7 +62,7 @@ class CurlProxyHandler
     public static function buildLogChannel()
     {
         if (\Swoole\Coroutine::getCid() >= 0) {
-            $logger = \Swoolefy\Core\Log\LogManager::getInstance()->getLogger('guzzle_curl_log');
+            $logger = LogManager::getInstance()->getLogger(LogManager::GUZZLE_CURL_LOG);
             if ($logger) {
                 $logFilePath = $logger->getLogFilePath();
                 if (!Context::has('is_exist_guzzle_curl_log_file')) {

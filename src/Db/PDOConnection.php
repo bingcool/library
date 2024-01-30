@@ -420,6 +420,15 @@ abstract class PDOConnection implements ConnectionInterface
         return $this->PDOInstance;
     }
 
+    /**
+     * 游标-生成器迭代处理,可用于处理大量数据
+     *
+     * @param string $sql
+     * @param array $bindParams
+     * @param $fetchType
+     * @return \Generator
+     * @throws \Throwable
+     */
     public function cursor(string $sql, array $bindParams, $fetchType = '')
     {
         $this->PDOStatementHandle($sql, $bindParams);

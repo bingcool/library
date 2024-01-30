@@ -359,7 +359,7 @@ class Query extends BaseQuery
     }
 
     /**
-     * 使用游标查找记录
+     * 使用游标-生成器迭代大量数据集合
      * @access public
      * @param mixed $data 数据
      * @return \Generator

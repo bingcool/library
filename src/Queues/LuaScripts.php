@@ -21,10 +21,11 @@ class LuaScripts
         $lua = <<<LUA
 local retryMessageKey = KEYS[1];
 local delayKey = KEYS[2];
-local member = ARGV[1];
-local scoreTime = ARGV[2];
+local msgId = ARGV[1];
+local member = ARGV[2];
+local scoreTime = ARGV[3];
 
-redis.call('hIncrBy', retryMessageKey, member , 1);
+redis.call('hIncrBy', retryMessageKey, msgId , 1);
 
 redis.call('zAdd', delayKey, scoreTime, member);
 
@@ -119,19 +120,19 @@ local targetMember = ARGV[2];
 
 -- retryMessageKey need use data 
 local retryTimes = ARGV[3];
-local uniqueMember = ARGV[4];
+local msgId = ARGV[4];
 
-local hasRetryTimes = redis.call('hGet', retryMessageKey, uniqueMember);
+local hasRetryTimes = redis.call('hGet', retryMessageKey, msgId);
 
 if hasRetryTimes then
     if ( hasRetryTimes >= retryTimes ) then
-        redis.call('hDel', retryMessageKey, uniqueMember);
+        redis.call('hDel', retryMessageKey, msgId);
         return 1;
     end;
 end;
 
 -- retry member incr retryTimes
-redis.call('hIncrBy', retryMessageKey, uniqueMember , 1);
+redis.call('hIncrBy', retryMessageKey, msgId , 1);
 
 return redis.call('zAdd', retryQueueKey, nextTime, targetMember);
 

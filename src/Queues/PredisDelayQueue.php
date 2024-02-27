@@ -89,19 +89,21 @@ class PredisDelayQueue extends BaseDelayQueue
 
     /**
      * 重试
-     * @param $member
+     * @param array $member
      * @param int $delayTime
      * @return mixed
      */
-    public function retry($member, int $delayTime)
+    public function retry(array $member, int $delayTime)
     {
-        $retryTimes = $this->redis->hGet($this->retryMessageKey, $member);
-        if ($retryTimes >= $this->retryTimes) {
-            $this->redis->hDel($this->retryMessageKey, $member);
+        list($member, $overRetryTimes) = $this->delRetryMsg($member);
+        // 达到最大的重试次数
+        if ($overRetryTimes) {
             return;
         }
 
-        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), 2, ...[$this->retryMessageKey, $this->delayKey, $member, time() + $delayTime]);
+        $msgId = $member['__id'];
+        $member = json_encode($member);
+        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), 2, ...[$this->retryMessageKey, $this->delayKey, $msgId, $member, time() + $delayTime]);
     }
 
 }

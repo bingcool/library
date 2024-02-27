@@ -94,18 +94,27 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     }
 
     /**
+     * @return string
+     * @throws \Exception
+     */
+    protected function generateUnMsgId(): string
+    {
+        return md5(microtime(true). random_bytes(16) . random_int(1,100000));
+    }
+
+    /**
      * 由于是延迟队列，一般score存入当前时间戳，$delayTime为延迟时间，单位秒
-     * @param int $score
-     * @param $memberValue
+     * @param array $memberValue
      * @param int $delayTime
      * @return $this
      */
-    public function addItem(int $score, $memberValue, int $delayTime)
+    public function addItem(array $memberValue, int $delayTime)
     {
-        if ($score < 0) {
-            $score = time();
-        }
+        $score = time();
         $this->sortData[] = $score + $delayTime;
+        // 有序集合不能重复元素
+        $memberValue['__id'] = $this->generateUnMsgId();
+        $memberValue['__retry_num'] = 0;
         $this->sortData[] = is_array($memberValue) ? json_encode($memberValue) : $memberValue;
 
         if (count($this->sortData) >= 200) {
@@ -246,6 +255,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      * @param $start
      * @param $end
      * @param array $options
+     * @return array
      */
     public function rangeByScore($start, $end, array $options = ['limit' => [0, 9]])
     {
@@ -253,20 +263,61 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     }
 
     /**
+     * @param array $options
+     * @return array
+     */
+    public function pop(array $options =  ['limit' => [0, 9]] )
+    {
+        $result = $this->rangeByScore('-inf', time(), $options);
+        foreach ($result as &$item) {
+            if (is_string($item)) {
+                $item = json_decode($item, true) ?? $item;
+            }
+        }
+        return $result;
+    }
+
+    /**
      * 重试
-     * @param $member
+     * @param array $member
      * @param int $delayTime
      * @return mixed
      */
-    public function retry($member, int $delayTime)
+    public function retry(array $member, int $delayTime)
     {
-        $retryTimes = $this->redis->hGet($this->retryMessageKey, $member);
-        if ($retryTimes >= $this->retryTimes) {
-            $this->redis->hDel($this->retryMessageKey, $member);
+        list($member, $overRetryTimes) = $this->delRetryMsg($member);
+        // 达到最大的重试次数
+        if ($overRetryTimes) {
             return;
         }
+        $msgId = $member['__id'];
 
-        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), [$this->retryMessageKey, $this->delayKey, $member, (time() + $delayTime)], 2);
+        $member = json_encode($member);
+        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), [$this->retryMessageKey, $this->delayKey, $msgId, $member, (time() + $delayTime)], 2);
+    }
+
+    /**
+     * @param array $member
+     * @return array
+     * @throws \RedisException
+     */
+    protected function delRetryMsg(array $member): array
+    {
+        if (!isset($member['__id'])) {
+            $msgId = $this->generateUnMsgId();
+            $member['__id'] = $msgId;
+        }
+
+        $msgId = $member['__id'];
+        // 达到最大的重试次数
+        $retryTimes = $this->redis->hGet($this->retryMessageKey, $msgId);
+        $overRetryTimes = false;
+        if ($retryTimes >= $this->retryTimes) {
+            $this->redis->hDel($this->retryMessageKey, $msgId);
+            $overRetryTimes = true;
+        }
+        $member['__retry_num'] = $retryTimes;
+        return [$member, $overRetryTimes];
     }
 
     /**
@@ -276,5 +327,4 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     {
         $this->push();
     }
-
 }

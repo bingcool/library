@@ -67,18 +67,32 @@ class Queue
     }
 
     /**
+     * @return string
+     * @throws \Exception
+     */
+    protected function generateUnMsgId(): string
+    {
+        return md5(microtime(true). random_bytes(16) . random_int(1,100000));
+    }
+
+    /**
      * push data to list
      * @param mixed ...$items
      * @return bool|int
      */
-    public function push(...$items)
+    public function push(array ...$items)
     {
         $push = [];
         if (empty($items)) {
             return false;
         }
         foreach ($items as $v) {
-            $push[] = is_array($v) ? json_encode($v) : $v;
+            if (is_array($v)) {
+                $v['__id'] = $this->generateUnMsgId();
+                $v['__retry_num'] = 0;
+                $v = json_encode($v);
+            }
+            $push[] = $v;
         }
         // Predis handle
         if ($this->isPredisDriver) {
@@ -112,26 +126,43 @@ class Queue
             $this->redis->eval(LuaScripts::getQueueLuaScript(), [$this->retryQueueKey, $this->queueKey, '-inf', time(), 0, 100], 2);
         }
 
+        if (isset($result[1]) && is_string($result[1])) {
+            $data = json_decode($result[1], true);
+            if (!is_null($data)) {
+                $result[1] = $data;
+            }
+        }
+
         return $result;
     }
 
     /**
-     * @param array|string $data
+     * @param array $data
      * @param int $delayTime
      */
-    public function retry($data, int $delayTime = 10)
+    public function retry(array $data, int $delayTime = 10)
     {
-        if (is_array($data)) {
-            $data = json_encode($data);
+        if (!isset($data['__id'])) {
+            $data['__id'] = $this->generateUnMsgId();
         }
 
-        $uniqueMember = md5($data);
+        if (!isset($data['__retry_num'])) {
+            $data['__retry_num'] = 1;
+        }else {
+            $retryNum = $data['__retry_num'];
+            $data['__retry_num'] = $retryNum + 1;
+        }
+
+        $msgId = $data['__id'];
+
+        $data = json_encode($data);
 
         if ($this->isPredisDriver) {
-            $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), 2, ...[$this->retryQueueKey, $this->retryMessageKey, time() + $delayTime, $data, $this->retryTimes, $uniqueMember]);
+            $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), 2, ...[$this->retryQueueKey, $this->retryMessageKey, time() + $delayTime, $data, $this->retryTimes, $msgId]);
         } else {
-            $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), [$this->retryQueueKey, $this->retryMessageKey, time() + $delayTime, $data, $this->retryTimes, $uniqueMember], 2);
+            $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), [$this->retryQueueKey, $this->retryMessageKey, time() + $delayTime, $data, $this->retryTimes, $msgId], 2);
         }
+
         return $result;
     }
 

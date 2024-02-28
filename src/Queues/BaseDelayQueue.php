@@ -28,12 +28,6 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     protected $delayKey;
 
     /**
-     * 记录重试信息
-     * @var string
-     */
-    protected $retryMessageKey;
-
-    /**
      * 重试次数
      * @var int
      */
@@ -67,7 +61,6 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
         }
         $this->redis = $redis;
         $this->delayKey = $delayKey;
-        $this->retryMessageKey = $delayKey . ':retry_delq_msg';
         $this->option = $option;
     }
 
@@ -115,6 +108,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
         // 有序集合不能重复元素
         $memberValue['__id'] = $this->generateUnMsgId();
         $memberValue['__retry_num'] = 0;
+        $memberValue['__timestamp'] = $score;
         $this->sortData[] = is_array($memberValue) ? json_encode($memberValue) : $memberValue;
 
         if (count($this->sortData) >= 200) {
@@ -209,11 +203,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
         $chuncks = array_chunk($result, 2, false);
         $data = [];
         foreach ($chuncks as $chunck) {
-            if (preg_match("/^[1-9][0-9]*$/", $chunck[1])) {
-                $data[$chunck[0]] = (int)$chunck[1];
-            } else {
-                $data[$chunck[0]] = $chunck[1];
-            }
+            $data[] = $chunck[0];
         }
         return $data;
     }
@@ -232,23 +222,6 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     public function getDelayKey()
     {
         return $this->delayKey;
-    }
-
-    /**
-     * @return string
-     */
-    public function getRetryMessageKey()
-    {
-        return $this->retryMessageKey;
-    }
-
-    /**
-     * 获取目前队列重试的成员数量
-     * @return int
-     */
-    public function getRetryNumbers()
-    {
-        return $this->redis->hLen($this->getRetryMessageKey());
     }
 
     /**
@@ -285,15 +258,15 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      */
     public function retry(array $member, int $delayTime)
     {
-        list($member, $overRetryTimes) = $this->delRetryMsg($member);
+        list($member, $overRetryNum) = $this->parseMaxRetryNum($member);
         // 达到最大的重试次数
-        if ($overRetryTimes) {
+        if ($overRetryNum) {
             return;
         }
         $msgId = $member['__id'];
 
         $member = json_encode($member);
-        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), [$this->retryMessageKey, $this->delayKey, $msgId, $member, (time() + $delayTime)], 2);
+        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), [$this->delayKey, $msgId, $member, (time() + $delayTime)], 1);
     }
 
     /**
@@ -301,23 +274,26 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      * @return array
      * @throws \RedisException
      */
-    protected function delRetryMsg(array $member): array
+    protected function parseMaxRetryNum(array $member): array
     {
         if (!isset($member['__id'])) {
             $msgId = $this->generateUnMsgId();
             $member['__id'] = $msgId;
         }
 
-        $msgId = $member['__id'];
-        // 达到最大的重试次数
-        $retryTimes = $this->redis->hGet($this->retryMessageKey, $msgId);
-        $overRetryTimes = false;
-        if ($retryTimes >= $this->retryTimes) {
-            $this->redis->hDel($this->retryMessageKey, $msgId);
-            $overRetryTimes = true;
+        // 达到最大重试次数
+        if ($member['__retry_num'] >= $this->retryTimes) {
+            $overRetryNum = true;
         }
-        $member['__retry_num'] = $retryTimes;
-        return [$member, $overRetryTimes];
+
+        if (!isset($member['__retry_num'])) {
+            $member['__retry_num'] = 1;
+        }else {
+            $retryNum = $member['__retry_num'];
+            $member['__retry_num'] = $retryNum + 1;
+        }
+
+        return [$member, $overRetryNum ?? false];
     }
 
     /**

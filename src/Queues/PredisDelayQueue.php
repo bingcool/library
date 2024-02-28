@@ -70,18 +70,16 @@ class PredisDelayQueue extends BaseDelayQueue
             $limit = $options['limit'][1] ?? null;
         }
 
-        $withScores = (int)($options['withscores'] ?? 0);
+        $withScores = (int)($options['withscores'] ?? 1);
 
         $luaScript = LuaScripts::getRangeByScoreLuaScript();
 
         if ($withScores > 0 && isset($offset) && isset($limit)) {
-            $result = $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end, $offset, $limit, $withScores]);
-            return $this->mapResult($result);
+            return $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end, $offset, $limit, $withScores]);
         } else if (isset($offset) && isset($limit)) {
             return $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end, $offset, $limit]);
         } else if ($withScores > 0) {
-            $result = $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end, '', '', $withScores]);
-            return $this->mapResult($result);
+            return $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end, '', '', $withScores]);
         } else {
             return $this->redis->eval($luaScript, 1, $this->delayKey, ...[$start, $end]);
         }
@@ -95,15 +93,15 @@ class PredisDelayQueue extends BaseDelayQueue
      */
     public function retry(array $member, int $delayTime)
     {
-        list($member, $overRetryTimes) = $this->delRetryMsg($member);
+        list($member, $overRetryNum) = $this->parseMaxRetryNum($member);
         // 达到最大的重试次数
-        if ($overRetryTimes) {
+        if ($overRetryNum) {
             return;
         }
 
         $msgId = $member['__id'];
         $member = json_encode($member);
-        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), 2, ...[$this->retryMessageKey, $this->delayKey, $msgId, $member, time() + $delayTime]);
+        $this->redis->eval(LuaScripts::getDelayRetryLuaScript(), 1, ...[$this->delayKey, $msgId, $member, time() + $delayTime]);
     }
 
 }

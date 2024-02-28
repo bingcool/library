@@ -19,14 +19,10 @@ class LuaScripts
     public static function getDelayRetryLuaScript()
     {
         $lua = <<<LUA
-local retryMessageKey = KEYS[1];
-local delayKey = KEYS[2];
+local delayKey = KEYS[1];
 local msgId = ARGV[1];
 local member = ARGV[2];
 local scoreTime = ARGV[3];
-
-redis.call('hIncrBy', retryMessageKey, msgId , 1);
-
 redis.call('zAdd', delayKey, scoreTime, member);
 
 LUA;
@@ -46,22 +42,56 @@ local offset =  ARGV[3];
 local limit = ARGV[4];
 local withScores = ARGV[5];
 
-local ret = {};
+local members = {};
+local tempMembers = {};
 
 if ( (type(tonumber(limit)) == 'number' ) and ( tonumber(withScores) == 1 ) ) then
-    ret = redis.call('zRangeByScore', delayKey, startScore, endScore,'withscores','limit', offset, limit);
+    members = redis.call('zRangeByScore', delayKey, startScore, endScore,'withscores','limit', offset, limit);
+    local j = 1;
+    for i,member in ipairs(members) do
+        if type(tonumber(member)) ~= 'number' then
+            tempMembers[j] = member
+            j = j + 1;
+        end
+    end
+    
+    -- delete data
+    if #tempMembers > 0 then
+        redis.call("ZREM", delayKey, unpack(tempMembers))
+    end
+    
+    members = tempMembers;
+    
 elseif type(tonumber(limit)) == 'number' then
-    ret = redis.call('zRangeByScore', delayKey, startScore, endScore, 'limit', offset, limit);
+    members = redis.call('zRangeByScore', delayKey, startScore, endScore, 'limit', offset, limit);
+    -- delete data
+    if #members > 0 then 
+        redis.call("ZREM", delayKey, unpack(members))
+    end
 elseif ( tonumber(withScores) == 1 ) then
-    ret = redis.call('zRangeByScore', delayKey, startScore, endScore, 'withscores');
+    members = redis.call('zRangeByScore', delayKey, startScore, endScore, 'withscores');
+    
+    local j = 1;
+    for i,member in ipairs(members) do
+        if type(tonumber(member)) ~= 'number' then
+            tempMembers[j] = member
+            j = j + 1;
+        end
+    end
+    
+    -- delete data
+    redis.call('zRemRangeByScore', delayKey, startScore, endScore);
+    
+    members = tempMembers;
+    
 else
-    ret = redis.call('zRangeByScore', delayKey, startScore, endScore);
+    members = redis.call('zRangeByScore', delayKey, startScore, endScore);
+    -- delete data
+    redis.call('zRemRangeByScore', delayKey, startScore, endScore);
 end;
 
--- delete data
-redis.call('zRemRangeByScore', delayKey, startScore, endScore);
+return members;
 
-return ret;
     
 LUA;
         return $lua;
@@ -80,23 +110,23 @@ local endScore = ARGV[2];
 local offset =  ARGV[3];
 local limit = ARGV[4];
 
-local ret = {};
+local members = {};
 
 -- get retry item
 if type(tonumber(limit)) == 'number' then
-    ret = redis.call('zRangeByScore', delayRetryKey, startScore, endScore, 'limit', offset, limit);
+    members = redis.call('zRangeByScore', delayRetryKey, startScore, endScore, 'limit', offset, limit);
 else
-    ret = redis.call('zRangeByScore', delayRetryKey, startScore, endScore);
+    members = redis.call('zRangeByScore', delayRetryKey, startScore, endScore);
 end;
 
 -- lPush queue
-for k,v in ipairs(ret) do
+for k,v in ipairs(members) do
     redis.call('lPush', queueKey, v);
 end;
 
 -- delete data
-if next(ret) ~= nil then
-    redis.call('zRemRangeByScore', delayRetryKey, startScore, endScore);
+if #members > 0 then
+    redis.call('ZREM', delayRetryKey, unpack(members));
 end;
 
 return true;
@@ -112,7 +142,6 @@ LUA;
     {
         $lua = <<<LUA
 local retryQueueKey = KEYS[1];
-local retryMessageKey = KEYS[2];
 
 -- retryQueueKey need use data
 local nextTime = ARGV[1];
@@ -121,18 +150,6 @@ local targetMember = ARGV[2];
 -- retryMessageKey need use data 
 local retryTimes = ARGV[3];
 local msgId = ARGV[4];
-
-local hasRetryTimes = redis.call('hGet', retryMessageKey, msgId);
-
-if hasRetryTimes then
-    if ( hasRetryTimes >= retryTimes ) then
-        redis.call('hDel', retryMessageKey, msgId);
-        return 1;
-    end;
-end;
-
--- retry member incr retryTimes
-redis.call('hIncrBy', retryMessageKey, msgId , 1);
 
 return redis.call('zAdd', retryQueueKey, nextTime, targetMember);
 

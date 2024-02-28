@@ -63,7 +63,6 @@ class Queue
         $this->redis = $redis;
         $this->queueKey = $queueKey;
         $this->retryQueueKey = $queueKey . ':retry_queue_sort';
-        $this->retryMessageKey = $queueKey . ':retry_queue_msg';
     }
 
     /**
@@ -90,6 +89,7 @@ class Queue
             if (is_array($v)) {
                 $v['__id'] = $this->generateUnMsgId();
                 $v['__retry_num'] = 0;
+                $memberValue['__timestamp'] = time();
                 $v = json_encode($v);
             }
             $push[] = $v;
@@ -139,11 +139,17 @@ class Queue
     /**
      * @param array $data
      * @param int $delayTime
+     * @return void
      */
     public function retry(array $data, int $delayTime = 10)
     {
         if (!isset($data['__id'])) {
             $data['__id'] = $this->generateUnMsgId();
+        }
+
+        // 达到最大的重试次数
+        if ($data['__retry_num'] >= $this->retryTimes) {
+            return;
         }
 
         if (!isset($data['__retry_num'])) {
@@ -158,9 +164,9 @@ class Queue
         $data = json_encode($data);
 
         if ($this->isPredisDriver) {
-            $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), 2, ...[$this->retryQueueKey, $this->retryMessageKey, time() + $delayTime, $data, $this->retryTimes, $msgId]);
+            $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), 1, ...[$this->retryQueueKey, time() + $delayTime, $data, $this->retryTimes, $msgId]);
         } else {
-            $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), [$this->retryQueueKey, $this->retryMessageKey, time() + $delayTime, $data, $this->retryTimes, $msgId], 2);
+            $result = $this->redis->eval(LuaScripts::getQueueRetryLuaScript(), [$this->retryQueueKey, time() + $delayTime, $data, $this->retryTimes, $msgId], 1);
         }
 
         return $result;
@@ -195,33 +201,6 @@ class Queue
     }
 
     /**
-     * 当前重试队列长度
-     * @return int
-     */
-    public function retryQueueCount()
-    {
-        return (int)$this->redis->zCount($this->retryQueueKey, '-inf', '+inf');
-    }
-
-    /**
-     * delRetryMessageKey
-     */
-    public function delRetryMessageKey()
-    {
-        if ($this->retryQueueCount() == 0 && (int)$this->redis->lLen($this->queueKey) == 0) {
-            if ($this->isPredisDriver) {
-                $this->redis->del([$this->retryMessageKey]);
-            } else {
-                /**
-                 * @var \Redis $redis
-                 */
-                $redis = $this->redis;
-                $redis->del($this->retryMessageKey);
-            }
-        }
-    }
-
-    /**
      * @return RedisConnection
      */
     public function getRedis()
@@ -243,13 +222,5 @@ class Queue
     public function getRetryQueueKey()
     {
         return $this->retryQueueKey;
-    }
-
-    /**
-     * @return string
-     */
-    public function getRetryMessageKey()
-    {
-        return $this->retryMessageKey;
     }
 }

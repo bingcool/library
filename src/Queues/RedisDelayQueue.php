@@ -52,13 +52,11 @@ class RedisDelayQueue extends BaseDelayQueue
         $luaScript = LuaScripts::getRangeByScoreLuaScript();
 
         if ($withScores > 0 && isset($offset) && isset($limit)) {
-            $result = $this->redis->eval($luaScript, [$this->delayKey, $start, $end, $offset, $limit, $withScores], 1);
-            return $this->mapResult($result);
+            return $this->redis->eval($luaScript, [$this->delayKey, $start, $end, $offset, $limit, $withScores], 1);
         } else if (isset($offset) && isset($limit)) {
             return $this->redis->eval($luaScript, [$this->delayKey, $start, $end, $offset, $limit], 1);
         } else if ($withScores > 0) {
-            $result = $this->redis->eval($luaScript, [$this->delayKey, $start, $end, '', '', $withScores], 1);
-            return $this->mapResult($result);
+            return $this->redis->eval($luaScript, [$this->delayKey, $start, $end, '', '', $withScores], 1);
         } else {
             return $this->redis->eval($luaScript, [$this->delayKey, $start, $end], 1);
         }

@@ -89,7 +89,7 @@ class Queue
             if (is_array($v)) {
                 $v['__id'] = $this->generateUnMsgId();
                 $v['__retry_num'] = 0;
-                $memberValue['__timestamp'] = time();
+                $v['__timestamp'] = time();
                 $v = json_encode($v);
             }
             $push[] = $v;

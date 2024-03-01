@@ -19,7 +19,7 @@ class RedisLimit
     /**
      * rate limit key
      */
-    const PREFIX_LIMIT = 'rate_limit:';
+    const PREFIX_LIMIT = '_rate_limit:';
 
     /**
      * @var RedisConnection
@@ -31,26 +31,16 @@ class RedisLimit
      */
     protected $rateKey;
 
-    /** 滑动窗口单位数量,单位秒
+    /** 滑动窗口单位数量,单位个
      * @var int
      */
     protected $limitNum;
 
     /**
-     * 滑动窗口时间，小时|分钟|秒 ,单位秒
+     * 滑动窗口时间，单位秒（不宜设置过大，否资流量分配不均匀）
      * @var int
      */
-    protected $limitTime;
-
-    /**
-     * sort set 保留请求id数据最长时长,单位秒
-     * 有时需要统计可能是小时级别，也可能是分钟级别，秒级别
-     * 如果有小时级别流量控制，那么设置为24小时(86400s)即可
-     * 如果最大级别只有分钟流量控制，那么设置为1小时(3600s)即可
-     * 如果只有秒级流量控制，那么设置为1分钟(60s)即可
-     * @var int
-     */
-    protected $ttl;
+    protected $windowSizeTime;
 
     /**
      * @var bool
@@ -77,23 +67,18 @@ class RedisLimit
     }
 
     /**
-     * @param int $time
-     * @param int $num
-     * @param int $ttl
+     * @param int $limitNum
+     * @param int $windowSizeTime
      * @return void
      */
-    public function setLimitParams(int $limitNum, int $limitTime, int $ttl) {
+    public function setLimitParams(int $limitNum, int $windowSizeTime) {
         $this->limitNum = $limitNum;
-        $this->limitTime = $limitTime;
-        $this->ttl = $ttl;
+        $this->windowSizeTime = $windowSizeTime;
     }
 
     /**
-     * @param string $key
-     * @param int $limitTime
-     * @param int $limitNum
-     * @param int $ttl
      * @return bool
+     * @throws RateLimitException
      */
     public function isLimit(): bool
     {
@@ -101,19 +86,18 @@ class RedisLimit
             throw new RateLimitException("RateKey Missing Setting");
         }
 
-        if (empty($this->limitNum) || empty($this->limitTime) || empty($this->ttl)) {
+        if (empty($this->limitNum) || empty($this->windowSizeTime)) {
             throw new RateLimitException("RateLimit Missing Set Params");
         }
 
         $requireId = $this->getRequireId();
-        $endMilliSecond = $this->getMilliSecond();
-        $startMilliSecond = $endMilliSecond - ($this->limitTime * 1000);
-        $remRemainTime = $endMilliSecond - ($this->ttl * 1000);
+        $windowEndMilliSecond = (int)$this->getMilliSecond();
+        $windowStartMilliSecond = $windowEndMilliSecond - ($this->windowSizeTime * 1000);
 
         if ($this->isPredisDriver) {
-            $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $this->limitNum, $requireId]);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $windowStartMilliSecond, $windowEndMilliSecond, $this->limitNum, $requireId]);
         } else {
-            $isLimit = $this->redis->eval($this->getLuaLimitScript(), [$this->rateKey, $startMilliSecond, $endMilliSecond, $remRemainTime, $this->limitNum, $requireId], 1);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), [$this->rateKey, $windowStartMilliSecond, $windowEndMilliSecond, $this->limitNum, $requireId], 1);
         }
 
         return (bool)$isLimit;
@@ -136,19 +120,25 @@ class RedisLimit
     {
         $lua = <<<LUA
 local rateKey = KEYS[1];
-local startMilliSecond = ARGV[1];
-local endMilliSecond = ARGV[2];
-local remRemainTime = tonumber(ARGV[3]);
-local limitNum = tonumber(ARGV[4]);
-local requireId = tonumber(ARGV[5]);
+local windowStartMilliSecond = tonumber(ARGV[1]);
+local windowEndMilliSecond = tonumber(ARGV[2]);
+local limitNum = tonumber(ARGV[3]);
+local requireId = tostring(ARGV[4]);
+
+-- Not EXISTS Key
+if redis.call('EXISTS', rateKey) == 0 then
+    redis.call('EXPIRE', rateKey, 24 * 3600)
+end
+
+-- delete data
+redis.call('zRemRangeByScore', rateKey, '-inf', windowStartMilliSecond);
 
 -- get in limit time count
-local count = redis.call('zCount', rateKey, startMilliSecond, endMilliSecond);
+local count = redis.call('zCount', rateKey, windowStartMilliSecond, windowEndMilliSecond);
+
 -- can access rate limit
 if (count < limitNum) then
-    -- delete data
-    redis.call('zRemRangeByScore', rateKey, '-inf', remRemainTime);
-    redis.call('zAdd', rateKey, endMilliSecond, requireId);
+    redis.call('zAdd', rateKey, windowEndMilliSecond, requireId);
     return 0;
 else 
     return 1;

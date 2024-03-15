@@ -1186,7 +1186,7 @@ abstract class AbstractBuilder
     }
 
     /**
-     * 生成insertall SQL
+     * 生成insertAll SQL
      * @access public
      * @param  Query $query   查询对象
      * @param  array $dataSet 数据集

@@ -196,7 +196,7 @@ class Mysql extends AbstractBuilder
     }
 
     /**
-     * 生成insertall SQL
+     * 生成insertAll SQL
      * @access public
      * @param  Query    $query   查询对象
      * @param  array    $keys 键值

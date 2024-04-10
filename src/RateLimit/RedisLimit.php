@@ -91,13 +91,11 @@ class RedisLimit
         }
 
         $requireId = $this->getRequireId();
-        $windowEndMilliSecond = (int)$this->getMilliSecond();
-        $windowStartMilliSecond = $windowEndMilliSecond - ($this->windowSizeTime * 1000);
 
         if ($this->isPredisDriver) {
-            $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $windowStartMilliSecond, $windowEndMilliSecond, $this->limitNum, $requireId]);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $this->windowSizeTime, $this->limitNum, $requireId]);
         } else {
-            $isLimit = $this->redis->eval($this->getLuaLimitScript(), [$this->rateKey, $windowStartMilliSecond, $windowEndMilliSecond, $this->limitNum, $requireId], 1);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), [$this->rateKey, $this->windowSizeTime, $this->limitNum, $requireId], 1);
         }
 
         return (bool)$isLimit;
@@ -120,10 +118,20 @@ class RedisLimit
     {
         $lua = <<<LUA
 local rateKey = KEYS[1];
-local windowStartMilliSecond = tonumber(ARGV[1]);
-local windowEndMilliSecond = tonumber(ARGV[2]);
-local limitNum = tonumber(ARGV[3]);
-local requireId = tostring(ARGV[4]);
+local windowSizeTime = tonumber(ARGV[1]);
+local limitNum = tonumber(ARGV[2]);
+local requireId = tostring(ARGV[3]);
+
+local timeStamp = redis.call('TIME');
+local second = timeStamp[1];
+local msecond = string.sub(timeStamp[2], 1, 4);
+
+-- end time
+local windowEndMilliSecond = table.concat({second,msecond});
+
+-- start time
+local startMilliSecond = tonumber(second - tonumber(windowSizeTime));
+local windowStartMilliSecond = tonumber(table.concat({startMilliSecond,msecond}));
 
 -- Not EXISTS Key
 if redis.call('EXISTS', rateKey) == 0 then
@@ -147,22 +155,6 @@ end;
 LUA;
         return $lua;
 
-    }
-
-    /**
-     * @return int
-     */
-    protected function getMilliSecond()
-    {
-        $time = explode(" ", microtime());
-
-        $time = $time[1] . ($time[0] * 1000);
-
-        $time2 = explode(".", $time);
-
-        $time = $time2[0];
-
-        return $time;
     }
 
     /**

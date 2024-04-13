@@ -251,7 +251,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function enableDynamicDebug()
     {
-        if (\Swoolefy\Core\Coroutine\Context::has('db_debug')) {
+        if (\Swoole\Coroutine::getCid() >=0 && \Swoolefy\Core\Coroutine\Context::has('db_debug')) {
             $debug = \Swoolefy\Core\Coroutine\Context::get('db_debug');
             $debug = (int) $debug;
             if ($debug) {

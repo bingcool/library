@@ -58,7 +58,7 @@ abstract class Model implements ArrayAccess
     /**
      * @var string
      */
-    protected $table;
+    protected static $table;
 
     /**
      * 数据表主键
@@ -278,12 +278,14 @@ abstract class Model implements ArrayAccess
     /**
      * @return string
      */
-    public function getTableName(): string
+    public static function getTableName(): string
     {
-        return $this->table;
+        return static::$table;
     }
 
     /**
+     * build new Query, miss table name
+     *
      * @return Query
      */
     public function newQuery(): Query
@@ -297,12 +299,27 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * build new Query, with table name of this model
+     *
+     * @return Query
+     */
+    public function Query(): Query
+    {
+        if (method_exists($this->getConnection(), 'getObject')) {
+            $query = (new Query($this->getConnection()->getObject()))->table($this->getTableName());
+        }else {
+            $query = (new Query($this->getConnection()))->table($this->getTableName());
+        }
+        return $query;
+    }
+
+    /**
      * @return array
      */
     protected function getSchemaInfo(): array
     {
         if (empty($this->_schemaInfo)) {
-            $table = $this->table ? $this->table . $this->_suffix : $this->table;
+            $table = $this->getTableName() ? $this->getTableName() . $this->_suffix : $this->getTableName();
             $schemaInfo = $this->getConnection()->getSchemaInfo($table);
             $this->_schemaInfo = $schemaInfo;
         }
@@ -956,7 +973,7 @@ abstract class Model implements ArrayAccess
      * @param $arguments
      * @return Query
      */
-    public static function __callStatic($method, $arguments)
+    public static function __callStatic($method, $arguments): Query
     {
         $entity = new static();
         if (method_exists($entity->getConnection(), 'getObject')) {

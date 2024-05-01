@@ -38,7 +38,7 @@ trait ParseSql
         }
         $fields = implode(',', $fields);
         $columns = implode(',', $columns);
-        $sql = "INSERT INTO {$this->table} ({$fields}) VALUES ({$columns}) ";
+        $sql = "INSERT INTO {$this->getTableName()} ({$fields}) VALUES ({$columns}) ";
         return [$sql, $bindParams];
     }
 
@@ -48,7 +48,7 @@ trait ParseSql
     protected function parseFindSqlByPk()
     {
         $pk = $this->getPk();
-        $sql = "SELECT * FROM {$this->table} WHERE {$pk}=:pk";
+        $sql = "SELECT * FROM {$this->getTableName()} WHERE {$pk}=:pk";
         $bindParams = [
             ':pk' => $this->getPkValue() ?? 0
         ];
@@ -72,7 +72,7 @@ trait ParseSql
             }
 
             if(!empty($this->expressionFields)) {
-                    // expression
+                // expression
                 if(array_key_exists('*@'.$field, $this->expressionFields)) {
                     $setValues[] = $field . '=' . $this->expressionFields['*@'.$field];
                 }else if(array_key_exists('+@'.$field, $this->expressionFields)) {
@@ -86,7 +86,7 @@ trait ParseSql
         }
         $this->expressionFields = [];
         $setValueStr = implode(',', $setValues);
-        $sql = "UPDATE {$this->table} SET {$setValueStr} WHERE {$pk}=:pk";
+        $sql = "UPDATE {$this->getTableName()} SET {$setValueStr} WHERE {$pk}=:pk";
         $bindParams[':pk'] = $this->getPkValue() ?? 0;
         return [$sql, $bindParams];
     }
@@ -100,7 +100,7 @@ trait ParseSql
         $pk = $this->getPk();
         $pkValue = $this->getPkValue();
         if ($pkValue) {
-            $sql = "DELETE FROM {$this->table} WHERE {$pk}=:pk LIMIT 1";
+            $sql = "DELETE FROM {$this->getTableName()} WHERE {$pk}=:pk LIMIT 1";
             $bindParams[':pk'] = $pkValue;
         }
         return [$sql ?? '', $bindParams ?? []];
@@ -113,7 +113,7 @@ trait ParseSql
      */
     protected function parseWhereSql(string $where)
     {
-        $sql = "SELECT * FROM {$this->table} WHERE {$where}";
+        $sql = "SELECT * FROM {$this->getTableName()} WHERE {$where}";
         return $sql;
     }
 

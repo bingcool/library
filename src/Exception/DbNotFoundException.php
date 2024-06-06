@@ -9,22 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Common\Library\Exception;
 
-use Common\Library\Exception\DbException;
-/**
- * 查询数据处理
- */
-trait ResultOperation
-{/**
-     * 查询失败 抛出异常
-     * @access protected
-     * @return void
-     * @throws DbException
-     */
-    protected function throwNotFound(): void
-    {
-        throw new DbException('table data not Found');
-    }
+class DbNotFoundException extends CommonException
+{
 
 }

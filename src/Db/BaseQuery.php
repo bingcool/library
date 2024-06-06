@@ -14,6 +14,8 @@ namespace Common\Library\Db;
 use Common\Library\Db\Helper\Str;
 use Common\Library\Db\Concern;
 use Common\Library\Exception\DbException;
+use Common\Library\Exception\DbNotFoundException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * 数据查询基础类
@@ -982,13 +984,42 @@ abstract class BaseQuery
 
         if (empty($this->options['where'])) {
             // 如果没有任何更新条件则不执行
-            throw new DbException('miss update condition');
+            throw new DbException('miss update where condition');
         }
 
         $this->parseOptions();
         $sql = $this->builder->update($this);
         $bindParams = $this->getBind();
         return $this->connection->createCommand($sql)->update($bindParams);
+    }
+
+    /**
+     * 更新或者插入单个记录
+     *
+     * @param array $whereAttr
+     * @param array $data
+     * @return bool
+     * @throws DbException
+     */
+    public function updateOrCreateOne(array $whereAttr, array $data)
+    {
+        if (empty($whereAttr)) {
+            throw new DbException('Empty where condition');
+        }
+        $result   = $this->where($whereAttr)->limit(2)->select();
+        $newQuery = $this->newQuery();
+        if (!empty($result)) {
+            if (count($result) == 1) {
+                $newQuery->where($whereAttr)->update($data);
+            }else {
+                throw new DbException('More than one record');
+            }
+        }else {
+            $newData = array_merge($whereAttr, $data);
+            $newQuery->insert($newData, false);
+        }
+
+        return true;
     }
 
     /**
@@ -1083,6 +1114,29 @@ abstract class BaseQuery
         }
 
         return $result;
+    }
+
+    /**
+     * 查找单条记录
+     *
+     * @return $this|array
+     */
+    public function first()
+    {
+        return $this->find();
+    }
+
+    /**
+     * Execute the query and get the first result or throw an exception
+     * @return mixed
+     */
+    public function firstOrFail()
+    {
+        if (!empty($result = $this->first())) {
+            return $result;
+        }
+
+        throw new DbNotFoundException("Not Found Record Data.");
     }
 
     /**

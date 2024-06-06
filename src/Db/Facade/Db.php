@@ -50,7 +50,7 @@ class Db
     {
         $appConf = Swfy::getAppConf();
         if (empty($appConf['default_db'])) {
-            throw new DbException('Missing set default_db item');
+            throw new DbException('app conf missing set `default_db` item');
         }
         $name = $appConf['default_db'];
         $query = self::connect($name);

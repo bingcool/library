@@ -15,7 +15,6 @@ use Common\Library\Db\Helper\Str;
 use Common\Library\Db\Concern;
 use Common\Library\Exception\DbException;
 use Common\Library\Exception\DbNotFoundException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * 数据查询基础类

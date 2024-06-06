@@ -24,7 +24,8 @@ trait ResultOperation
      */
     protected function throwNotFound(): void
     {
-        throw new DbException('table data not Found');
+        $table = $this->getTable();
+        throw new DbException('table data not Found:' . $table);
     }
 
 }

@@ -1049,16 +1049,15 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * 列表查出的数据填充成model对象
+     * 列表查出的数据填充成model对象,方便IDE提示
      *
      * @param array $values
      * @return array
      */
-    public function fill(array $values): Model
+    public function fill(array $attributes): Model
     {
-        $model = clone $this;
-        $model->_data = $values;
-        return $model;
+        $this->parseOrigin($attributes);
+        return $this;
     }
 
     /**

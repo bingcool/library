@@ -35,10 +35,11 @@ class Queue
     protected $retryQueueKey;
 
     /**
-     * 记录重试消息hash
+     * 优先队列
+     *
      * @var string
      */
-    protected $retryMessageKey;
+    protected $priorityQueueKey;
 
     /**
      * @var integer 重试次数
@@ -63,6 +64,7 @@ class Queue
         $this->redis = $redis;
         $this->queueKey = $queueKey;
         $this->retryQueueKey = $queueKey . ':retry_queue_sort';
+        $this->priorityQueueKey = $queueKey . ':priority_queue';
     }
 
     /**
@@ -75,11 +77,12 @@ class Queue
     }
 
     /**
-     * push data to list
-     * @param mixed ...$items
-     * @return bool|int
+     * @param string $queueKey
+     * @param array ...$items
+     * @return false
+     * @throws \Exception
      */
-    public function push(array ...$items)
+    protected function lpush(string $queueKey, array ...$items)
     {
         $push = [];
         if (empty($items)) {
@@ -96,25 +99,57 @@ class Queue
         }
         // Predis handle
         if ($this->isPredisDriver) {
-            return $this->redis->lPush($this->queueKey, $push);
+            return $this->redis->lPush($queueKey, $push);
         }
-        return $this->redis->lPush($this->queueKey, ...$push);
+        return $this->redis->lPush($queueKey, ...$push);
+    }
+
+    /**
+     *
+     * push data to list
+     * @param mixed ...$items
+     * @return bool|int
+     */
+    public function push(array ...$items)
+    {
+        $this->lpush($this->queueKey, ...$items);
+    }
+
+    /**
+     * 优先队列
+     *
+     * @param array ...$items
+     * @return false
+     * @throws \Exception
+     */
+    public function pushPriority(array ...$items)
+    {
+        $this->lpush($this->priorityQueueKey, ...$items);
     }
 
     /**
      * @param int $timeOut
      * @retur array
      */
-    public function pop(int $timeOut)
+    public function pop(int $timeOut = 1)
     {
         if ($timeOut <= 0) {
             $timeOut = 1;
         }
 
+        if ($timeOut > 3) {
+            $timeOut = 3;
+        }
+
         if ($this->isPredisDriver) {
-            $result = $this->redis->brPop([$this->queueKey], $timeOut);
+            // 优先读取优先队列
+            $result = $this->redis->brPop([$this->priorityQueueKey], 1);
+            // 优先队列读取不到值
             if ($result === null) {
-                $result = [];
+                $result = $this->redis->brPop([$this->queueKey], $timeOut);
+                if ($result === null) {
+                    $result = [];
+                }
             }
             $this->redis->eval(LuaScripts::getQueueLuaScript(), 2, ...[$this->retryQueueKey, $this->queueKey, '-inf', time(), 0, 100]);
         } else {
@@ -122,7 +157,12 @@ class Queue
              * @var \Redis $redis
              */
             $redis = $this->redis;
-            $result = $redis->brPop($this->queueKey, $timeOut);
+            // 优先读取优先队列
+            $result = $redis->brPop($this->priorityQueueKey, 1);
+            // 优先队列读取不到值
+            if (empty($result)) {
+                $result = $redis->brPop($this->queueKey, $timeOut);
+            }
             $this->redis->eval(LuaScripts::getQueueLuaScript(), [$this->retryQueueKey, $this->queueKey, '-inf', time(), 0, 100], 2);
         }
 

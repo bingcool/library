@@ -23,7 +23,7 @@ $queue = new \Common\Library\Queues\Queue(
 );
 
 
-$queue->getRedis()->del('ali_queue_key');
+$queue->getRedis()->del(['ali_queue_key']);
 
 for ($i = 1; $i <= 2; $i++) {
     $item = [
@@ -34,7 +34,6 @@ for ($i = 1; $i <= 2; $i++) {
     $queue->push($item);
 }
 
-$queue->delRetryMessageKey();
 
 while (1) {
     try {

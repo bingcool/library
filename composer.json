@@ -23,6 +23,7 @@
     "ext-curl": "*",
     "ext-json": "*",
     "ext-redis": "*",
+    "ext-openssl": "*",
     "psr/clock": "*",
     "predis/predis": "~2.2.1",
     "malkusch/lock": "~2.2.0",

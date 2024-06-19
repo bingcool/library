@@ -42,6 +42,7 @@ class AmqpTopicQueue extends AmqpTopicAbstract {
         if($this->ackHandler || $this->nackHandler) {
             $this->channel->confirm_select(false);
         }
+        
         $this->exchangeDeclare();
         $this->queueDeclare();
         $this->queueBind();

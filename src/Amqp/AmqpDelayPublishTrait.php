@@ -25,6 +25,10 @@ trait AmqpDelayPublishTrait
      */
     protected function exchangeDeclare()
     {
+        $arguments = $this->parseArguments();
+        if (isset($arguments['x-max-priority'])) {
+            unset($arguments['x-max-priority']);
+        }
         $this->channel->exchange_declare(
             $this->amqpConfig->exchangeName,
             $this->amqpConfig->type,
@@ -33,7 +37,7 @@ trait AmqpDelayPublishTrait
             $this->amqpConfig->autoDelete,
             $this->amqpConfig->internal,
             $this->amqpConfig->nowait,
-            $this->parseArguments(),
+            $arguments,
             $this->amqpConfig->ticket
         );
     }
@@ -43,6 +47,10 @@ trait AmqpDelayPublishTrait
      */
     protected function queueDeclare()
     {
+        $arguments = $this->parseArguments();
+        if (isset($arguments['x-max-priority'])) {
+            unset($arguments['x-max-priority']);
+        }
         $this->channel->queue_declare(
             $this->amqpConfig->queueName,
             $this->amqpConfig->passive,
@@ -50,7 +58,7 @@ trait AmqpDelayPublishTrait
             $this->amqpConfig->exclusive,
             $this->amqpConfig->autoDelete,
             $this->amqpConfig->nowait,
-            $this->parseArguments(),
+            $arguments,
             $this->amqpConfig->ticket
         );
     }

@@ -14,6 +14,7 @@ namespace Common\Library\Amqp;
 use PhpAmqpLib\Connection\Heartbeat\PCNTLHeartbeatSender;
 use PhpAmqpLib\Exception\AMQPIOException;
 use PhpAmqpLib\Exception\AMQPIOWaitException;
+use PhpAmqpLib\Wire\AMQPTable;
 
 trait AmqpDelayConsumerTrait
 {
@@ -124,17 +125,19 @@ trait AmqpDelayConsumerTrait
      */
     protected function exchangeDeclareDelay()
     {
-        $this->channel->exchange_declare(
-            $this->amqpConfig->arguments['x-dead-letter-exchange'],
-            $this->amqpConfig->type,
-            $this->amqpConfig->passive,
-            $this->amqpConfig->durable,
-            $this->amqpConfig->autoDelete,
-            $this->amqpConfig->internal,
-            $this->amqpConfig->nowait,
-            [],
-            $this->amqpConfig->ticket
-        );
+        if (isset($this->amqpConfig->arguments['x-dead-letter-exchange'])) {
+            $this->channel->exchange_declare(
+                $this->amqpConfig->arguments['x-dead-letter-exchange'],
+                $this->amqpConfig->type,
+                $this->amqpConfig->passive,
+                $this->amqpConfig->durable,
+                $this->amqpConfig->autoDelete,
+                $this->amqpConfig->internal,
+                $this->amqpConfig->nowait,
+                [],
+                $this->amqpConfig->ticket
+            );
+        }
     }
 
     /**
@@ -142,16 +145,24 @@ trait AmqpDelayConsumerTrait
      */
     protected function queueDeclareDelay()
     {
-        $this->channel->queue_declare(
-            $this->amqpConfig->arguments['x-dead-letter-queue'],
-            $this->amqpConfig->passive,
-            $this->amqpConfig->durable,
-            $this->amqpConfig->exclusive,
-            $this->amqpConfig->autoDelete,
-            $this->amqpConfig->nowait,
-            [],
-            $this->amqpConfig->ticket
-        );
+        if (isset($this->amqpConfig->arguments['x-max-priority'])) {
+            $arguments = new AMQPTable(['x-max-priority' => $this->amqpConfig->arguments['x-max-priority']]);
+        }else {
+            $arguments = [];
+        }
+
+        if (isset($this->amqpConfig->arguments['x-dead-letter-queue'])) {
+            $this->channel->queue_declare(
+                $this->amqpConfig->arguments['x-dead-letter-queue'],
+                $this->amqpConfig->passive,
+                $this->amqpConfig->durable,
+                $this->amqpConfig->exclusive,
+                $this->amqpConfig->autoDelete,
+                $this->amqpConfig->nowait,
+                $arguments,
+                $this->amqpConfig->ticket
+            );
+        }
     }
 
     /**
@@ -159,10 +170,12 @@ trait AmqpDelayConsumerTrait
      */
     protected function queueBindDelay()
     {
-        $this->channel->queue_bind(
-            $this->amqpConfig->arguments['x-dead-letter-queue'],
-            $this->amqpConfig->arguments['x-dead-letter-exchange'],
-            $this->amqpConfig->arguments['x-dead-letter-routing-key']
-        );
+        if (isset($this->amqpConfig->arguments['x-dead-letter-queue'])) {
+            $this->channel->queue_bind(
+                $this->amqpConfig->arguments['x-dead-letter-queue'],
+                $this->amqpConfig->arguments['x-dead-letter-exchange'],
+                $this->amqpConfig->arguments['x-dead-letter-routing-key']
+            );
+        }
     }
 }

@@ -23,7 +23,7 @@ if (isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 1) {
 
 
 while (true) {
-    $rateLimit = new \Common\Library\RateLimit\RedisLimit($redis);
+    $rateLimit = new \Common\Library\RateLimit\DurationLimiter($redis);
     $key = 'ali-query-api';
     $limitTime = 1;
     $limitNum = 200;

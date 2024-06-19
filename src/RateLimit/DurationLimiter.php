@@ -14,7 +14,7 @@ namespace Common\Library\RateLimit;
 use Common\Library\Redis\RedisConnection;
 use Common\Library\Exception\RateLimitException;
 
-class RedisLimit
+class DurationLimiter
 {
     /**
      * rate limit key

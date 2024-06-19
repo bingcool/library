@@ -39,6 +39,7 @@ class AmqpConfig {
    public $passive = false;
 
     /**
+     * 持久化
      * @var bool
      */
    public $durable = false;

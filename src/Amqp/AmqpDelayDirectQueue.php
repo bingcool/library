@@ -47,6 +47,11 @@ class AmqpDelayDirectQueue extends AmqpAbstract {
             $this->channel->confirm_select(false);
         }
 
+        // 声明延迟队列
+        $this->exchangeDeclareDelay();
+        $this->queueDeclareDelay();
+        $this->queueBindDelay();
+
         $this->exchangeDeclare();
         $this->queueDeclare();
         $this->queueBind();

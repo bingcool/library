@@ -11,6 +11,7 @@
 
 namespace Common\Library\Amqp;
 
+use Common\Library\Exception\AmqpException;
 use PhpAmqpLib\Message\AMQPMessage;
 
 class AmqpDelayDirectQueue extends AmqpAbstract {
@@ -27,8 +28,12 @@ class AmqpDelayDirectQueue extends AmqpAbstract {
      */
     public function publish(AMQPMessage $message, bool $mandatory = false, bool $immediate = false, $ticket = null)
     {
+        if (empty($this->amqpConfig->routingKey) || empty($this->amqpConfig->bindingKey)) {
+            throw new AmqpException('Amqp Direct routingKey != bindingKey');
+        }
+
         if($this->amqpConfig->routingKey != $this->amqpConfig->bindingKey) {
-            throw new \Exception('Amqp Direct routingKey != bindingKey');
+            throw new AmqpException('Amqp Direct routingKey != bindingKey');
         }
 
         if(empty($this->channel)) {

@@ -71,7 +71,7 @@ class Queue
      * @return string
      * @throws \Exception
      */
-    protected function generateUnMsgId(): string
+    protected function generateMsgId(): string
     {
         return md5(microtime(true). random_bytes(16) . random_int(1,100000));
     }
@@ -90,7 +90,7 @@ class Queue
         }
         foreach ($items as $v) {
             if (is_array($v)) {
-                $v['__id'] = $this->generateUnMsgId();
+                $v['__id'] = $this->generateMsgId();
                 $v['__retry_num'] = 0;
                 $v['__timestamp'] = time();
                 $v = json_encode($v);
@@ -184,7 +184,7 @@ class Queue
     public function retry(array $data, int $delayTime = 10)
     {
         if (!isset($data['__id'])) {
-            $data['__id'] = $this->generateUnMsgId();
+            $data['__id'] = $this->generateMsgId();
         }
 
         // 达到最大的重试次数

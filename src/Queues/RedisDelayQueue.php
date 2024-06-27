@@ -23,7 +23,7 @@ class RedisDelayQueue extends BaseDelayQueue
      * @param Redis $redis
      * @param string $delayKey
      * @param string|null $option
-     * @throws \QueueException
+     * @throws QueueException
      */
     public function __construct(RedisConnection $redis, string $delayKey, ?string $option = null)
     {

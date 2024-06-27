@@ -90,7 +90,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      * @return string
      * @throws \Exception
      */
-    protected function generateUnMsgId(): string
+    protected function generateMsgId(): string
     {
         return md5(microtime(true). random_bytes(16) . random_int(1,100000));
     }
@@ -106,7 +106,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
         $score = time();
         $this->sortData[] = $score + $delayTime;
         // 有序集合不能重复元素
-        $memberValue['__id'] = $this->generateUnMsgId();
+        $memberValue['__id'] = $this->generateMsgId();
         $memberValue['__retry_num'] = 0;
         $memberValue['__timestamp'] = $score;
         $this->sortData[] = is_array($memberValue) ? json_encode($memberValue) : $memberValue;
@@ -200,10 +200,10 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
      */
     protected function mapResult(array $result)
     {
-        $chuncks = array_chunk($result, 2, false);
+        $chunks = array_chunk($result, 2, false);
         $data = [];
-        foreach ($chuncks as $chunck) {
-            $data[] = $chunck[0];
+        foreach ($chunks as $chunk) {
+            $data[] = $chunk[0];
         }
         return $data;
     }
@@ -277,7 +277,7 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     protected function parseMaxRetryNum(array $member): array
     {
         if (!isset($member['__id'])) {
-            $msgId = $this->generateUnMsgId();
+            $msgId = $this->generateMsgId();
             $member['__id'] = $msgId;
         }
 

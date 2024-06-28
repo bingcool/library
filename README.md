@@ -5,7 +5,8 @@
 - [x] PostgreSql Model组件    
 - [x] Kafka Producer Consumer组件    
 - [x] Amqp 队列组件   
-- [x] Jwt 组件     
+- [x] Jwt 组件   
+- [x] Encrypt 加密解密组件     
 - [x] Redis Cache组件  
 - [x] Redis Queue队列组件   
 - [x] Redis Delay Queue延迟队列组件            
@@ -29,10 +30,11 @@
 - [x] symfony/symfony/polyfill-php82    
 - [x] symfony/symfony/polyfill-php83
 - [x] xlswriter   
-- [x] Guzzle 
+- [x] Guzzle Client     
 - [x] catfan/Medoo    
 - [x] gearmand
 - [x] phpcollection/phpcollection    
+- [x] webman/captcha     
 
 https://baijiahao.baidu.com/s?id=1700417997484083491&wfr=spider&for=pc    
 

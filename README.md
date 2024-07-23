@@ -18,7 +18,9 @@
 - [x] Curl基础组件    
 - [x] Protobuf 组件   
 - [x] Validate 组件  
-- [X] Event 组件   
+- [X] Event 组件
+- [x] captcha 组件
+
 
 ### 其他适合swoole环境使用的组件类库
 - [X] symfony/filesystem
@@ -33,8 +35,7 @@
 - [x] Guzzle Client     
 - [x] catfan/Medoo    
 - [x] gearmand
-- [x] phpcollection/phpcollection    
-- [x] webman/captcha     
+- [x] phpcollection/phpcollection     
 
 https://baijiahao.baidu.com/s?id=1700417997484083491&wfr=spider&for=pc    
 

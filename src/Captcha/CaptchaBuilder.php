@@ -11,7 +11,7 @@
 
 namespace Common\Library\Captcha;
 
-use Common\Library\Exception\CacheException;
+use Common\Library\Exception\CaptchaException;
 
 class CaptchaBuilder extends \stdClass implements CaptchaBuilderInterface
 {
@@ -718,7 +718,7 @@ class CaptchaBuilder extends \stdClass implements CaptchaBuilderInterface
      *
      * @param string $backgroundImage
      * @return string
-     * @throws Exception
+     * @throws CaptchaException
      */
     protected function validateBackgroundImage($backgroundImage)
     {
@@ -727,7 +727,7 @@ class CaptchaBuilder extends \stdClass implements CaptchaBuilderInterface
             $backgroundImageExploded = explode('/', $backgroundImage);
             $imageFileName = count($backgroundImageExploded) > 1? $backgroundImageExploded[count($backgroundImageExploded)-1] : $backgroundImage;
 
-            throw new CacheException('Invalid background image: ' . $imageFileName);
+            throw new CaptchaException('Invalid background image: ' . $imageFileName);
         }
 
         // check image type
@@ -736,7 +736,7 @@ class CaptchaBuilder extends \stdClass implements CaptchaBuilderInterface
         finfo_close($finfo);
 
         if (!in_array($imageType, $this->allowedBackgroundImageTypes)) {
-            throw new CacheException('Invalid background image type! Allowed types are: ' . join(', ', $this->allowedBackgroundImageTypes));
+            throw new CaptchaException('Invalid background image type! Allowed types are: ' . join(', ', $this->allowedBackgroundImageTypes));
         }
 
         return $imageType;
@@ -748,7 +748,7 @@ class CaptchaBuilder extends \stdClass implements CaptchaBuilderInterface
      * @param string $backgroundImage
      * @param string $imageType
      * @return resource
-     * @throws CacheException
+     * @throws CaptchaException
      */
     protected function createBackgroundImageFromType($backgroundImage, $imageType)
     {
@@ -764,7 +764,7 @@ class CaptchaBuilder extends \stdClass implements CaptchaBuilderInterface
                 break;
 
             default:
-                throw new CacheException('Not supported file type for background image!');
+                throw new CaptchaException('Not supported file type for background image!');
                 break;
         }
 

@@ -234,7 +234,7 @@ class SplArray extends \ArrayObject
     }
 
     /*
-     $test = new \EasySwoole\Spl\SplArray([
+     $test = new Spl\SplArray([
         'title'=>'title',
         'items'=>[
             ['title'=>'Some string', 'number' => 1],

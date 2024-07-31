@@ -38,6 +38,7 @@
 - [x] phpcollection/phpcollection     
 - [x] intervention/image   image处理组件   
 - [x] endroid/qr-code   二维码组件       
+- [x] aliyuncs/oss-sdk-php 阿里云oss组件    
 
 https://baijiahao.baidu.com/s?id=1700417997484083491&wfr=spider&for=pc    
 

@@ -30,7 +30,8 @@
 - [x] symfony/symfony/polyfill-php80     
 - [x] symfony/symfony/polyfill-php81    
 - [x] symfony/symfony/polyfill-php82    
-- [x] symfony/symfony/polyfill-php83
+- [x] symfony/symfony/polyfill-php83   
+- [x] symfony/string     
 - [x] xlswriter   
 - [x] Guzzle Client     
 - [x] catfan/Medoo    
@@ -39,6 +40,7 @@
 - [x] intervention/image   image处理组件   
 - [x] endroid/qr-code   二维码组件       
 - [x] aliyuncs/oss-sdk-php 阿里云oss组件    
+- [x] w7corp/easywechat   微信easywechat组件    
 
 https://baijiahao.baidu.com/s?id=1700417997484083491&wfr=spider&for=pc    
 

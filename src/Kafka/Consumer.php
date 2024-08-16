@@ -50,7 +50,8 @@ class Consumer extends AbstractKafka
         'auto.commit.interval.ms' => 200,
         'auto.offset.reset' => 'earliest',
         'session.timeout.ms' => 45 * 1000,
-        'max.poll.interval.ms' => 600 * 1000
+        'max.poll.interval.ms' => 600 * 1000, //根据实际场景max.poll.interval.ms值设置大一点，避免不必要的rebalance
+        'max.poll.records' => 500, //可适当减小max.poll.records的值，默认值是500，可根据实际消息速率适当调小。
     ];
 
     /**

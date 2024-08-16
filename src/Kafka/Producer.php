@@ -36,7 +36,7 @@ class Producer extends AbstractKafka
      * @var array
      */
     protected $defaultProperty = [
-        'enable.idempotence' => 0,
+        'enable.idempotence' => 0, // 开启幂等性配置
         'message.send.max.retries' => 10
     ];
 

@@ -64,6 +64,7 @@ final class RequestMiddleware
                     'method' => $method,
                     'trace_id' => $traceId,
                     'body'   => $body,
+                    'time'   => date('Y-m-d H:i:s'),
                 ];
 
                 $logger = CurlProxyHandler::buildLogChannel();
@@ -72,8 +73,8 @@ final class RequestMiddleware
                         'path'   => $path,
                         'trace_id' => $traceId ,
                     ]);
-
-                    $logger->info("【请求】 api={$path}, traceId={$traceId}, 请求参数：" . json_encode($jsonData, JSON_UNESCAPED_UNICODE));
+                    $dateTime = date('Y-m-d H:i:s');
+                    $logger->info("【request@{$dateTime}】  api={$path}, traceId={$traceId}, 请求参数：" . json_encode($jsonData, JSON_UNESCAPED_UNICODE));
                 }
             } catch (Throwable $exception) {
             }

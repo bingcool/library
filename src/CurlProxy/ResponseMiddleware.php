@@ -33,7 +33,8 @@ final class ResponseMiddleware
                     $info = Context::get('__guzzle_curl_path');
                     $path = $info['path'] ?? '';
                     $traceId = $info['trace_id'] ?? '';
-                    $logger->info("【响应】 api={$path}, traceId={$traceId}, 响应数据：" . $result . "\r\n\r\n");
+                    $dateTime = date('Y-m-d H:i:s');
+                    $logger->info("【response@{$dateTime}】 api={$path}, traceId={$traceId}, 响应数据：" . $result . "\r\n\r\n");
                 }
             } catch (Throwable $exception) {
             }

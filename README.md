@@ -32,6 +32,7 @@
 - [x] symfony/symfony/polyfill-php82    
 - [x] symfony/symfony/polyfill-php83   
 - [x] symfony/string     
+- [x] symfony/translation     
 - [x] xlswriter   
 - [x] Guzzle Client     
 - [x] catfan/Medoo    

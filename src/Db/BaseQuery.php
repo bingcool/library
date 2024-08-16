@@ -1139,6 +1139,29 @@ abstract class BaseQuery
     }
 
     /**
+     * @param string $column
+     * @param string|null $indexKey
+     * @return array
+     */
+    public function pluck(?string $column, string $indexKey = null)
+    {
+        $this->parseOptions();
+        $sql = $this->builder->select($this);
+        $bindParams = $this->getBind();
+        $resultSet = $this->connection->query($sql, $bindParams);
+
+        if (empty($resultSet)) {
+            return [];
+        }
+
+        if (empty($indexKey)) {
+            return array_column($resultSet, $column);
+        }else {
+            return array_column($resultSet, $column, $indexKey);
+        }
+    }
+
+    /**
      * 原生查询
      *
      * @param string $sql

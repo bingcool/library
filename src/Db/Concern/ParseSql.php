@@ -48,10 +48,19 @@ trait ParseSql
     protected function parseFindSqlByPk()
     {
         $pk = $this->getPk();
-        $sql = "SELECT * FROM {$this->getTableName()} WHERE {$pk}=:pk";
-        $bindParams = [
-            ':pk' => $this->getPkValue() ?? 0
-        ];
+        if ($this->isSoftDelete()) {
+            $deletedAtField = $this->getSoftDeleteField();
+            $sql = "SELECT * FROM {$this->getTableName()} WHERE {$pk}=:pk AND {$deletedAtField} IS NULL";
+            $bindParams = [
+                ':pk' => $this->getPkValue() ?? 0
+            ];
+        }else {
+            $sql = "SELECT * FROM {$this->getTableName()} WHERE {$pk}=:pk";
+            $bindParams = [
+                ':pk' => $this->getPkValue() ?? 0
+            ];
+        }
+
         return [$sql, $bindParams];
     }
 
@@ -86,7 +95,12 @@ trait ParseSql
         }
         $this->expressionFields = [];
         $setValueStr = implode(',', $setValues);
-        $sql = "UPDATE {$this->getTableName()} SET {$setValueStr} WHERE {$pk}=:pk";
+        if ($this->isSoftDelete()) {
+            $deletedAtField = $this->getSoftDeleteField();
+            $sql = "UPDATE {$this->getTableName()} SET {$setValueStr} WHERE {$pk}=:pk AND {$deletedAtField} IS NULL";
+        }else {
+            $sql = "UPDATE {$this->getTableName()} SET {$setValueStr} WHERE {$pk}=:pk";
+        }
         $bindParams[':pk'] = $this->getPkValue() ?? 0;
         return [$sql, $bindParams];
     }
@@ -102,6 +116,27 @@ trait ParseSql
         if ($pkValue) {
             $sql = "DELETE FROM {$this->getTableName()} WHERE {$pk}=:pk LIMIT 1";
             $bindParams[':pk'] = $pkValue;
+        }
+        return [$sql ?? '', $bindParams ?? []];
+    }
+
+    /**
+     * parseSoftDeleteSql
+     * @return array
+     */
+    protected function parseSoftDeleteSql()
+    {
+        if ($this->isSoftDelete()) {
+            $pk = $this->getPk();
+            $pkValue = $this->getPkValue();
+            $deletedAtField = $this->getSoftDeleteField();
+            $deleteDate = date('Y-m-d H:i:s');
+            if ($pkValue) {
+                $sql = "UPDATE {$this->getTableName()} SET {$deletedAtField}=:deleteDate WHERE {$pk}=:pk LIMIT 1";
+                $bindParams[':pk'] = $pkValue;
+                $bindParams[':deleteDate'] = $deleteDate;
+            }
+            return [$sql ?? '', $bindParams ?? []];
         }
         return [$sql ?? '', $bindParams ?? []];
     }
@@ -124,6 +159,9 @@ trait ParseSql
      */
     public function findOne(string $where, array $bindParams = [])
     {
+        if ($this->isSoftDelete()) {
+            $where .= ' AND ' . $this->getSoftDeleteField() . ' IS NULL';
+        }
         $sql = $this->parseWhereSql($where);
         /**@var PDOConnection $connection */
         $connection = $this->getSlaveConnection();

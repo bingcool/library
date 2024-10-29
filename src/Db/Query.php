@@ -442,4 +442,15 @@ class Query extends BaseQuery
 
         return true;
     }
+
+    /**
+     * 查询没有删除的记录
+     *
+     * @param string $deletedField
+     * @return $this
+     */
+    public function whereNotDelete(string $deletedField = 'deleted_at')
+    {
+        return $this->whereNull($deletedField);
+    }
 }

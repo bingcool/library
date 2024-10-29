@@ -363,6 +363,17 @@ class Fetch
     }
 
     /**
+     * 查找单条记录 返回SQL语句
+     * @access public
+     * @param  mixed $data
+     * @return string
+     */
+    public function first($data = null): string
+    {
+        return $this->find($data);
+    }
+
+    /**
      * 查找多条记录 如果不存在则抛出异常
      * @access public
      * @param  mixed $data

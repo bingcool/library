@@ -13,20 +13,37 @@ namespace Common\Library\Db\Concern;
 
 use Common\Library\Exception\DbException;
 /**
- * 查询数据处理
+ * 软删除
  */
-trait ResultOperation
+trait SoftDelete
 {
     /**
-     * 查询失败 抛出异常
-     * @access protected
-     * @return void
-     * @throws DbException
+     * Indicates if the model is currently force deleting.
+     *
+     * @var bool
      */
-    protected function throwNotFound(): void
+    protected $enableSoftDelete = true;
+
+    /**
+     * @var string
+     */
+    protected static $softDeleteField = 'deleted_at';
+
+    /**
+     * @return mixed|string
+     */
+    protected function getSoftDeleteField()
     {
-        $table = $this->getTable();
-        throw new DbException('table data not Found:' . $table);
+        return static::$softDeleteField;
+    }
+
+    /**
+     * @return $this
+     */
+    public function withoutTrashed()
+    {
+        $this->enableSoftDelete = false;
+        return $this;
     }
 
 }

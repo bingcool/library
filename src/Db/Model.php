@@ -232,6 +232,16 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * @return bool
+     */
+    protected function isSoftDelete()
+    {
+        if (property_exists($this,'enableSoftDelete') && $this->enableSoftDelete === true) {
+            return true;
+        }
+        return false;
+    }
+    /**
      * 设置数据是否存在
      * @param bool $exists
      * @return $this
@@ -680,6 +690,11 @@ abstract class Model implements ArrayAccess
         } else {
             if ($this->processDelete() === false) {
                 throw new DbException('ProcessDelete Failed');
+            }
+
+            list($sql, $bindParams) = $this->parseSoftDeleteSql();
+            if (!empty($sql)) {
+                $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
             }
         }
 

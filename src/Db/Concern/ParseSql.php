@@ -177,11 +177,12 @@ trait ParseSql
             }
             $this->parseOrigin($attributes);
             $this->setIsNew(false);
+            return $this;
         } else {
             $this->exists(false);
             $this->setIsNew(true);
+            return null;
         }
-        return $this;
     }
 
     /**

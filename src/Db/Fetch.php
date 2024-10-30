@@ -370,6 +370,10 @@ class Fetch
      */
     public function first($data = null): string
     {
+        $model = $this->query->getModel();
+        if (is_object($model) && $model->isSoftDelete()) {
+            $this->whereNull($model->getSoftDeleteField());
+        }
         return $this->find($data);
     }
 

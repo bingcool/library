@@ -25,6 +25,28 @@ class Query extends BaseQuery
     use Concern\TableFieldInfo;
 
     /**
+     * @var Model
+     */
+    protected $model;
+
+    /**
+     * @param Model $model
+     * @return void
+     */
+    public function setModel(Model $model)
+    {
+        $this->model = $model;
+    }
+
+    /**
+     * @return Model
+     */
+    public function getModel()
+    {
+        return $this->model;
+    }
+
+    /**
      * 表达式方式指定Field排序
      * @access public
      * @param string $field 排序字段
@@ -359,6 +381,14 @@ class Query extends BaseQuery
     }
 
     /**
+     * @return $this
+     */
+    public function getQuery()
+    {
+        return $this;
+    }
+
+    /**
      * 使用游标-生成器迭代大量数据集合
      * @access public
      * @param mixed $data 数据
@@ -449,7 +479,7 @@ class Query extends BaseQuery
      * @param string $deletedField
      * @return $this
      */
-    public function whereNotDelete(string $deletedField = 'deleted_at')
+    public function withoutDelete(string $deletedField = 'deleted_at')
     {
         return $this->whereNull($deletedField);
     }

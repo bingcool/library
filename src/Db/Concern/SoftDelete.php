@@ -11,6 +11,7 @@
 
 namespace Common\Library\Db\Concern;
 
+use Common\Library\Db\Query;
 use Common\Library\Exception\DbException;
 /**
  * 软删除
@@ -22,7 +23,7 @@ trait SoftDelete
      *
      * @var bool
      */
-    protected $enableSoftDelete = true;
+    public $__enableSoftDelete = true;
 
     /**
      * @var string
@@ -32,7 +33,7 @@ trait SoftDelete
     /**
      * @return mixed|string
      */
-    protected function getSoftDeleteField()
+    public function getSoftDeleteField()
     {
         return static::$softDeleteField;
     }
@@ -40,10 +41,17 @@ trait SoftDelete
     /**
      * @return $this
      */
-    public function withoutTrashed()
+    public static function withoutTrashed()
     {
-        $this->enableSoftDelete = false;
-        return $this;
+        $model = new static();
+        $model->__enableSoftDelete = false;
+        if (method_exists($model->getConnection(), 'getObject')) {
+            $query = (new Query($model->getConnection()->getObject()))->table($model->getTableName());
+        }else {
+            $query = (new Query($model->getConnection()))->table($model->getTableName());
+        }
+        $query->setModel($model);
+        return $query;
     }
 
 }

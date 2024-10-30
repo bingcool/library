@@ -143,10 +143,23 @@ abstract class Model implements ArrayAccess
 
     /**
      * @param PDOConnection $connection
+     * @return $this
      */
     public function setConnection(PDOConnection $connection)
     {
         $this->connection = $connection;
+        return $this;
+    }
+
+    /**
+     * @param PDOConnection $connection
+     * @return Query
+     */
+    public static function connection(PDOConnection $connection)
+    {
+        $model = new static();
+        $model->setConnection($connection);
+        return $model->getQuery();
     }
 
     /**
@@ -234,9 +247,9 @@ abstract class Model implements ArrayAccess
     /**
      * @return bool
      */
-    protected function isSoftDelete()
+    public function isSoftDelete()
     {
-        if (property_exists($this,'enableSoftDelete') && $this->enableSoftDelete === true) {
+        if (property_exists($this,'__enableSoftDelete') && $this->__enableSoftDelete === true) {
             return true;
         }
         return false;
@@ -294,8 +307,8 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * build new Query, miss table name
-     *
+     * build new Query, miss table name, 构建查询时需要指定table表名
+     * (new Order())->newQuery()->table($sql)->alias('a')->select()
      * @return Query
      */
     public function newQuery(): Query
@@ -305,6 +318,7 @@ abstract class Model implements ArrayAccess
         }else {
             $query = new Query($this->getConnection());
         }
+        $query->setModel($this);
         return $query;
     }
 
@@ -313,13 +327,31 @@ abstract class Model implements ArrayAccess
      *
      * @return Query
      */
-    public function Query(): Query
+    public static function query(): Query
+    {
+        $model = new static();
+        if (method_exists($model->getConnection(), 'getObject')) {
+            $query = (new Query($model->getConnection()->getObject()))->table($model->getTableName());
+        }else {
+            $query = (new Query($model->getConnection()))->table($model->getTableName());
+        }
+        $query->setModel($model);
+        return $query;
+    }
+
+    /**
+     * build new Query, with table name of this model
+     *
+     * @return Query
+     */
+    public function getQuery(): Query
     {
         if (method_exists($this->getConnection(), 'getObject')) {
             $query = (new Query($this->getConnection()->getObject()))->table($this->getTableName());
         }else {
             $query = (new Query($this->getConnection()))->table($this->getTableName());
         }
+        $query->setModel($this);
         return $query;
     }
 
@@ -996,6 +1028,7 @@ abstract class Model implements ArrayAccess
         }else {
             $query = (new Query($entity->getConnection()))->table($entity->getTableName())->{$method}(...$arguments);
         }
+        $query->setModel($entity);
         return $query;
     }
 

@@ -597,12 +597,24 @@ abstract class BaseQuery
     }
 
     /**
+     * table别名函数
+     *
+     * @param $table
+     * @param array|string $alias
+     * @return $this
+     */
+    public function from(string $table, $alias = '')
+    {
+        return $this->table($table, $alias);
+    }
+    /**
      * 指定当前操作的数据表
      * @access public
      * @param mixed $table 表名
+     * @param array|string $alias
      * @return $this
      */
-    public function table($table)
+    public function table($table, $alias = '')
     {
         if (is_string($table)) {
             if (strpos($table, ')')) {
@@ -648,6 +660,10 @@ abstract class BaseQuery
         }
 
         $this->options['table'] = $table;
+
+        if ($alias) {
+            $this->alias($alias);
+        }
 
         return $this;
     }
@@ -1062,7 +1078,7 @@ abstract class BaseQuery
     }
 
     /**
-     * 查找记录
+     * 查找记录列表
      * @access public
      * @param mixed $data 数据
      * @return Collection|array|static[]
@@ -1093,7 +1109,7 @@ abstract class BaseQuery
      * 查找单条记录
      * @access public
      * @param mixed $data 查询数据
-     * @return array|Model|null|static|mixed
+     * @return array|mixed
      */
     public function find($data = null)
     {
@@ -1111,18 +1127,44 @@ abstract class BaseQuery
             $resultSet = $this->connection->query($sql, $bindParams);
             $result = $resultSet[0] ?? [];
         }
-
         return $result;
     }
 
     /**
      * 查找单条记录
      *
-     * @return $this|array
+     * @return mixed
      */
     public function first()
     {
-        return $this->find();
+        if (empty($this->model)) {
+            // eg： OrderEntity::query()->where('user_id', '=', 1)->first();
+            throw new DbException('first()函数仅仅用于Model类构建的Query查询');
+        }
+
+        if (!empty($this->options['join'])) {
+            throw new DbException('first()函数仅仅用于Model类构建的Query查询,不支持JOIN表和子句查询单条记录,请使用find()函数');
+        }
+
+        // model模型构建的单条记录查询,必须过滤fields，否则有别名没法填充值到模型的字段属性,两者对不上
+        if ($this->model) {
+            foreach ($this->options['field'] as $field) {
+                if (str_contains($field, ' ')) {
+                    throw new DbException("first()函数的Model类构建Query查询字段[{$field}]不支持指定字段别名");
+                }
+            }
+        }
+
+        if ($this->model->isSoftDelete()) {
+            $this->whereNull($this->model->getSoftDeleteField());
+        }
+        
+        $result = $this->find();
+        if (!empty($result)) {
+            $this->model->fill($result);
+            return $this->model;
+        }
+        return null;
     }
 
     /**

@@ -265,7 +265,7 @@ trait WhereQuery
     /**
      * 设置软删除字段及条件
      * @access public
-     * @param string $field     查询字段
+     * @param string $field     软删除字段
      * @param mixed  $condition 查询条件
      * @return $this
      */

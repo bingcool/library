@@ -766,6 +766,7 @@ abstract class BaseQuery
      * @access public
      * @param array $json  JSON字段
      * @param bool  $assoc 是否取出数组
+     * @see Query::result()
      * @return $this
      */
     public function json(array $json = [], bool $assoc = false)
@@ -1102,6 +1103,8 @@ abstract class BaseQuery
             $this->throwNotFound();
         }
 
+        $this->result($resultSet);
+
         return new Collection($resultSet);
     }
 
@@ -1109,9 +1112,10 @@ abstract class BaseQuery
      * 查找单条记录
      * @access public
      * @param mixed $data 查询数据
+     * @param bool   $firstCall 是否为first()函数调用
      * @return array|mixed
      */
-    public function find($data = null)
+    public function find($data = null, bool $firstCall = false)
     {
         if (!is_null($data)) {
             // AR模式分析主键条件
@@ -1125,6 +1129,9 @@ abstract class BaseQuery
             $sql = $this->builder->select($this);
             $bindParams = $this->getBind();
             $resultSet = $this->connection->query($sql, $bindParams);
+            if (!$firstCall) {
+                $this->result($resultSet);
+            }
             $result = $resultSet[0] ?? [];
         }
         return $result;
@@ -1147,7 +1154,7 @@ abstract class BaseQuery
         }
 
         // model模型构建的单条记录查询,必须过滤fields，否则有别名没法填充值到模型的字段属性,两者对不上
-        if ($this->model) {
+        if ($this->model && !empty($this->options['field'])) {
             foreach ($this->options['field'] as $field) {
                 if (str_contains($field, ' ')) {
                     throw new DbException("first()函数的Model类构建Query查询字段[{$field}]不支持指定字段别名");
@@ -1159,7 +1166,7 @@ abstract class BaseQuery
             $this->whereNull($this->model->getSoftDeleteField());
         }
         
-        $result = $this->find();
+        $result = $this->find(null, true);
         if (!empty($result)) {
             $this->model->fill($result);
             return $this->model;

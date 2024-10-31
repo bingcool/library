@@ -742,6 +742,8 @@ abstract class PDOConnection implements ConnectionInterface
             return [];
         }
 
+        list($tableName) = explode(' ', $tableName);
+
         $info = $this->getSchemaInfo($tableName);
         return $fetch ? $info[$fetch] : $info;
     }

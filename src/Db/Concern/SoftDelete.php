@@ -33,15 +33,15 @@ trait SoftDelete
     /**
      * @return mixed|string
      */
-    public function getSoftDeleteField()
+    public static function getSoftDeleteField()
     {
         return static::$softDeleteField;
     }
 
     /**
-     * @return $this
+     * @return Query
      */
-    public static function withoutTrashed()
+    public static function withoutTrashed(): Query
     {
         $model = new static();
         $model->__enableSoftDelete = false;
@@ -54,4 +54,24 @@ trait SoftDelete
         return $query;
     }
 
+    /**
+     * 恢复被软删除的记录
+     * @param mixed $pkValue 主键值
+     * @return bool
+     */
+    public function restore($pkValue): bool
+    {
+        if ($this->isSoftDelete() && $pkValue) {
+            if (method_exists($this->getConnection(), 'getObject')) {
+                $query = (new Query($this->getConnection()->getObject()))->table($this->getTableName());
+            }else {
+                $query = (new Query($this->getConnection()))->table($this->getTableName());
+            }
+            $deletedField = $this->getSoftDeleteField();
+            $query->where($this->getPk(),'=', $pkValue);
+            $query->whereNotNull($deletedField);
+            $query->restore($deletedField);
+        }
+        return true;
+    }
 }

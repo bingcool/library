@@ -1211,6 +1211,23 @@ abstract class BaseQuery
     }
 
     /**
+     * 恢复被软删除的记录.
+     *
+     * @param string $deletedField
+     * @return void
+     * @throws DbException
+     */
+    public function restore(string $deletedField = 'deleted_at')
+    {
+        if (empty($this->options['where'])) {
+            throw new DbException('restore()恢复软删数据缺少条件参数');
+        }
+        $this->update([
+            $deletedField => null
+        ]);
+    }
+
+    /**
      * 原生查询
      *
      * @param string $sql

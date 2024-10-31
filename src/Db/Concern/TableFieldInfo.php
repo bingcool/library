@@ -61,7 +61,7 @@ trait TableFieldInfo
      *
      * @return array|mixed
      */
-    protected function getFieldType(?string $field = null)
+    public function getFieldType(?string $field = null)
     {
         $schemaInfo = $this->getSchema();
         if ($field) {

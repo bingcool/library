@@ -706,10 +706,6 @@ abstract class Model implements ArrayAccess
      */
     public function delete(bool $force = false): bool
     {
-        if (!$this->isExists()) {
-            throw new DbException('Active object is not exist');
-        }
-
         $this->setIsNew(false);
 
         if (!$this->isExists || false === $this->trigger('BeforeDelete')) {

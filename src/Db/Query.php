@@ -410,7 +410,7 @@ class Query extends BaseQuery
 
         // 生成查询SQL
         $sql = $this->builder->select($this);
-        
+
         return $connection->cursor($sql, $this->getBind());
     }
 

@@ -1378,6 +1378,10 @@ abstract class PDOConnection implements ConnectionInterface
             $dateTime = date('Y-m-d H:i:s');
             if($this->isCoroutine()) {
                 $cid = \Swoole\Coroutine::getCid();
+                $traceId = '';
+                if (\Swoolefy\Core\Coroutine\Context::has('trace-id')) {
+                    $traceId = \Swoolefy\Core\Coroutine\Context::get('trace-id');
+                }
                 $sqlFlag = "【sql-cid-{$cid}】";
                 $logger = LogManager::getInstance()->getLogger(LogManager::SQL_LOG);
                 if ($logger) {
@@ -1385,7 +1389,7 @@ abstract class PDOConnection implements ConnectionInterface
                     if (!file_exists($logFilePath)) {
                         fopen($logFilePath, 'w');
                     }
-                    $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【{$sqlFlag}】: ".$realSql;
+                    $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【Trace-Id: {$traceId}】【{$sqlFlag}】: ".$realSql;
                     $logger->info($sqlLog);
                 }
             }

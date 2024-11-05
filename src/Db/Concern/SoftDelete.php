@@ -11,6 +11,7 @@
 
 namespace Common\Library\Db\Concern;
 
+use Common\Library\Db\PDOConnection;
 use Common\Library\Db\Query;
 use Common\Library\Exception\DbException;
 /**
@@ -39,16 +40,20 @@ trait SoftDelete
     }
 
     /**
+     * @param PDOConnection $connection
      * @return Query
      */
-    public static function withoutTrashed(): Query
+    public static function withoutTrashed(?PDOConnection $connection = null): Query
     {
         $model = new static();
         $model->__enableSoftDelete = false;
-        if (method_exists($model->getConnection(), 'getObject')) {
-            $query = (new Query($model->getConnection()->getObject()))->table($model->getTableName());
+        if (!is_object($connection)) {
+            $connection = $model->getConnection();
+        }
+        if (method_exists($connection, 'getObject')) {
+            $query = (new Query($connection->getObject()))->table($model->getTableName());
         }else {
-            $query = (new Query($model->getConnection()))->table($model->getTableName());
+            $query = (new Query($connection))->table($model->getTableName());
         }
         $query->setModel($model);
         return $query;

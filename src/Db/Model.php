@@ -61,6 +61,14 @@ abstract class Model implements ArrayAccess
     protected static $table;
 
     /**
+     * 类型转换，支持的类型
+     * @see \Common\Library\Db\Casts\TypeCasts
+     *
+     * @var array
+     */
+    protected $casts = [];
+
+    /**
      * 数据表主键
      * @var string
      */
@@ -435,15 +443,18 @@ abstract class Model implements ArrayAccess
             if (is_null($value)) {
                 return;
             }
-        } else if (isset($this->_fieldTypeMap[$name])) {
-            //类型转换
-            $value = $this->writeTransform($value, $this->_fieldTypeMap[$name]);
+        } else {
+            $this->_fieldTypeMap = array_merge($this->_fieldTypeMap, $this->casts);
+            if (isset($this->_fieldTypeMap[$name])) {
+                //类型转换
+                $value = $this->writeTransform($value, $this->_fieldTypeMap[$name]);
+            }
         }
         // 源数据
         if (!$this->isExists()) {
             $this->_origin[$name] = $value;
         }
-
+        
         // 设置数据对象属性
         $this->_data[$name] = $value;
     }
@@ -873,8 +884,11 @@ abstract class Model implements ArrayAccess
         $method = 'get' . self::studly($fieldName) . 'Attr';
         if (method_exists(static::class, $method)) {
             $value = $this->$method($value);
-        } else if (isset($this->_fieldTypeMap[$fieldName])) {
-            $value = $this->readTransform($value, $this->_fieldTypeMap[$fieldName]);
+        } else {
+            $this->_fieldTypeMap = array_merge($this->_fieldTypeMap, $this->casts);
+            if (isset($this->_fieldTypeMap[$fieldName])) {
+                $value = $this->readTransform($value, $this->_fieldTypeMap[$fieldName]);
+            }
         }
         return $value;
     }
@@ -1093,15 +1107,20 @@ abstract class Model implements ArrayAccess
     }
 
     /**
-     * 列表查出的数据填充成model对象,方便IDE提示
-     *
+     * 单表查出的列表数据填充成model对象,方便IDE提示，eg:
+     * foreach ($orderList as $raw) {
+     *    // 填充到Model实体,方便IDE提示
+     *    $orderItem = OrderEntity::fill($raw);
+     *    var_dump($orderItem->json_data);
+     * }
      * @param array $values
-     * @return array
+     * @return mixed
      */
-    public function fill(array $attributes): Model
+    public static function fill(array $attributes): Model
     {
-        $this->parseOrigin($attributes);
-        return $this;
+        $model = new static();
+        $model->parseOrigin($attributes);
+        return $model;
     }
 
     /**

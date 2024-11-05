@@ -200,14 +200,14 @@ trait ParseSql
             $bindParams[$newField] = $value;
         }
 
-        $where = implode(' and ', $whereArr);
+        $where = implode(' AND ', $whereArr);
         return $this->findOne($where, $bindParams);
     }
 
     /**
      * @param array $attributes
      */
-    protected function parseOrigin(array $attributes = [])
+    public function parseOrigin(array $attributes = [])
     {
         if ($attributes) {
             foreach ($attributes as $field => $value) {

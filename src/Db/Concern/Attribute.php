@@ -277,7 +277,7 @@ trait Attribute
     }
 
     /**
-     * 数据写入 类型转换
+     * 数据写入 类型转换。以下类型指的是存在数据库类型
      * @param mixed $value 值
      * @param string|array $type 要转换的类型
      * @return mixed
@@ -325,11 +325,14 @@ trait Attribute
                 }
                 break;
             case 'array':
-                $value = (array)$value;
-                break;
             case 'json':
                 $option = !empty($param) ? (int)$param : JSON_UNESCAPED_UNICODE;
-                $value = json_encode($value, $option);
+                if (empty($value)) {
+                    $value = [];
+                }
+                if (is_array($value)) {
+                    $value = json_encode($value, $option);
+                }
                 break;
             case 'serialize':
                 $value = serialize($value);
@@ -391,10 +394,12 @@ trait Attribute
                 }
                 break;
             case 'json':
-                $value = json_decode($value, true);
-                break;
             case 'array':
-                $value = empty($value) ? [] : json_decode($value, true);
+                if (empty($value)) {
+                    $value = [];
+                }else if (is_string($value)) {
+                    $value = json_decode($value, true);
+                }
                 break;
             case 'object':
                 $value = empty($value) ? new \stdClass() : json_decode($value);

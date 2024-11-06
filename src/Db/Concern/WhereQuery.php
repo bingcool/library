@@ -244,6 +244,96 @@ trait WhereQuery
     }
 
     /**
+     * 指定json_contains查询条件.
+     *
+     * @param mixed  $field     查询字段
+     * @param mixed  $condition 查询条件
+     * @param string $logic     查询逻辑 and or xor
+     *
+     * @return $this
+     */
+    public function whereJsonContains(string $field, $condition, string $logic = 'AND')
+    {
+        $type = $this->getConnection()->getConfig('type');
+        if (strtolower($type) == 'pgsql') {
+            return $this->wherePgJsonContains($field, $condition, $logic);
+        }else {
+            if (str_contains($field, '->')) {
+                [$field1, $field2] = explode('->', $field);
+                $field             = 'json_extract(' . $field1 . ',\'$.' . $field2 . '\')';
+            }
+            // 数据表json有些数据可能是数字，但是使用字符串来表示的，eg: ['111','222','333'],这是需要兼容处理
+            if (is_numeric($condition) && is_string($condition)) {
+                $value1 = '"' . $condition . '"';
+                $value2 = (int)$condition;
+                return $this->whereRaw('json_contains(' . $field . ','.'\''.$value1.'\''.') or json_contains(' . $field . ','.'\''.$value2.'\''.')');
+            }else {
+                $value  = is_string($condition) ? '"' . $condition . '"' : $condition;
+                return $this->whereRaw('json_contains(' . $field . ','.'\''.$value.'\''.')');
+            }
+        }
+    }
+
+    /**
+     * pgsql json 查询条件
+     *
+     * @param string $logic
+     * @param string $field
+     * @param string $operator
+     * @param $condition
+     * @param array $bind
+     * @param bool $strict
+     * @return $this
+     */
+    protected function wherePgJsonContains(string $field, $condition, string $logic = 'AND')
+    {
+        /**
+         * expend_data=='{"name": "xiaomi", "phone": 123456789}',        使用：whereJsonContains(expend_data->>name, 'xiaoming') -> where expend_data @> '{"name":"xiaomi"}'
+         * expend_data=[1222, 345, 567, 81],                             使用：wherePgJsonContains('expend_data',['1222'])  -> WHERE( expend_data @> '["1222"]' or expend_data @> '[1222]' )
+         * expend_data={"name": "xiaomi", "phone": [123456789, 123456]}, 使用：whereJsonContains('expend_data->>phone',[123456789])  -> WHERE  ( expend_data @> '{"phone":[123456789]}' )
+         *
+         */
+
+        if (str_contains($field, '->>')) {
+            [$field1, $field2] = explode('->>', $field);
+            $field = $field1;
+            $condition = [
+                $field2 => $condition,
+            ];
+        }
+
+        if (is_array($condition)) {
+            $condition1 = [];
+            foreach ($condition as $k=>$v) {
+                if (is_numeric($v) && is_string($v)) {
+                    $condition1[] = (int)$v;
+                }
+            }
+            $value1 = json_encode($condition, JSON_UNESCAPED_UNICODE);
+            if (!empty($condition1)) {
+                $value2 = json_encode($condition1, JSON_UNESCAPED_UNICODE);
+                return $this->whereRaw("{$field} @> '$value1' or {$field} @> '$value2' ");
+            }else {
+                return $this->whereRaw("{$field} @> '$value1'");
+            }
+        }else {
+            if (is_numeric($condition) && is_string($condition)) {
+                $value1 = $condition;
+                $value2 = (int)$condition;
+                return $this->whereRaw("{$field} @> '$value1' or {$field} @> $value2 ");
+            }else {
+                $value = $condition;
+                return $this->whereRaw("{$field} @> '$value'");
+            }
+        }
+    }
+
+    public function whereOrJsonContains(string $field, $condition)
+    {
+        return $this->whereJsonContains($field, $condition, 'OR');
+    }
+
+    /**
      * 比较两个字段
      * @access public
      * @param string $field1   查询字段

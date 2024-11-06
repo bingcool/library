@@ -270,6 +270,7 @@ abstract class Model implements ArrayAccess
     protected function exists(bool $exists = true)
     {
         $this->isExists = $exists;
+        $this->isNew    = !$exists;
         return $this;
     }
 

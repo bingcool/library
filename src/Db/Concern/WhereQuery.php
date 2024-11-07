@@ -255,22 +255,76 @@ trait WhereQuery
     public function whereJsonContains(string $field, $condition, string $logic = 'AND')
     {
         $type = $this->getConnection()->getConfig('type');
-        if (strtolower($type) == 'pgsql') {
+        $type = strtolower($type);
+        if ($type == 'pgsql') {
             return $this->wherePgJsonContains($field, $condition, $logic);
+        }else if ($type == 'mysql') {
+            return $this->whereMysqlJsonContains($field, $condition, $logic);
+        }else if ($type == 'sqlite') {
+            return $this->whereSqliteJsonContains($field, $condition, $logic);
+        }else if ($type == 'oracle') {
+            return $this->whereOracleJsonContains($field, $condition, $logic);
+        }
+    }
+
+    /**
+     * mysql json 查询条件
+     *
+     * @param string $field
+     * @param $condition
+     * @param string $logic
+     * @return BaseQuery
+     */
+    protected function whereMysqlJsonContains(string $field, $condition, string $logic = 'AND')
+    {
+        /**
+         * 字段expend_data是关联数组，例如：
+         * expend_data={"name": "swoolefy","sex"}
+         * 使用：whereJsonContains('expend_data->name', "swoolefy")
+         * 最终的sql: json_contains(json_extract(expend_data,'$.name'),'"swoolefy"')
+         * 
+         * 字段expend_data直接存贮的是索引数组，要注意数据存贮类型，如果是整型的，查询值必须是整型，字符串的查询值也必须是字符串，例如：
+         * expend_data=[123,456,789]
+         * 使用：whereJsonContains('expend_data',123)
+         * 最终的sql: json_contains(expend_data,'123')
+         *
+         * 字段expend_data直接存贮的关联数组，数组里面的phone字段是索引数组,要注意数据存贮类型，如果是整型的，查询值必须是整型，字符串的查询值也必须是字符串，例如：
+         * expend_data={"name": "swoolefy", "phone": ['12346543', '123456']}
+         * 使用：whereJsonContains('expend_data->phone', '123456')
+         * 最终的sql:  json_contains(json_extract(expend_data,'$.phone'),'"123456"')
+         *
+         * 字段expend_data直接存贮的关联数组，数组里面的address字段是个二维数组，查询address数组里面的add字段的值，例如：
+         * expend_data={"name": "swoolefy", "address": [{"add": "shenzhen"}, {"add": "guangzhou"}]}
+         * 使用：whereJsonContains('expend_data->address', ['add' => 'shenzhen'])
+         * 最终的sql:  json_contains(json_extract(expend_data,'$.address'),'{"add":"shenzhen"}')
+         *
+         */
+
+        if (str_contains($field, '->')) {
+            [$field1, $field2] = explode('->', $field);
+            $field             = 'json_extract(' . $field1 . ',\'$.' . $field2 . '\')';
+        }
+        // 数据表json有些数据可能是数字，但是使用字符串来表示的，eg: ['111','222','333'],这是需要兼容处理
+        if (is_numeric($condition)) {
+            $value1 = '"' . $condition . '"';
+            $value2 = (int)$condition;
+            return $this->whereRaw('json_contains(' . $field . ','.'\''.$value1.'\''.') or json_contains(' . $field . ','.'\''.$value2.'\''.')');
         }else {
-            if (str_contains($field, '->')) {
-                [$field1, $field2] = explode('->', $field);
-                $field             = 'json_extract(' . $field1 . ',\'$.' . $field2 . '\')';
-            }
-            // 数据表json有些数据可能是数字，但是使用字符串来表示的，eg: ['111','222','333'],这是需要兼容处理
-            if (is_numeric($condition) && is_string($condition)) {
-                $value1 = '"' . $condition . '"';
-                $value2 = (int)$condition;
-                return $this->whereRaw('json_contains(' . $field . ','.'\''.$value1.'\''.') or json_contains(' . $field . ','.'\''.$value2.'\''.')');
+            if (is_array($condition)) {
+                $value = json_encode($condition,JSON_UNESCAPED_UNICODE);
             }else {
-                $value  = is_string($condition) ? '"' . $condition . '"' : $condition;
-                return $this->whereRaw('json_contains(' . $field . ','.'\''.$value.'\''.')');
+                if(str_contains($condition,'{')) {
+                    $valueArr = json_decode($condition,true);
+                    if (!is_null($valueArr)) {
+                        $value = $condition;
+                    }else {
+                        $value = '"' . $condition . '"';
+                    }
+                }else {
+                    $value = '"' . $condition . '"';
+                }
             }
+            return $this->whereRaw('json_contains(' . $field . ','.'\''.$value.'\''.')');
         }
     }
 
@@ -288,10 +342,26 @@ trait WhereQuery
     protected function wherePgJsonContains(string $field, $condition, string $logic = 'AND')
     {
         /**
-         * expend_data=='{"name": "xiaomi", "phone": 123456789}',        使用：whereJsonContains(expend_data->>name, 'xiaoming') -> where expend_data @> '{"name":"xiaomi"}'
-         * expend_data=[1222, 345, 567, 81],                             使用：wherePgJsonContains('expend_data',['1222'])  -> WHERE( expend_data @> '["1222"]' or expend_data @> '[1222]' )
-         * expend_data={"name": "xiaomi", "phone": [123456789, 123456]}, 使用：whereJsonContains('expend_data->>phone',[123456789])  -> WHERE  ( expend_data @> '{"phone":[123456789]}' )
          *
+         * 字段expend_data是关联数组，查询某个字段的某个值：
+         * expend_data ='{"name": "xiaomi", "phone": 123456789}',
+         * 使用：whereJsonContains(expend_data->>name, 'xiaoming')
+         * 最终的sql: where expend_data @> '{"name":"xiaomi"}'
+         *
+         * 字段expend_data是索引数组，查询某个值：
+         * expend_data =[1222, 345, 567, 81],
+         * 使用：wherePgJsonContains('expend_data',['1222'])
+         * 最终的sql: WHERE( expend_data @> '["1222"]' or expend_data @> '[1222]' )
+         *
+         * 字段expend_data关联数组里面的phone是一维数组，查询某个值：
+         * expend_data ={"name": "xiaomi", "phone": [123456789, 123456]}
+         * 使用：whereJsonContains('expend_data->>phone',[123456789])
+         * 最终的sql: WHERE  ( expend_data @> '{"phone":[123456789]}' )
+         *
+         * 字段expend_data关联数组的address里面是二维关联数组，查询某个值：
+         * expend_data ={"name": "xiaomi","address": [{"add1": "深圳"},{"add1": "广州"}]}
+         * 使用：whereJsonContains('expend_data->>address',[['add1' => '深圳']])
+         * 最终的sql: WHERE  ( expend_data @> '{"address":[{"add1":"深圳"}]}' )
          */
 
         if (str_contains($field, '->>')) {
@@ -326,6 +396,16 @@ trait WhereQuery
                 return $this->whereRaw("{$field} @> '$value'");
             }
         }
+    }
+
+    protected function whereSqliteJsonContains(string $field, $condition, string $logic = 'AND')
+    {
+        throw new \Exception('sqlite json_contains not support, please use whereRaw() instead');
+    }
+
+    protected function whereOrcaleJsonContains(string $field, $condition, string $logic = 'AND')
+    {
+        throw new \Exception('sqlite json_contains not support, please use whereRaw() instead');
     }
 
     public function whereOrJsonContains(string $field, $condition)

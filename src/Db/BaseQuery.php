@@ -64,6 +64,12 @@ abstract class BaseQuery
     protected $lastInsId = 0;
 
     /**
+     * 是否为first()函数调用查询
+     * @var bool
+     */
+    protected $firstCall = false;
+
+    /**
      * 当前查询参数
      * @var array
      */
@@ -1081,17 +1087,11 @@ abstract class BaseQuery
     /**
      * 查找记录列表
      * @access public
-     * @param mixed $data 数据
      * @return Collection|array|static[]
      * @throws DbException
      */
-    public function select($data = null): Collection
+    public function select(): Collection
     {
-        if (!is_null($data)) {
-            // 主键条件分析
-            $this->parsePkWhere($data);
-        }
-
         $this->parseOptions();
         $sql = $this->builder->select($this);
         $bindParams = $this->getBind();
@@ -1115,30 +1115,26 @@ abstract class BaseQuery
      * @param bool   $firstCall 是否为first()函数调用
      * @return array|mixed
      */
-    public function find($data = null, bool $firstCall = false)
+    public function find()
     {
-        if (!is_null($data)) {
-            // AR模式分析主键条件
-            $this->parsePkWhere($data);
-        }
-
         if (empty($this->options['where']) && empty($this->options['order'])) {
             $result = [];
         } else {
             $this->parseOptions();
             $sql = $this->builder->select($this);
             $bindParams = $this->getBind();
-            $resultSet = $this->connection->query($sql, $bindParams);
-            if (!$firstCall) {
-                $this->result($resultSet);
+            $result = $this->connection->query($sql, $bindParams);
+            if (!$this->firstCall) {
+                $this->result($result);
+            }else {
+                $result = $result[0] ?? [];
             }
-            $result = $resultSet[0] ?? [];
         }
         return $result;
     }
 
     /**
-     * 查找单条记录
+     * 查找单条记录(Model类查询)
      *
      * @return mixed
      */
@@ -1165,10 +1161,15 @@ abstract class BaseQuery
         if ($this->model->isSoftDelete()) {
             $this->whereNull($this->model->getSoftDeleteField());
         }
-        
-        $result = $this->find(null, true);
+        $this->firstCall = true;
+        $result = $this->find();
+        $this->firstCall = false;
         if (!empty($result)) {
-            $this->model->fill($result);
+            /**
+             * @var $modelObject Model
+             */
+            $modelObject = $this->model;
+            $modelObject->parseOrigin($result);
             return $this->model;
         }
         return null;

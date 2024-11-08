@@ -27,6 +27,7 @@ abstract class Model implements ArrayAccess
     use Concern\Expression;
     use Concern\ParseSql;
     use Concern\TimeStamp;
+    use Concern\LockShare;
     use Concern\Util;
 
     const BEFORE_INSERT = 'BeforeInsert';

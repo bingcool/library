@@ -93,15 +93,31 @@ trait ParseSql
                 }
             }
         }
+
+        $bindWhere = [
+            "{$pk}=:pk",
+        ];
+
+        $bindParams[':pk'] = $this->getPkValue() ?? 0;
+
+        if (!empty($this->lockShareWhereFieldValues)) {
+            foreach ($this->lockShareWhereFieldValues as $fieldName => $value) {
+                $bindWhere[] = $fieldName.'=:'.$fieldName;
+                $bindParams[':'.$fieldName] = $value;
+            }
+        }
+
+        $whereStr = implode(' AND ', $bindWhere);
+
         $this->expressionFields = [];
         $setValueStr = implode(',', $setValues);
         if ($this->isSoftDelete()) {
             $deletedAtField = $this->getSoftDeleteField();
-            $sql = "UPDATE {$this->getTableName()} SET {$setValueStr} WHERE {$pk}=:pk AND {$deletedAtField} IS NULL";
+            $sql = "UPDATE {$this->getTableName()} SET {$setValueStr} WHERE {$whereStr} AND {$deletedAtField} IS NULL";
         }else {
-            $sql = "UPDATE {$this->getTableName()} SET {$setValueStr} WHERE {$pk}=:pk";
+            $sql = "UPDATE {$this->getTableName()} SET {$setValueStr} WHERE {$whereStr}";
         }
-        $bindParams[':pk'] = $this->getPkValue() ?? 0;
+        var_dump($sql);
         return [$sql, $bindParams];
     }
 

@@ -117,7 +117,6 @@ trait ParseSql
         }else {
             $sql = "UPDATE {$this->getTableName()} SET {$setValueStr} WHERE {$whereStr}";
         }
-        var_dump($sql);
         return [$sql, $bindParams];
     }
 
@@ -187,7 +186,7 @@ trait ParseSql
         $attributes = $connection->createCommand($sql)->queryOne($bindParams);
         if ($attributes) {
             $pk = $this->getPk();
-            if(!isset($attributes[$pk])) {
+            if (!isset($attributes[$pk])) {
                 $className = get_class($this);
                 throw new DbException("{$className} property error, no match table primary key");
             }
@@ -211,8 +210,8 @@ trait ParseSql
     {
         $whereArr = $bindParams = [];
         foreach ($whereMap as $field => $value) {
-            $newField = ":{$field}";
-            $whereArr[] = "{$field}=$newField";
+            $newField   = ":{$field}";
+            $whereArr[] = "{$field}={$newField}";
             $bindParams[$newField] = $value;
         }
 

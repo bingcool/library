@@ -507,9 +507,9 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
     }
 
     /**
-     * 指定字段排序
+     * 指定字段排序，支持dateTime,timestamp,int,float,double类型的字段
      * @access public
-     * @param string $field 排序字段
+     * @param string $field 排序字段,支持dateTime,timestamp,int,float,double类型的字段
      * @param string $order 排序
      * @return $this
      */
@@ -518,9 +518,26 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         return $this->sort(function ($a, $b) use ($field, $order) {
             $fieldA = $a[$field] ?? null;
             $fieldB = $b[$field] ?? null;
+            if (!is_null($fieldA)) {
+                if ($this->isValidDate($fieldA)) {
+                    $fieldA = strtotime($fieldA);
+                    if (!is_null($fieldB)) {
+                        $fieldB = strtotime($fieldB);
+                    }
+                }
+            }
 
             return 'desc' == strtolower($order) ? intval($fieldB > $fieldA) : intval($fieldA > $fieldB);
         });
+    }
+
+    /**
+     * @param $date
+     * @param $pattern
+     * @return bool
+     */
+    protected function isValidDate($date, $pattern = '/^\d{4}-\d{1,2}(-)(.*)$/') {
+        return (bool) preg_match($pattern, trim($date));
     }
 
     /**

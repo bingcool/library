@@ -83,11 +83,11 @@ class DurationLimiter
     public function isLimit(): bool
     {
         if (empty($this->rateKey)) {
-            throw new RateLimitException("RateKey Missing Setting");
+            throw new RateLimitException("RateKey Missing Setting rateKey");
         }
 
         if (empty($this->limitNum) || empty($this->windowSizeTime)) {
-            throw new RateLimitException("RateLimit Missing Set Params");
+            throw new RateLimitException("RateLimit Missing Params");
         }
 
         $requireId = $this->getRequireId();

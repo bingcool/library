@@ -536,8 +536,17 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
      * @param $pattern
      * @return bool
      */
-    protected function isValidDate($date, $pattern = '/^\d{4}-\d{1,2}(-)(.*)$/') {
-        return (bool) preg_match($pattern, trim($date));
+    public function isValidDate($date) {
+        try {
+            $dateTime = new \DateTime($date);
+            if ($dateTime->getTimestamp() > 0) {
+                return true;
+            }else {
+                return false;
+            }
+        }catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**

@@ -30,6 +30,8 @@ abstract class Model implements ArrayAccess
     use Concern\LockShare;
     use Concern\Util;
 
+    // BeforeSave将在BeforeInsert | BeforeUpdate之前执行。可以处理一些新增前和更新前的都需要执行的公共逻辑
+    const BEFORE_SAVE = 'BeforeSave';
     const BEFORE_INSERT = 'BeforeInsert';
     const BEFORE_INSERT_TRANSACTION = 'BeforeInsertTransaction';
     const AFTER_INSERT_TRANSACTION = 'AfterInsertTransaction';
@@ -40,14 +42,20 @@ abstract class Model implements ArrayAccess
     const AFTER_UPDATE_TRANSACTION = 'AfterUpdateTransaction';
     const AFTER_UPDATE = 'AfterUpdate';
 
+    // AfterInsert | AfterUpdate 之后都会执行这个AfterSave. 可以处理一些新增后和更新后的都需要执行的公共逻辑
+    const AFTER_SAVE = 'AfterSave';
+
     const BEFORE_DELETE = 'BeforeDelete';
     const AFTER_DELETE = 'AfterDelete';
 
     const EVENTS = [
+        self::BEFORE_SAVE,
         self::BEFORE_INSERT,
         self::AFTER_INSERT,
         self::BEFORE_UPDATE,
         self::AFTER_UPDATE,
+        self::AFTER_SAVE,
+
         self::BEFORE_DELETE,
         self::AFTER_DELETE,
         self::BEFORE_INSERT_TRANSACTION,
@@ -197,6 +205,15 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * onBeforeSave将在BeforeInsert | BeforeUpdate之前执行。可以处理一些新增前和更新前的都需要执行的公共逻辑
+     * @return bool
+     */
+    protected function onBeforeSave(): bool
+    {
+        return true;
+    }
+
+    /**
      * @return bool
      */
     protected function onBeforeInsert(): bool
@@ -223,6 +240,14 @@ abstract class Model implements ArrayAccess
      * @return void
      */
     protected function onAfterUpdate()
+    {
+    }
+
+    /**
+     * AfterInsert | AfterUpdate 事件执行之后都会执行这个AfterSave函数. 可以处理一些新增后和更新后的都需要执行的公共逻辑
+     * @return void
+     */
+    protected function onAfterSave()
     {
     }
 
@@ -488,7 +513,9 @@ abstract class Model implements ArrayAccess
         // new flag
         $this->setIsNew(true);
 
-        if (false === $this->trigger('BeforeInsert')) {
+        $this->trigger(self::BEFORE_SAVE);
+
+        if (false === $this->trigger(self::BEFORE_INSERT)) {
             return false;
         }
 
@@ -528,7 +555,7 @@ abstract class Model implements ArrayAccess
                     $this->exists(true);
                     // query buildAttributes
                     $this->buildAttributes();
-                    $this->trigger('AfterInsert');
+                    $this->trigger(self::AFTER_INSERT);
                 });
             } else if ($hasBeforeInsertTransaction) {
                 $this->transaction(function () use ($sql, $bindParams) {
@@ -538,7 +565,7 @@ abstract class Model implements ArrayAccess
                     $this->exists(true);
                     // query buildAttributes
                     $this->buildAttributes();
-                    $this->trigger('AfterInsert');
+                    $this->trigger(self::AFTER_INSERT);
                 });
             } else if ($hasAfterInsertTransaction) {
                 $this->transaction(function () use ($sql, $bindParams) {
@@ -548,7 +575,7 @@ abstract class Model implements ArrayAccess
                     $this->exists(true);
                     // query buildAttributes
                     $this->buildAttributes();
-                    $this->trigger('AfterInsert');
+                    $this->trigger(self::AFTER_INSERT);
                 });
             } else {
                 $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
@@ -556,8 +583,11 @@ abstract class Model implements ArrayAccess
                 $this->exists(true);
                 // query buildAttributes
                 $this->buildAttributes();
-                $this->trigger('AfterInsert');
+                $this->trigger(self::AFTER_INSERT);
             }
+
+            $this->trigger(self::AFTER_SAVE);
+
         } catch (\Throwable $e) {
             $this->_numRows = 0;
             throw $e;
@@ -568,7 +598,7 @@ abstract class Model implements ArrayAccess
             $this->_data[$pk] = $this->getConnection()->getLastInsID($pk);
         }
 
-        if(!$enableAfterCommitCallback) {
+        if (!$enableAfterCommitCallback) {
             if(method_exists(static::class, 'onAfterInsertCommitCallBack')) {
                 $this->onAfterInsertCommitCallBack();
             }
@@ -629,7 +659,10 @@ abstract class Model implements ArrayAccess
     protected function updateData(array $attributes = []): bool
     {
         $this->setIsNew(false);
-        if (false === $this->trigger('BeforeUpdate')) {
+
+        $this->trigger(self::BEFORE_SAVE);
+
+        if (false === $this->trigger(self::BEFORE_UPDATE)) {
             return false;
         }
 
@@ -665,27 +698,29 @@ abstract class Model implements ArrayAccess
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                         $this->onAfterUpdateTransaction();
                         $this->checkResult($this->_data);
-                        $this->trigger('AfterUpdate');
+                        $this->trigger(self::AFTER_UPDATE);
                     });
                 } else if ($hasBeforeUpdateTransaction) {
                     $this->transaction(function () use ($sql, $bindParams) {
                         $this->onBeforeUpdateTransaction();
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                         $this->checkResult($this->_data);
-                        $this->trigger('AfterUpdate');
+                        $this->trigger(self::AFTER_UPDATE);
                     });
                 } else if ($hasAfterUpdateTransaction) {
                     $this->transaction(function () use ($sql, $bindParams) {
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                         $this->onAfterUpdateTransaction();
                         $this->checkResult($this->_data);
-                        $this->trigger('AfterUpdate');
+                        $this->trigger(self::AFTER_UPDATE);
                     });
                 } else {
                     $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                     $this->checkResult($this->_data);
-                    $this->trigger('AfterUpdate');
+                    $this->trigger(self::AFTER_UPDATE);
                 }
+
+                $this->trigger(self::AFTER_SAVE);
 
             } catch (\Throwable $e) {
                 $this->_numRows = 0;
@@ -721,13 +756,15 @@ abstract class Model implements ArrayAccess
     {
         $this->setIsNew(false);
 
-        if (!$this->isExists || false === $this->trigger('BeforeDelete')) {
+        if (!$this->isExists || false === $this->trigger(self::BEFORE_DELETE)) {
             return false;
         }
 
         if ($force) {
             list($sql, $bindParams) = $this->parseDeleteSql();
-            $this->_numRows = $this->getConnection()->createCommand($sql)->delete($bindParams);
+            if (!empty($sql)) {
+                $this->_numRows = $this->getConnection()->createCommand($sql)->delete($bindParams);
+            }
         } else {
             if ($this->processDelete() === false) {
                 throw new DbException('ProcessDelete Failed');
@@ -740,7 +777,8 @@ abstract class Model implements ArrayAccess
         }
 
         $this->exists(false);
-        $this->trigger('AfterDelete');
+
+        $this->trigger(self::AFTER_DELETE);
 
         if($this->getConnection()->isEnableTransaction()) {
             if(method_exists(static::class, 'onAfterDeleteCommitCallBack')) {
@@ -752,6 +790,8 @@ abstract class Model implements ArrayAccess
             }
         }
 
+        $this->withRecoverEvents();
+
         return true;
     }
 
@@ -761,10 +801,11 @@ abstract class Model implements ArrayAccess
      */
     protected function processDelete(): bool
     {
-        //todo
         // 逻辑删除，可能不需要再次执行update操作
+        $this->skipEvent(self::BEFORE_SAVE);
         $this->skipEvent(self::BEFORE_UPDATE);
         $this->skipEvent(self::AFTER_UPDATE);
+        $this->skipEvent(self::AFTER_SAVE);
         return true;
     }
 

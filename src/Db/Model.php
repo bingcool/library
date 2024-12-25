@@ -535,10 +535,9 @@ abstract class Model implements ArrayAccess
         list($sql, $bindParams) = $this->parseInsertSql($allowFields);
 
         try {
-
             $hasBeforeInsertTransaction = method_exists(static::class, 'onBeforeInsertTransaction');
-            $hasAfterInsertTransaction = method_exists(static::class, 'onAfterInsertTransaction');
-            $enableAfterCommitCallback = false;
+            $hasAfterInsertTransaction  = method_exists(static::class, 'onAfterInsertTransaction');
+            $enableAfterCommitCallback  = false;
             if($hasBeforeInsertTransaction || $hasAfterInsertTransaction || $this->getConnection()->isEnableTransaction()) {
                 if(method_exists(static::class, 'onAfterInsertCommitCallBack')) {
                     $enableAfterCommitCallback = true;
@@ -556,6 +555,7 @@ abstract class Model implements ArrayAccess
                     // query buildAttributes
                     $this->buildAttributes();
                     $this->trigger(self::AFTER_INSERT);
+                    $this->trigger(self::AFTER_SAVE);
                 });
             } else if ($hasBeforeInsertTransaction) {
                 $this->transaction(function () use ($sql, $bindParams) {
@@ -566,6 +566,7 @@ abstract class Model implements ArrayAccess
                     // query buildAttributes
                     $this->buildAttributes();
                     $this->trigger(self::AFTER_INSERT);
+                    $this->trigger(self::AFTER_SAVE);
                 });
             } else if ($hasAfterInsertTransaction) {
                 $this->transaction(function () use ($sql, $bindParams) {
@@ -576,6 +577,7 @@ abstract class Model implements ArrayAccess
                     // query buildAttributes
                     $this->buildAttributes();
                     $this->trigger(self::AFTER_INSERT);
+                    $this->trigger(self::AFTER_SAVE);
                 });
             } else {
                 $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
@@ -584,9 +586,8 @@ abstract class Model implements ArrayAccess
                 // query buildAttributes
                 $this->buildAttributes();
                 $this->trigger(self::AFTER_INSERT);
+                $this->trigger(self::AFTER_SAVE);
             }
-
-            $this->trigger(self::AFTER_SAVE);
 
         } catch (\Throwable $e) {
             $this->_numRows = 0;
@@ -699,6 +700,7 @@ abstract class Model implements ArrayAccess
                         $this->onAfterUpdateTransaction();
                         $this->checkResult($this->_data);
                         $this->trigger(self::AFTER_UPDATE);
+                        $this->trigger(self::AFTER_SAVE);
                     });
                 } else if ($hasBeforeUpdateTransaction) {
                     $this->transaction(function () use ($sql, $bindParams) {
@@ -706,6 +708,7 @@ abstract class Model implements ArrayAccess
                         $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                         $this->checkResult($this->_data);
                         $this->trigger(self::AFTER_UPDATE);
+                        $this->trigger(self::AFTER_SAVE);
                     });
                 } else if ($hasAfterUpdateTransaction) {
                     $this->transaction(function () use ($sql, $bindParams) {
@@ -713,14 +716,14 @@ abstract class Model implements ArrayAccess
                         $this->onAfterUpdateTransaction();
                         $this->checkResult($this->_data);
                         $this->trigger(self::AFTER_UPDATE);
+                        $this->trigger(self::AFTER_SAVE);
                     });
                 } else {
                     $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
                     $this->checkResult($this->_data);
                     $this->trigger(self::AFTER_UPDATE);
+                    $this->trigger(self::AFTER_SAVE);
                 }
-
-                $this->trigger(self::AFTER_SAVE);
 
             } catch (\Throwable $e) {
                 $this->_numRows = 0;

@@ -164,7 +164,7 @@ class Consumer extends AbstractKafka
     /**
      * @param string|null $topicName
      * @return KafkaConsumer
-     * @throws Throwable
+     * @throws \Throwable
      */
     public function subject(string $topicName = null)
     {

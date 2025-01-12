@@ -1111,8 +1111,6 @@ abstract class BaseQuery
     /**
      * 查找单条记录
      * @access public
-     * @param mixed $data 查询数据
-     * @param bool   $firstCall 是否为first()函数调用
      * @return array|mixed
      */
     public function find()

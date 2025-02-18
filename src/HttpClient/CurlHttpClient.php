@@ -12,6 +12,7 @@
 namespace Common\Library\HttpClient;
 
 use Common\Library\Exception\CurlException;
+use Common\Library\Purl\Url;
 
 /**
  * Class CurlHttpClient
@@ -273,29 +274,34 @@ class CurlHttpClient implements HttpClientInterface
             }
         }
 
+        $newUrl = new Url();
+        $newUrl->setUrl($uri['scheme'].'://'.$uri['host']);
+
         if (isset($uri['user'])) {
-            $user = $uri['user'] . ':';
+            $newUrl->set('user', $uri['user']);
         }
 
         if (isset($uri['pass'])) {
-            $pass = $uri['pass'] . '@';
+            $newUrl->set('pass', $uri['pass']);
         }
 
         if (isset($uri['port'])) {
-            $port = ':' . $uri['port'];
+            $newUrl->set('port', $uri['port']);
+        }
+
+        if (isset($uri['path'])) {
+            $newUrl->set('path', $uri['path']);
         }
 
         if (isset($uri['query'])) {
-            $query = '?' . $uri['query'];
+            $newUrl->set('query', $uri['query']);
         }
 
         if (isset($uri['fragment'])) {
-            $fragment = '#' . $uri['fragment'];
+            $newUrl->set('fragment', $uri['fragment']);
         }
 
-        $url = $uri['scheme'] . '://' . ($user ?? '') . ($pass ?? '') . $uri['host'] . ($port ?? '') . ($uri['path'] ?? '/') . ($query ?? '') . ($fragment ?? '');
-
-        return $url;
+        return $newUrl->getUrl();
     }
 
     /**

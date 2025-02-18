@@ -16,6 +16,8 @@ use function strpos;
 /**
  * Url is a simple OO class for manipulating Urls in PHP.
  *
+ * @see https://github.com/jwage/purl
+ *
  * @property string $scheme
  * @property string $host
  * @property int $port

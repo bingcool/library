@@ -275,7 +275,8 @@ class CurlHttpClient implements HttpClientInterface
         }
 
         $newUrl = new Url();
-        $newUrl->setUrl($uri['scheme'].'://'.$uri['host']);
+        $baseUrl = sprintf('%s://%s', $uri['scheme'], $uri['host']);
+        $newUrl->setUrl($baseUrl);
 
         if (isset($uri['user'])) {
             $newUrl->set('user', $uri['user']);

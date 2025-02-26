@@ -1315,7 +1315,7 @@ abstract class PDOConnection implements ConnectionInterface
     public function getLastInsID($sequence = null, $pkValue = 0)
     {
         try {
-            $insertId = $this->PDOInstance->lastInsertId('order_id');
+            $insertId = $this->PDOInstance->lastInsertId($sequence);
         } catch (\Throwable $exception) {
             $insertId = 0;
         }

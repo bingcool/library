@@ -440,6 +440,20 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * 批量赋值
+     *
+     * @param array $data
+     * @return $this
+     */
+    public function setData(array $data)
+    {
+        foreach ($data as $key => $value) {
+            $this->$key = $value;
+        }
+        return $this;
+    }
+
+    /**
      * 修改器 设置数据对象的值处理
      * @param string $name 名称
      * @param mixed $value 值
@@ -481,7 +495,7 @@ abstract class Model implements ArrayAccess
         if (!$this->isExists()) {
             $this->_origin[$name] = $value;
         }
-        
+
         // 设置数据对象属性
         $this->_data[$name] = $value;
     }
@@ -546,9 +560,11 @@ abstract class Model implements ArrayAccess
             }
 
             if ($hasBeforeInsertTransaction && $hasAfterInsertTransaction) {
-                $this->transaction(function () use ($sql, $bindParams) {
+                $this->transaction(function () use ($sql, $bindParams, $pk) {
                     $this->onBeforeInsertTransaction();
                     $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+                    // if increment primary key insert successful set primary key to data array
+                    $this->setAutoIncrementPkValue($pk);
                     $this->onAfterInsertTransaction();
                     // set exist
                     $this->exists(true);
@@ -558,9 +574,11 @@ abstract class Model implements ArrayAccess
                     $this->trigger(self::AFTER_SAVE);
                 });
             } else if ($hasBeforeInsertTransaction) {
-                $this->transaction(function () use ($sql, $bindParams) {
+                $this->transaction(function () use ($sql, $bindParams, $pk) {
                     $this->onBeforeInsertTransaction();
                     $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+                    // if increment primary key insert successful set primary key to data array
+                    $this->setAutoIncrementPkValue($pk);
                     // set exist
                     $this->exists(true);
                     // query buildAttributes
@@ -569,8 +587,10 @@ abstract class Model implements ArrayAccess
                     $this->trigger(self::AFTER_SAVE);
                 });
             } else if ($hasAfterInsertTransaction) {
-                $this->transaction(function () use ($sql, $bindParams) {
+                $this->transaction(function () use ($sql, $bindParams, $pk) {
                     $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+                    // if increment primary key insert successful set primary key to data array
+                    $this->setAutoIncrementPkValue($pk);
                     $this->onAfterInsertTransaction();
                     // set exist
                     $this->exists(true);
@@ -581,6 +601,8 @@ abstract class Model implements ArrayAccess
                 });
             } else {
                 $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
+                // if increment primary key insert successful set primary key to data array
+                $this->setAutoIncrementPkValue($pk);
                 // set exist
                 $this->exists(true);
                 // query buildAttributes
@@ -594,11 +616,6 @@ abstract class Model implements ArrayAccess
             throw $e;
         }
 
-        // if increment primary key insert successful set primary key to data array
-        if (!isset($this->_data[$pk]) || is_null($this->_data[$pk]) || $this->_data[$pk] == '') {
-            $this->_data[$pk] = $this->getConnection()->getLastInsID($pk);
-        }
-
         if (!$enableAfterCommitCallback) {
             if(method_exists(static::class, 'onAfterInsertCommitCallBack')) {
                 $this->onAfterInsertCommitCallBack();
@@ -606,6 +623,17 @@ abstract class Model implements ArrayAccess
         }
 
         return $this->_data[$pk] ?? '';
+    }
+
+    /**
+     * @param $pk
+     * @return void
+     */
+    private function setAutoIncrementPkValue($pk)
+    {
+        if (!isset($this->_data[$pk]) || is_null($this->_data[$pk]) || $this->_data[$pk] == '') {
+            $this->_data[$pk] = $this->getConnection()->getLastInsID($pk);
+        }
     }
 
     /**

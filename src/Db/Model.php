@@ -827,6 +827,17 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     *  强制物理删除
+     *
+     * @return bool
+     * @throws DbException
+     */
+    public function forceDelete(): bool
+    {
+        return $this->delete(true);
+    }
+
+    /**
      * 自定义逻辑删除过程
      * @return bool
      */

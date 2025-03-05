@@ -129,7 +129,7 @@ trait ParseSql
         $pk = $this->getPk();
         $pkValue = $this->getPkValue();
         if ($pkValue) {
-            $sql = "DELETE FROM {$this->getTableName()} WHERE {$pk}=:pk LIMIT 1";
+            $sql = "DELETE FROM {$this->getTableName()} WHERE {$pk}=:pk";
             $bindParams[':pk'] = $pkValue;
         }
         return [$sql ?? '', $bindParams ?? []];
@@ -147,7 +147,7 @@ trait ParseSql
             $deletedAtField = $this->getSoftDeleteField();
             $deleteDate = date('Y-m-d H:i:s');
             if ($pkValue) {
-                $sql = "UPDATE {$this->getTableName()} SET {$deletedAtField}=:deleteDate WHERE {$pk}=:pk LIMIT 1";
+                $sql = "UPDATE {$this->getTableName()} SET {$deletedAtField}=:deleteDate WHERE {$pk}=:pk";
                 $bindParams[':pk'] = $pkValue;
                 $bindParams[':deleteDate'] = $deleteDate;
             }

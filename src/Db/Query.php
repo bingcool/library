@@ -209,12 +209,24 @@ class Query extends BaseQuery
     /**
      * 指定强制索引
      * @access public
-     * @param string $force 索引名称
+     * @param string|array $force 索引名称
      * @return $this
      */
-    public function force(string $force)
+    public function force($indexName)
     {
-        $this->options['force'] = $force;
+        $this->options['force'] = $indexName;
+        return $this;
+    }
+
+    /**
+     * 指定强制索引
+     * @access public
+     * @param string|array $indexName 索引名称
+     * @return $this
+     */
+    public function forceIndx($indexName)
+    {
+        $this->force($indexName);
         return $this;
     }
 

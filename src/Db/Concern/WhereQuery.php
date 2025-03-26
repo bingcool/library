@@ -644,6 +644,55 @@ trait WhereQuery
     }
 
     /**
+     * 多字段组合查询,eg：
+     * 用法1：单个数组查询
+     * $query->whereGroupField([
+     *    "warehouse_id" => 1,
+     *    "product_id"   => 12345,
+     *    "position_id"  => 11
+     * ])->select()
+     *
+     * 用法2：二维数组批量查询
+     * $query->whereGroupField([
+     *  [
+     *    "warehouse_id" => 1,
+     *    "product_id"   => 12345,
+     *    "position_id"  => 11
+     *  ],
+     *  [
+     *    "warehouse_id" => 1,
+     *    "product_id"   => 12345,
+     *    "position_id"  => 11
+     *  ]
+     * ])->select()
+     * @param array $fieldValues
+     * @param string $logic
+     * @return $this
+     */
+    public function whereGroupField(array $fieldValues, string $logic = 'AND')
+    {
+        if (isset($fieldValues[0]) && is_array($fieldValues[0])) {
+            $fields = array_keys($fieldValues[0]);
+            foreach ($fieldValues as $fieldValue) {
+                $values = array_values($fieldValue);
+                $valuesCollection[] = "(".implode(",", $values).")";
+            }
+
+        }else {
+            $fields = array_keys($fieldValues);
+            $values = array_values($fieldValues);
+            $valuesCollection[] = "(".implode(",", $values).")";
+        }
+
+        if (empty($valuesCollection)) {
+            throw new \Exception("whereGroupField fieldValues is empty");
+        }
+
+        $this->whereRaw("(".implode(",", $fields).") in (".implode(",", $valuesCollection).")",[], $logic);
+        return $this;
+    }
+
+    /**
      * 去除某个查询条件
      * @access public
      * @param string $field 查询字段

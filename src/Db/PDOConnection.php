@@ -153,7 +153,7 @@ abstract class PDOConnection implements ConnectionInterface
     /**
      * @var array
      */
-    protected static $slowSqlNoticeCallback;
+    protected static $slowSqlNoticeCallback = [];
 
     /**
      * PDO连接参数
@@ -1420,11 +1420,19 @@ abstract class PDOConnection implements ConnectionInterface
      */
     protected function callSlowSqlFn($realRunTime, $realSql)
     {
+        $fn = static::$slowSqlNoticeCallback['fn'] ?? '';
+        if (empty($fn)) {
+            return;
+        }
         if (class_exists('swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
             goApp(function () use($realRunTime, $realSql) {
+                $traceId = '';
+                if (\Swoolefy\Core\Coroutine\Context::has('trace-id')) {
+                    $traceId = \Swoolefy\Core\Coroutine\Context::get('trace-id');
+                }
                 try {
                     $fn = static::$slowSqlNoticeCallback['fn'];
-                    $fn($realRunTime, $realSql);
+                    $fn($realRunTime, $realSql, $traceId);
                 }catch (\Throwable $exception) {
 
                 }
@@ -1432,7 +1440,7 @@ abstract class PDOConnection implements ConnectionInterface
         }else {
             try {
                 $fn = static::$slowSqlNoticeCallback['fn'];
-                $fn($realRunTime, $realSql);
+                $fn($realRunTime, $realSql, '');
             }catch (\Throwable $exception) {
 
             }

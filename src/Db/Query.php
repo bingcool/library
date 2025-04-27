@@ -209,7 +209,7 @@ class Query extends BaseQuery
     /**
      * 指定强制索引
      * @access public
-     * @param string|array $force 索引名称
+     * @param string $force 索引名称
      * @return $this
      */
     public function force($indexName)

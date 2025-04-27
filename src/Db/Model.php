@@ -342,6 +342,14 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * @return array
+     */
+    public function getTypeCasts(): array
+    {
+        return $this->casts;
+    }
+
+    /**
      * build new Query, miss table name, 构建查询时需要指定table表名
      * (new Order())->newQuery()->table($sql)->alias('a')->select()
      * @return Query

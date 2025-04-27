@@ -882,6 +882,7 @@ abstract class BaseQuery
     public function insert(array $data = [], bool $getLastInsID = true)
     {
         if (!empty($data)) {
+            $this->parseInsertOrUpdateData($data);
             $this->options['data'] = $data;
         }
 
@@ -906,6 +907,52 @@ abstract class BaseQuery
     }
 
     /**
+     * @param array $data
+     * @return void
+     */
+    protected function parseInsertOrUpdateData(array &$data)
+    {
+        if (!empty($this->model)) {
+            $typeCasts = $this->getModel()->getTypeCasts();
+            if (isset($data[0])) {
+                foreach ($data as $key => &$dataItem) {
+                    foreach ($dataItem as $field => &$itemValue) {
+                        if (isset($typeCasts[$field])) {
+                            switch ($typeCasts[$field]) {
+                                case 'array':
+                                case 'json':
+                                    if (!empty($itemValue) && is_array($itemValue)) {
+                                        $itemValue = json_encode($itemValue, JSON_UNESCAPED_UNICODE);
+                                    }
+                                    break;
+                                case 'serialize':
+                                    $itemValue = serialize($itemValue);
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }else {
+                foreach ($data as $field => &$itemValue) {
+                    if (isset($typeCasts[$field])) {
+                        switch ($typeCasts[$field]) {
+                            case 'array':
+                            case 'json':
+                                if (!empty($itemValue) && is_array($itemValue)) {
+                                    $itemValue = json_encode($itemValue, JSON_UNESCAPED_UNICODE);
+                                }
+                                break;
+                            case 'serialize':
+                                $itemValue = serialize($itemValue);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * 插入记录并获取自增ID
      * @access public
      * @param array $data 数据
@@ -927,6 +974,10 @@ abstract class BaseQuery
     {
         if (empty($dataSet)) {
             $dataSet = $this->options['data'] ?? [];
+        }
+
+        if (!empty($dataSet)) {
+            $this->parseInsertOrUpdateData($dataSet);
         }
 
         if (empty($limit) && !empty($this->options['limit']) && is_numeric($this->options['limit'])) {
@@ -997,7 +1048,9 @@ abstract class BaseQuery
     public function update(array $data = []): int
     {
         if (!empty($data)) {
-            $this->options['data'] = array_merge($this->options['data'] ?? [], $data);
+            $data = array_merge($this->options['data'] ?? [], $data);
+            $this->parseInsertOrUpdateData($data);
+            $this->options['data'] = $data;
         }
 
         if (empty($this->options['where'])) {

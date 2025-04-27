@@ -282,7 +282,7 @@ trait WhereQuery
          * expend_data={"name": "swoolefy","sex"}
          * 使用：whereJsonContains('expend_data->name', "swoolefy")
          * 最终的sql: json_contains(json_extract(expend_data,'$.name'),'"swoolefy"')
-         * 
+         *
          * 字段expend_data直接存贮的是索引数组，要注意数据存贮类型，如果是整型的，查询值必须是整型，字符串的查询值也必须是字符串，例如：
          * expend_data=[123,456,789]
          * 使用：whereJsonContains('expend_data',123)

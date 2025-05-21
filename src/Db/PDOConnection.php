@@ -363,11 +363,12 @@ abstract class PDOConnection implements ConnectionInterface
         // 记录SQL语句
         $this->queryStr = $sql;
         $this->bind = $bindParams;
-
+        $readSql = "";
         try {
             if ($this->debug) {
                 $queryStartTime = microtime(true);
-                $this->log('Execute sql start', "sql={$this->queryStr},bindParams=" . json_encode($bindParams, JSON_UNESCAPED_UNICODE));
+                $readSql = $this->getRealSql($this->queryStr, $this->bind);
+                $this->log('Execute sql start', "sql={$readSql},bindParams=" . json_encode($bindParams, JSON_UNESCAPED_UNICODE));
             }
             // 预处理
             $this->PDOStatement = $this->PDOInstance->prepare($sql);
@@ -392,8 +393,11 @@ abstract class PDOConnection implements ConnectionInterface
             throw $t;
         } finally {
             if ($this->debug) {
-                if (count($this->excelSqlArr) <= 500) {
-                    $this->excelSqlArr[] = $this->getRealSql($this->queryStr, $this->bind);
+                if (count($this->excelSqlArr) <= 100) {
+                    if (empty($readSql)) {
+                        $readSql = $this->getRealSql($this->queryStr, $this->bind);
+                    }
+                    $this->excelSqlArr[] = $readSql;
                 }
             }
         }

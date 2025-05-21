@@ -491,7 +491,7 @@ class Query extends BaseQuery
      * @param string $deletedField
      * @return $this
      */
-    public function withoutDelete(string $deletedField = 'deleted_at')
+    public function whereDeletedAtNull(string $deletedField = 'deleted_at')
     {
         return $this->whereNull($deletedField);
     }

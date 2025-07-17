@@ -208,8 +208,8 @@ trait HttpMethodTrait
                 }
             }
         }else {
-            foreach ($recordSchemaIndexFieldMap as $name => $item) {
-                $index = $item[$field]['index'];
+            foreach ($recordSchemaIndexFieldMap as $item) {
+                $index = $item['index'];
                 $recordSchemaIndexFieldMapNew[$index] = $item;
             }
         }

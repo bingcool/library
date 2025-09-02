@@ -46,6 +46,7 @@ final class ResponseMiddleware
         return self::mapResponse($fn);
     }
 
+
     /**
      * @param Closure $fn
      * @return Closure

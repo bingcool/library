@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Common\Library\OpenTelemetry\GuzzleAutoInstrumentation;
 
 use function assert;
-use OpenTelemetry\Context\Propagation\PropagationSetterInterface;
+use Common\Library\OpenTelemetry\Context\Propagation\PropagationSetterInterface;
 use Psr\Http\Message\RequestInterface;
 
 /**

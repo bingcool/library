@@ -1,11 +1,14 @@
 <?php
 
-// DO NOT EDIT, this is an Auto-generated file from script/semantic-conventions
+// DO NOT EDIT, this is archived and left for backward compatibility.
 
 declare(strict_types=1);
 
 namespace Common\Library\OpenTelemetry\SemConv;
 
+/**
+ * {@see OpenTelemetry\SemConv\Attributes}\* or {@see OpenTelemetry\SemConv\Unstable\Attributes}\* instead.
+ */
 interface TraceAttributes
 {
     /**
@@ -2276,6 +2279,14 @@ interface TraceAttributes
      */
     public const HTTP_HOST = 'http.host';
 
+    public const COROUTINE_ID = 'coroutine.id';
+
+    public const HTTP_REQUEST_BODY = 'http.request.body';
+
+    public const HTTP_REQUEST_HEADERS = 'http.request.headers';
+
+    public const HTTP_REQUEST_QUERY_PARAMS = 'http.request.query';
+
     /**
      * Deprecated, use `http.request.method` instead.
      *
@@ -2287,14 +2298,6 @@ interface TraceAttributes
      * The size of the request payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://www.rfc-editor.org/rfc/rfc9110.html#field.content-length) header. For requests using transport encoding, this should be the compressed size.
      */
     public const HTTP_REQUEST_BODY_SIZE = 'http.request.body.size';
-
-    public const HTTP_REQUEST_BODY = 'http.request.body';
-    
-    public const HTTP_REQUEST_QUERY_PARAMS = 'http.request.query';
-    
-    public const HTTP_REQUEST_HEADERS = 'http.request.headers';
-    
-    public const CLIENT_HOST = 'client.host';
 
     /**
      * HTTP request headers, `<key>` being the normalized HTTP Header name (lowercase), the value being the header values.

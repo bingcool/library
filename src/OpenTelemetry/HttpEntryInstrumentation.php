@@ -4,27 +4,29 @@ declare(strict_types=1);
 
 namespace Common\Library\OpenTelemetry;
 
-use OpenTelemetry\API\Common\Time\Clock;
-use OpenTelemetry\API\Common\Time\SystemClock;
-use OpenTelemetry\API\Instrumentation\Configurator;
-use OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
-use OpenTelemetry\API\Trace\SpanKind;
-use OpenTelemetry\Contrib\Otlp\SpanExporter;
-use OpenTelemetry\SDK\Common\Attribute\Attributes;
-use OpenTelemetry\SDK\Resource\ResourceInfo;
+use Common\Library\OpenTelemetry\API\Common\Time\Clock;
+use Common\Library\OpenTelemetry\API\Common\Time\SystemClock;
+use Common\Library\OpenTelemetry\API\Instrumentation\Configurator;
+use Common\Library\OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
+use Common\Library\OpenTelemetry\API\Trace\SpanKind;
+use Common\Library\OpenTelemetry\Contrib\Otlp\SpanExporter;
+use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
+use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
 use Common\Library\OpenTelemetry\SemConv\ResourceAttributes;
 use Common\Library\Exception\OpenTelemetryException;
-use OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
-use OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
-use OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
-use OpenTelemetry\SDK\Trace\Sampler\ParentBased;
-use OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
-use OpenTelemetry\SDK\Trace\TracerProvider;
-use OpenTelemetry\SDK\Trace\TracerProviderBuilder;
-use OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory;
+use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
+use Common\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
+use Common\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
+use Common\Library\OpenTelemetry\SDK\Trace\Sampler\ParentBased;
+use Common\Library\OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
+use Common\Library\OpenTelemetry\SDK\Trace\TracerProvider;
+use Common\Library\OpenTelemetry\SDK\Trace\TracerProviderBuilder;
+use Common\Library\OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory;
 
 class HttpEntryInstrumentation
 {
+
+    public static $globalTracerProvider;
 
     const OTEL_SAMPLER_TYPE_ALWAYS_ON = 'always_on';
 
@@ -34,15 +36,19 @@ class HttpEntryInstrumentation
 
     const OTEL_SAMPLER_TYPE_TRACE_ID_RATIO = 'trace_id_ratio';
 
-    public static function register(): void
+    public static function register(bool $rootSpanFlag = false)
     {
         $OTEL_PHP_AUTOLOAD_ENABLED = env('OTEL_PHP_AUTOLOAD_ENABLED', false);
         if (!$OTEL_PHP_AUTOLOAD_ENABLED) {
             return;
         }
 
+        if (isset(\Swoole\Coroutine::getContext()["__tracer_provier"])) {
+            return \Swoole\Coroutine::getContext()["__tracer_provier"];
+        }
+
         $OTEL_MAX_QUEUE_SIZE = intval(env('OTEL_MAX_QUEUE_SIZE', 512));
-        $OTEL_SCHEDULE_DELAY = intval(env('OTEL_SCHEDULE_DELAY_MILLISECONDS', 1000));
+        $OTEL_SCHEDULE_DELAY = intval(env('OTEL_SCHEDULE_DELAY_MILLISECONDS', 1));
         $OTEL_EXPORT_TIMEOUT = intval(env('OTEL_EXPORT_TIMEOUT', 30));
 
         $resource = ResourceInfo::create(Attributes::create([
@@ -98,6 +104,14 @@ class HttpEntryInstrumentation
             ->setSampler($sampler)
             ->build();
 
-        Configurator::create()->withTracerProvider($provider)->activate();
+        \Swoole\Coroutine::getContext()["__tracer_provier"] = $provider;
+
+        if ($rootSpanFlag) {
+            \Swoole\Coroutine::getContext()["__trace_root_flag"] = 1;
+        } else {
+            \Swoole\Coroutine::getContext()["__trace_root_flag"] = 0;
+        }
+
+        return $provider;
     }
 }

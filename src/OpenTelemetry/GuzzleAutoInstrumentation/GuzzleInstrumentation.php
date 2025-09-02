@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Common\Library\OpenTelemetry\GuzzleAutoInstrumentation;
 
-use OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
+use  Common\Library\OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
 use function get_cfg_var;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Promise\Is;
 use GuzzleHttp\Promise\PromiseInterface;
-use OpenTelemetry\API\Globals;
-use OpenTelemetry\API\Instrumentation\CachedInstrumentation;
-use OpenTelemetry\API\Trace\Span;
-use OpenTelemetry\API\Trace\SpanKind;
-use OpenTelemetry\API\Trace\StatusCode;
-use OpenTelemetry\Context\Context;
+use Common\Library\OpenTelemetry\API\Globals;
+use Common\Library\OpenTelemetry\API\Instrumentation\CachedInstrumentation;
+use Common\Library\OpenTelemetry\API\Trace\Span;
+use Common\Library\OpenTelemetry\API\Trace\SpanKind;
+use Common\Library\OpenTelemetry\API\Trace\StatusCode;
+use Common\Library\OpenTelemetry\Context\Context;
 use function OpenTelemetry\Instrumentation\hook;
 use Common\Library\OpenTelemetry\SemConv\TraceAttributes;
 use Psr\Http\Message\RequestInterface;
@@ -53,6 +53,11 @@ class GuzzleInstrumentation
 
                 $propagator = TraceContextPropagator::getInstance();
                 $parentContext = Context::getCurrent();
+                var_dump(spl_object_id($parentContext));
+
+                var_dump("hook_coroutine_id=".\Swoole\Coroutine::getCid());
+                $contextData = \Swoolefy\Core\Coroutine\Context::get('traceparent');
+                var_dump("pre——traceparent=".$contextData);
 
                 /** @psalm-suppress ArgumentTypeCoercion */
                 $spanBuilder = $instrumentation
@@ -62,14 +67,15 @@ class GuzzleInstrumentation
                     ->setSpanKind(SpanKind::KIND_CLIENT)
                     ->setAttribute(TraceAttributes::CLIENT_HOST, gethostname())
                     ->setAttribute(TraceAttributes::URL_FULL, (string) $request->getUri())
+                    ->setAttribute(TraceAttributes::HTTP_REQUEST_BODY, self::handleRequestBody($request))
                     ->setAttribute(TraceAttributes::HTTP_REQUEST_METHOD, $request->getMethod())
+                    ->setAttribute(TraceAttributes::HTTP_REQUEST_QUERY_PARAMS, $request->getUri()->getQuery())
                     ->setAttribute(TraceAttributes::NETWORK_PROTOCOL_VERSION, $request->getProtocolVersion())
                     ->setAttribute(TraceAttributes::USER_AGENT_ORIGINAL, $request->getHeaderLine('User-Agent'))
                     ->setAttribute(TraceAttributes::HTTP_REQUEST_BODY_SIZE, $request->getHeaderLine('Content-Length'))
                     ->setAttribute(TraceAttributes::SERVER_ADDRESS, $request->getUri()->getHost())
                     ->setAttribute(TraceAttributes::SERVER_PORT, $request->getUri()->getPort())
                     ->setAttribute(TraceAttributes::URL_PATH, $request->getUri()->getPath())
-                    ->setAttribute(TraceAttributes::HTTP_REQUEST_BODY, self::handleRequest($request))
                     ->setAttribute(TraceAttributes::CODE_FUNCTION_NAME, sprintf('%s::%s', $class, $function))
                     ->setAttribute(TraceAttributes::CODE_FILE_PATH, $filename)
                     ->setAttribute(TraceAttributes::CODE_LINE_NUMBER, $lineno)
@@ -98,6 +104,8 @@ class GuzzleInstrumentation
             post: static function (Client $client, array $params, PromiseInterface $promise, ?Throwable $exception): void {
                 $scope = Context::storage()->scope();
                 $scope?->detach();
+
+                $contextData = \Swoolefy\Core\Coroutine\Context::get('traceparent');
 
                 if (!$scope || $scope->context() === Context::getCurrent()) {
                     return;
@@ -148,7 +156,7 @@ class GuzzleInstrumentation
         );
     }
 
-    private static function handleRequest(RequestInterface $request)
+    private static function handleRequestBody(RequestInterface $request)
     {
         $contentType = $request->getHeaderLine('Content-Type');
         $postData = [];

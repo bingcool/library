@@ -28,7 +28,17 @@
     "predis/predis": "~2.2.1",
     "malkusch/lock": "~2.2.0",
     "php-amqplib/php-amqplib": "~3.5.0",
-    "open-telemetry/exporter-otlp": "~1.3.2"
+    "php-http/discovery": "^1.14",
+    "psr/http-client-implementation": "^1.0",
+    "psr/http-factory-implementation": "^1.0",
+    "psr/http-client": "^1.0",
+    "psr/http-message": "^1.0.1|^2.0",
+    "psr/log": "^1.1|^2.0|^3.0",
+    "ramsey/uuid": "^3.0 || ^4.0",
+    "symfony/polyfill-mbstring": "^1.23",
+    "symfony/polyfill-php82": "^1.26",
+    "tbachert/spi": "^1.0.5",
+    "google/protobuf": "^3.22 || ^4.0"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",
@@ -36,14 +46,45 @@
     "phpunit/phpunit": ">=7.2.0"
   },
   "autoload": {
-    "files": ["src/Helper.php"],
+    "files": [
+      "src/Helper.php",
+      "src/OpenTelemetry/Context/fiber/initialize_fiber_handler.php",
+      "src/OpenTelemetry/Contrib/Otlp/_register.php",
+      "src/OpenTelemetry/SDK/Common/Util/functions.php",
+      "src/OpenTelemetry/SDK/Logs/Exporter/_register.php",
+      "src/OpenTelemetry/SDK/Metrics/MetricExporter/_register.php",
+      "src/OpenTelemetry/SDK/Propagation/_register.php",
+      "src/OpenTelemetry/SDK/Trace/SpanExporter/_register.php",
+      "src/OpenTelemetry/SDK/Common/Dev/Compatibility/_load.php",
+      "src/OpenTelemetry/SDK/_autoload.php",
+      "src/OpenTelemetry/API/Trace/functions.php"
+    ],
     "psr-4": {
-      "Common\\Library\\": "src/"
+      "Common\\Library\\": "src/",
+      "Opentelemetry\\Proto\\": "src/Opentelemetry/gen-otlp-protobuf/Opentelemetry/Proto/",
+      "GPBMetadata\\Opentelemetry\\": "src/Opentelemetry/gen-otlp-protobuf/GPBMetadata/Opentelemetry/"
     }
   },
   "autoload-dev": {
     "psr-4": {
       "Common\\Library\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "spi": {
+      "OpenTelemetry\\API\\Instrumentation\\AutoInstrumentation\\HookManagerInterface": [
+        "OpenTelemetry\\API\\Instrumentation\\AutoInstrumentation\\ExtensionHookManager"
+      ],
+      "OpenTelemetry\\API\\Instrumentation\\AutoInstrumentation\\HookManagerInterface": [
+        "OpenTelemetry\\API\\Instrumentation\\AutoInstrumentation\\ExtensionHookManager"
+      ],
+      "OpenTelemetry\\API\\Configuration\\ConfigEnv\\EnvComponentLoader": [
+        "OpenTelemetry\\API\\Instrumentation\\Configuration\\General\\ConfigEnv\\EnvComponentLoaderHttpConfig",
+        "OpenTelemetry\\API\\Instrumentation\\Configuration\\General\\ConfigEnv\\EnvComponentLoaderPeerConfig"
+      ],
+      "OpenTelemetry\\SDK\\Common\\Configuration\\Resolver\\ResolverInterface": [
+        "OpenTelemetry\\SDK\\Common\\Configuration\\Resolver\\SdkConfigurationResolver"
+      ]
     }
   }
 

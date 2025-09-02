@@ -1,0 +1,117 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Common\Library\OpenTelemetry\SDK;
+
+use Common\Library\OpenTelemetry\API\Instrumentation\Configurator;
+use Common\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
+use Common\Library\OpenTelemetry\API\Logs\NoopEventLoggerProvider;
+use Common\Library\OpenTelemetry\Context\Context;
+use Common\Library\OpenTelemetry\Context\Propagation\NoopTextMapPropagator;
+use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Common\Library\OpenTelemetry\Context\ScopeInterface;
+use Common\Library\OpenTelemetry\SDK\Common\Util\ShutdownHandler;
+use Common\Library\OpenTelemetry\SDK\Logs\LoggerProviderInterface;
+use Common\Library\OpenTelemetry\SDK\Logs\NoopLoggerProvider;
+use Common\Library\OpenTelemetry\SDK\Metrics\MeterProviderInterface;
+use Common\Library\OpenTelemetry\SDK\Metrics\NoopMeterProvider;
+use Common\Library\OpenTelemetry\SDK\Trace\NoopTracerProvider;
+use Common\Library\OpenTelemetry\SDK\Trace\TracerProviderInterface;
+
+class SdkBuilder
+{
+    private ?TracerProviderInterface $tracerProvider = null;
+    private ?MeterProviderInterface $meterProvider = null;
+    private ?LoggerProviderInterface $loggerProvider = null;
+    private ?EventLoggerProviderInterface $eventLoggerProvider = null;
+    private ?TextMapPropagatorInterface $propagator = null;
+    private bool $autoShutdown = false;
+
+    /**
+     * Automatically shut down providers on process completion. If not set, the user is responsible for calling `shutdown`.
+     */
+    public function setAutoShutdown(bool $shutdown): self
+    {
+        $this->autoShutdown = $shutdown;
+
+        return $this;
+    }
+
+    public function setTracerProvider(TracerProviderInterface $provider): self
+    {
+        $this->tracerProvider = $provider;
+
+        return $this;
+    }
+
+    public function setMeterProvider(MeterProviderInterface $meterProvider): self
+    {
+        $this->meterProvider = $meterProvider;
+
+        return $this;
+    }
+
+    public function setLoggerProvider(LoggerProviderInterface $loggerProvider): self
+    {
+        $this->loggerProvider = $loggerProvider;
+
+        return $this;
+    }
+
+    /**
+     * @deprecated
+     */
+    public function setEventLoggerProvider(EventLoggerProviderInterface $eventLoggerProvider): self
+    {
+        $this->eventLoggerProvider = $eventLoggerProvider;
+
+        return $this;
+    }
+
+    public function setPropagator(TextMapPropagatorInterface $propagator): self
+    {
+        $this->propagator = $propagator;
+
+        return $this;
+    }
+
+    public function build(): Sdk
+    {
+        $tracerProvider = $this->tracerProvider ?? new NoopTracerProvider();
+        $meterProvider = $this->meterProvider ?? new NoopMeterProvider();
+        $loggerProvider = $this->loggerProvider ?? new NoopLoggerProvider();
+        $eventLoggerProvider = $this->eventLoggerProvider ?? new NoopEventLoggerProvider();
+        if ($this->autoShutdown) {
+            // rector rule disabled in config, because ShutdownHandler::register() does not keep a strong reference to $this
+            ShutdownHandler::register($tracerProvider->shutdown(...));
+            ShutdownHandler::register($meterProvider->shutdown(...));
+            ShutdownHandler::register($loggerProvider->shutdown(...));
+        }
+
+        return new Sdk(
+            $tracerProvider,
+            $meterProvider,
+            $loggerProvider,
+            $eventLoggerProvider,
+            $this->propagator ?? NoopTextMapPropagator::getInstance(),
+        );
+    }
+
+    /**
+     * @phan-suppress PhanDeprecatedFunction
+     */
+    public function buildAndRegisterGlobal(): ScopeInterface
+    {
+        $sdk = $this->build();
+        $context = Configurator::create()
+            ->withPropagator($sdk->getPropagator())
+            ->withTracerProvider($sdk->getTracerProvider())
+            ->withMeterProvider($sdk->getMeterProvider())
+            ->withLoggerProvider($sdk->getLoggerProvider())
+            ->withEventLoggerProvider($sdk->getEventLoggerProvider())
+            ->storeInContext();
+
+        return Context::storage()->attach($context);
+    }
+}

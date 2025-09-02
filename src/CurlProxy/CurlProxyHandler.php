@@ -87,6 +87,10 @@ class CurlProxyHandler
         if (Context::has('trace-id')) {
             $traceId = Context::get('trace-id');
         }
+        
+        if (Context::has('span-id')) {
+            $spanId = Context::get('span-id');
+        }
 
         // 设置traceId
         $stack->push(RequestMiddleware::addHeader('trace-id', $traceId ?? ''));
@@ -94,6 +98,14 @@ class CurlProxyHandler
         $stack->push(RequestMiddleware::requestRecordLog());
         // 记录请求返回的原始数据
         $stack->push(ResponseMiddleware::responseRecordLog());
+
+        if (env('OTEL_INSTRUMENTATION_GUZZLE_ENABLED', false)) {
+            // 开始curl opentelemetry追踪
+            $stack->push(OpentelemetryMiddleware::opentelemetryStartTrace());
+            // 结束curl opentelemetry追踪
+            $stack->push(OpentelemetryMiddleware::opentelemetryEndTrace());
+        }
+
         return $stack;
     }
 }

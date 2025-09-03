@@ -6,9 +6,6 @@ declare(strict_types=1);
 
 namespace Common\Library\OpenTelemetry\SemConv;
 
-/**
- * Use {@see OpenTelemetry\SemConv\Attributes}\* or {@see OpenTelemetry\SemConv\Unstable\Attributes}\* instead.
- */
 interface TraceAttributeValues
 {
     /**

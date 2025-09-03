@@ -5,10 +5,6 @@ declare(strict_types=1);
 namespace Common\Library\OpenTelemetry;
 
 use Common\Library\OpenTelemetry\API\Common\Time\Clock;
-use Common\Library\OpenTelemetry\API\Common\Time\SystemClock;
-use Common\Library\OpenTelemetry\API\Instrumentation\Configurator;
-use Common\Library\OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
-use Common\Library\OpenTelemetry\API\Trace\SpanKind;
 use Common\Library\OpenTelemetry\Contrib\Otlp\SpanExporter;
 use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
 use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
@@ -19,7 +15,6 @@ use Common\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
 use Common\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
 use Common\Library\OpenTelemetry\SDK\Trace\Sampler\ParentBased;
 use Common\Library\OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
-use Common\Library\OpenTelemetry\SDK\Trace\TracerProvider;
 use Common\Library\OpenTelemetry\SDK\Trace\TracerProviderBuilder;
 use Common\Library\OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory;
 
@@ -69,7 +64,7 @@ class HttpEntryInstrumentation
             $headers['Authentication'] = $authenticationToken;
         }
 
-        $transport = (new OtlpHttpTransportFactory())->create($endpoint . '/v1/traces', 'application/x-protobuf');
+        $transport = (new OtlpHttpTransportFactory())->create($endpoint . '/v1/traces', 'application/x-protobuf', $headers);
         $exporter  = new SpanExporter($transport);
         $processor = new BatchSpanProcessor(
             $exporter,
@@ -79,7 +74,6 @@ class HttpEntryInstrumentation
             $OTEL_EXPORT_TIMEOUT * 1000
         );
 
-        $sampler = new AlwaysOnSampler();
         $OTEL_SAMPLER_TYPE = env('OTEL_SAMPLER_TYPE', self::OTEL_SAMPLER_TYPE_ALWAYS_ON);
         switch ($OTEL_SAMPLER_TYPE) {
             case self::OTEL_SAMPLER_TYPE_PARENTBASED_ALWAYS_ON:

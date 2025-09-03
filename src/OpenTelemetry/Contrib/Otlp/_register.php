@@ -1,13 +1,13 @@
 <?php
 
 declare(strict_types=1);
-\use Common\Library\OpenTelemetry\SDK\Registry::registerSpanExporterFactory('otlp', \OpenTelemetry\Contrib\Otlp\SpanExporterFactory::class);
-\use Common\Library\OpenTelemetry\SDK\Registry::registerSpanExporterFactory('otlp/stdout', \OpenTelemetry\Contrib\Otlp\StdoutSpanExporterFactory::class);
+\Common\Library\OpenTelemetry\SDK\Registry::registerSpanExporterFactory('otlp', \Common\Library\OpenTelemetry\Contrib\Otlp\SpanExporterFactory::class);
+\Common\Library\OpenTelemetry\SDK\Registry::registerSpanExporterFactory('otlp/stdout', \Common\Library\OpenTelemetry\Contrib\Otlp\StdoutSpanExporterFactory::class);
 
-\use Common\Library\OpenTelemetry\SDK\Registry::registerMetricExporterFactory('otlp', \OpenTelemetry\Contrib\Otlp\MetricExporterFactory::class);
-\use Common\Library\OpenTelemetry\SDK\Registry::registerMetricExporterFactory('otlp/stdout', \OpenTelemetry\Contrib\Otlp\StdoutMetricExporterFactory::class);
+\Common\Library\OpenTelemetry\SDK\Registry::registerMetricExporterFactory('otlp', \Common\Library\OpenTelemetry\Contrib\Otlp\MetricExporterFactory::class);
+\Common\Library\OpenTelemetry\SDK\Registry::registerMetricExporterFactory('otlp/stdout', \Common\Library\OpenTelemetry\Contrib\Otlp\StdoutMetricExporterFactory::class);
 
-\use Common\Library\OpenTelemetry\SDK\Registry::registerTransportFactory('http', \OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory::class);
+\Common\Library\OpenTelemetry\SDK\Registry::registerTransportFactory('http', \Common\Library\OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory::class);
 
-\use Common\Library\OpenTelemetry\SDK\Registry::registerLogRecordExporterFactory('otlp', \OpenTelemetry\Contrib\Otlp\LogsExporterFactory::class);
-\use Common\Library\OpenTelemetry\SDK\Registry::registerLogRecordExporterFactory('otlp/stdout', \OpenTelemetry\Contrib\Otlp\StdoutLogsExporterFactory::class);
+\Common\Library\OpenTelemetry\SDK\Registry::registerLogRecordExporterFactory('otlp', \Common\Library\OpenTelemetry\Contrib\Otlp\LogsExporterFactory::class);
+\Common\Library\OpenTelemetry\SDK\Registry::registerLogRecordExporterFactory('otlp/stdout', \Common\Library\OpenTelemetry\Contrib\Otlp\StdoutLogsExporterFactory::class);

@@ -6,9 +6,6 @@ declare(strict_types=1);
 
 namespace Common\Library\OpenTelemetry\SemConv;
 
-/**
- * {@see OpenTelemetry\SemConv\Attributes}\* or {@see OpenTelemetry\SemConv\Unstable\Attributes}\* instead.
- */
 interface TraceAttributes
 {
     /**
@@ -2259,6 +2256,8 @@ interface TraceAttributes
      * @deprecated {"note": "Replaced by `client.address`.", "reason": "renamed", "renamed_to": "client.address"}
      */
     public const HTTP_CLIENT_IP = 'http.client_ip';
+
+    public const HTTP_CLIENT_HOST = 'http.client.host';
 
     /**
      * State of the HTTP connection in the HTTP connection pool.

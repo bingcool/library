@@ -11,6 +11,7 @@
 
 namespace Common\Library\Db;
 
+use Common\Library\CurlProxy\OpentelemetryMiddleware;
 use PDO;
 use PDOStatement;
 use Common\Library\Exception\DbException;
@@ -1383,8 +1384,8 @@ abstract class PDOConnection implements ConnectionInterface
             if($this->isCoroutine()) {
                 $cid = \Swoole\Coroutine::getCid();
                 $traceId = '';
-                if (\Swoolefy\Core\Coroutine\Context::has('trace-id')) {
-                    $traceId = \Swoolefy\Core\Coroutine\Context::get('trace-id');
+                if (\Swoolefy\Core\Coroutine\Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+                    $traceId = \Swoolefy\Core\Coroutine\Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
                 }
                 $sqlFlag = "sql-cid-{$cid}";
                 $logger = LogManager::getInstance()->getLogger(LogManager::SQL_LOG);
@@ -1393,7 +1394,7 @@ abstract class PDOConnection implements ConnectionInterface
                     if (!file_exists($logFilePath)) {
                         fopen($logFilePath, 'w');
                     }
-                    $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【Trace-Id: {$traceId}】【{$sqlFlag}】: ".$realSql;
+                    $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【X-Trace-Id: {$traceId}】【{$sqlFlag}】: ".$realSql;
                     $logger->info($sqlLog);
                 }
             }
@@ -1431,8 +1432,8 @@ abstract class PDOConnection implements ConnectionInterface
         if (class_exists('swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
             goApp(function () use($realRunTime, $realSql) {
                 $traceId = '';
-                if (\Swoolefy\Core\Coroutine\Context::has('trace-id')) {
-                    $traceId = \Swoolefy\Core\Coroutine\Context::get('trace-id');
+                if (\Swoolefy\Core\Coroutine\Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+                    $traceId = \Swoolefy\Core\Coroutine\Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
                 }
                 try {
                     $fn = static::$slowSqlNoticeCallback['fn'];

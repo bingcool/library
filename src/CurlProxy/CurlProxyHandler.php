@@ -84,16 +84,16 @@ class CurlProxyHandler
         $handler = new static();
         $stack   = HandlerStack::create($handler);
 
-        if (Context::has('trace-id')) {
-            $traceId = Context::get('trace-id');
+        if (Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+            $traceId = Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
         }
         
-        if (Context::has('span-id')) {
-            $spanId = Context::get('span-id');
+        if (Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+            $spanId = Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
         }
 
         // 设置traceId
-        $stack->push(RequestMiddleware::addHeader('trace-id', $traceId ?? ''));
+        $stack->push(RequestMiddleware::addHeader(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID, $traceId ?? ''));
         // 记录请求参数
         $stack->push(RequestMiddleware::requestRecordLog());
         // 记录请求返回的原始数据

@@ -2,4 +2,4 @@
 
 declare(strict_types=1);
 
-\OpenTelemetry\SDK\SdkAutoloader::autoload();
+\Common\Library\OpenTelemetry\SDK\SdkAutoloader::autoload();

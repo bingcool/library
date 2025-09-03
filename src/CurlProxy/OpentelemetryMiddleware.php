@@ -14,36 +14,26 @@ namespace Common\Library\CurlProxy;
 use Closure;
 use Common\Library\OpenTelemetry\GuzzleAutoInstrumentation\HeadersPropagator;
 use Common\Library\OpenTelemetry\HttpEntryInstrumentation;
-use Common\Library\OpenTelemetry\SemConv\ResourceAttributes;
 use Common\Library\OpenTelemetry\SemConv\TraceAttributes;
-use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Promise\Is;
-use Common\Library\OpenTelemetry\API\Common\Time\Clock;
-use Common\Library\OpenTelemetry\API\Globals;
-use Common\Library\OpenTelemetry\API\Instrumentation\CachedInstrumentation;
-use Common\Library\OpenTelemetry\API\Instrumentation\Configurator;
 use Common\Library\OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
 use Common\Library\OpenTelemetry\API\Trace\Span;
-use Common\Library\OpenTelemetry\API\Trace\SpanContext;
-use Common\Library\OpenTelemetry\API\Trace\SpanKind;
-use Common\Library\OpenTelemetry\API\Trace\StatusCode;
-use Common\Library\OpenTelemetry\API\Trace\TraceFlags;
-use Common\Library\OpenTelemetry\API\Trace\TraceState;
-use Common\Library\OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory;
-use Common\Library\OpenTelemetry\Contrib\Otlp\SpanExporter;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
-use Common\Library\OpenTelemetry\SDK\Trace\Tracer;
-use Common\Library\OpenTelemetry\SDK\Trace\TracerProviderBuilder;
+use Common\Library\OpenTelemetry\API\Trace\SpanKind;;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Swoole\Coroutine;
-use Throwable;
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
 use Common\Library\OpenTelemetry\Context\Context;
 
 final class OpentelemetryMiddleware
 {
+
+    const OPENTELEMETRY_X_TRACE_ID = 'x-trace-id';
+
+    const OPENTELEMETRY_TRACEPARENT_ID = 'traceparent';
+
+    const OPENTELEMETRY_TRACE_ROOT_FLAG = '__trace_root_flag';
+
+    CONST OPENTELEMETRY_SPAN_TRACE = '__span_trace';
+
     /**
      * @return Closure
      */
@@ -53,10 +43,11 @@ final class OpentelemetryMiddleware
             $provider = HttpEntryInstrumentation::register( false);
             $propagator = TraceContextPropagator::getInstance();
             $parentContext = Context::getCurrent();
-            $traceparent = \Swoolefy\Core\Coroutine\Context::get('traceparent');
-            $isTraceRootFlag = \Swoole\Coroutine::getContext()["__trace_root_flag"];
+            $traceparent = SwooleContext::get(self::OPENTELEMETRY_TRACEPARENT_ID);
+
+            $isTraceRootFlag = SwooleContext::get(self::OPENTELEMETRY_TRACE_ROOT_FLAG);
             if (!empty($traceparent)) {
-                $carrier['traceparent'] = $traceparent;
+                $carrier[self::OPENTELEMETRY_TRACEPARENT_ID] = $traceparent;
                 $parentContext = TraceContextPropagator::getInstance()->extract($carrier);
             }
 
@@ -68,7 +59,8 @@ final class OpentelemetryMiddleware
 
             $span = $spanBuilder
                 ->setAttribute(TraceAttributes::COROUTINE_ID, \Swoole\Coroutine::getCid())
-                ->setAttribute(TraceAttributes::CLIENT_HOST, gethostname())
+                ->setAttribute(TraceAttributes::HTTP_CLIENT_HOST, gethostname())
+                ->setAttribute(TraceAttributes::CLIENT_ADDRESS, gethostname())
                 ->setAttribute(TraceAttributes::URL_FULL, (string) $request->getUri())
                 ->setAttribute(TraceAttributes::HTTP_REQUEST_BODY, self::handleRequestBody($request))
                 ->setAttribute(TraceAttributes::HTTP_REQUEST_METHOD, $request->getMethod())
@@ -104,7 +96,7 @@ final class OpentelemetryMiddleware
             $propagator->inject($request, HeadersPropagator::instance(), $context);
             Context::storage()->attach($context);
 
-            \Swoole\Coroutine::getContext()['__span_trace'] = $span;
+            SwooleContext::set(self::OPENTELEMETRY_SPAN_TRACE, $span);
 
             return $request;
         };
@@ -121,7 +113,7 @@ final class OpentelemetryMiddleware
             /**
              * @var Span $span
              */
-            $span = \Swoole\Coroutine::getContext()['__span_trace'] ?? null;
+            $span = SwooleContext::get(self::OPENTELEMETRY_SPAN_TRACE);
             if ($span) {
                 $span->end();
             }

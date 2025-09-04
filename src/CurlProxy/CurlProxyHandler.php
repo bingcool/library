@@ -15,7 +15,7 @@ use GuzzleHttp\Handler\CurlFactory;
 use GuzzleHttp\Handler\CurlFactoryInterface;
 use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\RequestInterface;
-use Swoolefy\Core\Coroutine\Context;
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
 use Swoolefy\Core\Log\LogManager;
 
 class CurlProxyHandler
@@ -65,10 +65,10 @@ class CurlProxyHandler
             $logger = LogManager::getInstance()->getLogger(LogManager::GUZZLE_CURL_LOG);
             if ($logger) {
                 $logFilePath = $logger->getLogFilePath();
-                if (!Context::has('is_exist_guzzle_curl_log_file')) {
+                if (!SwooleContext::has('is_exist_guzzle_curl_log_file')) {
                     if (!file_exists($logFilePath)) {
                         fopen($logFilePath, 'w');
-                        Context::set('is_exist_guzzle_curl_log_file', 1);
+                        SwooleContext::set('is_exist_guzzle_curl_log_file', 1);
                     }
                 }
                 return $logger;
@@ -84,12 +84,8 @@ class CurlProxyHandler
         $handler = new static();
         $stack   = HandlerStack::create($handler);
 
-        if (Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
-            $traceId = Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
-        }
-        
-        if (Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
-            $spanId = Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
+        if (SwooleContext::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+            $traceId = SwooleContext::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
         }
 
         // 设置traceId

@@ -34,6 +34,8 @@ final class OpentelemetryMiddleware
 
     CONST OPENTELEMETRY_SPAN_TRACE = '__span_trace';
 
+    const GUZZLE_CURL_PATH = '__guzzle_curl_path';
+
     /**
      * @return Closure
      */
@@ -113,7 +115,7 @@ final class OpentelemetryMiddleware
             /**
              * @var Span $span
              */
-            $span = SwooleContext::get(self::OPENTELEMETRY_SPAN_TRACE);
+            $span = SwooleContext::get(OpentelemetryMiddleware::OPENTELEMETRY_SPAN_TRACE);
             if ($span) {
                 $span->end();
             }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Common\Library\OpenTelemetry;
 
+use Common\Library\CurlProxy\OpentelemetryMiddleware;
 use Common\Library\OpenTelemetry\API\Common\Time\Clock;
 use Common\Library\OpenTelemetry\Contrib\Otlp\SpanExporter;
 use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
@@ -17,6 +18,7 @@ use Common\Library\OpenTelemetry\SDK\Trace\Sampler\ParentBased;
 use Common\Library\OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
 use Common\Library\OpenTelemetry\SDK\Trace\TracerProviderBuilder;
 use Common\Library\OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory;
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
 
 class HttpEntryInstrumentation
 {
@@ -31,6 +33,10 @@ class HttpEntryInstrumentation
 
     const OTEL_SAMPLER_TYPE_TRACE_ID_RATIO = 'trace_id_ratio';
 
+    const OTEL_TRACE_PROVIER = '__tracer_provier';
+
+    const OTEL_TRACE_ROOT_FLAG = OpentelemetryMiddleware::OPENTELEMETRY_TRACE_ROOT_FLAG;
+
     public static function register(bool $rootSpanFlag = false)
     {
         $OTEL_PHP_AUTOLOAD_ENABLED = env('OTEL_PHP_AUTOLOAD_ENABLED', false);
@@ -38,8 +44,8 @@ class HttpEntryInstrumentation
             return;
         }
 
-        if (isset(\Swoole\Coroutine::getContext()["__tracer_provier"])) {
-            return \Swoole\Coroutine::getContext()["__tracer_provier"];
+        if (SwooleContext::has(self::OTEL_TRACE_PROVIER)) {
+            return SwooleContext::get(self::OTEL_TRACE_PROVIER);
         }
 
         $OTEL_MAX_QUEUE_SIZE = intval(env('OTEL_MAX_QUEUE_SIZE', 512));
@@ -64,7 +70,7 @@ class HttpEntryInstrumentation
             $headers['Authentication'] = $authenticationToken;
         }
 
-        $transport = (new OtlpHttpTransportFactory())->create($endpoint . '/v1/traces', 'application/x-protobuf', $headers);
+        $transport = (new OtlpHttpTransportFactory())->create($endpoint . '/v1/traces', 'application/json', $headers);
         $exporter  = new SpanExporter($transport);
         $processor = new BatchSpanProcessor(
             $exporter,
@@ -98,12 +104,12 @@ class HttpEntryInstrumentation
             ->setSampler($sampler)
             ->build();
 
-        \Swoole\Coroutine::getContext()["__tracer_provier"] = $provider;
+        SwooleContext::set(self::OTEL_TRACE_PROVIER, $provider);
 
         if ($rootSpanFlag) {
-            \Swoole\Coroutine::getContext()["__trace_root_flag"] = 1;
+            SwooleContext::set(self::OTEL_TRACE_ROOT_FLAG, 1);
         } else {
-            \Swoole\Coroutine::getContext()["__trace_root_flag"] = 0;
+            SwooleContext::set(self::OTEL_TRACE_ROOT_FLAG, 0);
         }
 
         return $provider;

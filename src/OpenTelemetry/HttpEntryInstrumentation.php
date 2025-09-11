@@ -6,9 +6,16 @@ namespace Common\Library\OpenTelemetry;
 
 use Common\Library\CurlProxy\OpentelemetryMiddleware;
 use Common\Library\OpenTelemetry\API\Common\Time\Clock;
+use Common\Library\OpenTelemetry\API\Globals;
+use Common\Library\OpenTelemetry\API\Instrumentation\Configurator;
+use Common\Library\OpenTelemetry\Context\Context as OpenTelemetryContext;
+use Common\Library\OpenTelemetry\Context\ContextStorage;
+use Common\Library\OpenTelemetry\Contrib\Context\Swoole\SwooleContextStorage;
 use Common\Library\OpenTelemetry\Contrib\Otlp\SpanExporter;
 use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
 use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
+use Common\Library\OpenTelemetry\SDK\Trace\TracerProvider;
 use Common\Library\OpenTelemetry\SemConv\ResourceAttributes;
 use Common\Library\Exception\OpenTelemetryException;
 use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
@@ -72,13 +79,18 @@ class HttpEntryInstrumentation
 
         $transport = (new OtlpHttpTransportFactory())->create($endpoint . '/v1/traces', 'application/json', $headers);
         $exporter  = new SpanExporter($transport);
-        $processor = new BatchSpanProcessor(
-            $exporter,
-            Clock::getDefault(),
-            $OTEL_MAX_QUEUE_SIZE,
-            $OTEL_SCHEDULE_DELAY,
-            $OTEL_EXPORT_TIMEOUT * 1000
-        );
+
+        if (env('OTEL_SAMPLER_BATCH_SPAN_ENABLED',false)) {
+            $spanProcessor = new BatchSpanProcessor(
+                $exporter,
+                Clock::getDefault(),
+                $OTEL_MAX_QUEUE_SIZE,
+                $OTEL_SCHEDULE_DELAY,
+                $OTEL_EXPORT_TIMEOUT * 1000
+            );
+        } else {
+            $spanProcessor = new SimpleSpanProcessor($exporter);
+        }
 
         $OTEL_SAMPLER_TYPE = env('OTEL_SAMPLER_TYPE', self::OTEL_SAMPLER_TYPE_ALWAYS_ON);
         switch ($OTEL_SAMPLER_TYPE) {
@@ -98,20 +110,17 @@ class HttpEntryInstrumentation
                 break;
         }
 
-        $provider = (new TracerProviderBuilder())
+        $tracerProvider = (new TracerProviderBuilder())
             ->setResource($resource)
-            ->addSpanProcessor($processor)
+            ->addSpanProcessor($spanProcessor)
             ->setSampler($sampler)
             ->build();
 
-        SwooleContext::set(self::OTEL_TRACE_PROVIER, $provider);
+        // Use Swoole context storage
+        $contextStorage = new SwooleContextStorage(new ContextStorage());
+        OpenTelemetryContext::setStorage($contextStorage);
 
-        if ($rootSpanFlag) {
-            SwooleContext::set(self::OTEL_TRACE_ROOT_FLAG, 1);
-        } else {
-            SwooleContext::set(self::OTEL_TRACE_ROOT_FLAG, 0);
-        }
-
-        return $provider;
+        // Register the tracer provider
+        Globals::registerInitializer(fn(Configurator $configurator) => $configurator->withTracerProvider($tracerProvider));
     }
 }

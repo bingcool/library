@@ -239,6 +239,10 @@ class BatchSpanProcessor implements SpanProcessorInterface
                     }
                 }
 
+                if (!$this->shouldFlush()) {
+                    break;
+                }
+
                 if ($this->queue->isEmpty()) {
                     $this->enqueueBatch();
                 }

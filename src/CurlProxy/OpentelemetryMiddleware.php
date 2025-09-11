@@ -12,6 +12,7 @@
 namespace Common\Library\CurlProxy;
 
 use Closure;
+use Common\Library\OpenTelemetry\API\Globals;
 use Common\Library\OpenTelemetry\GuzzleAutoInstrumentation\HeadersPropagator;
 use Common\Library\OpenTelemetry\HttpEntryInstrumentation;
 use Common\Library\OpenTelemetry\SemConv\TraceAttributes;
@@ -42,7 +43,6 @@ final class OpentelemetryMiddleware
     public static function opentelemetryStartTrace()
     {
         $fn = function (RequestInterface $request) {
-            $provider = HttpEntryInstrumentation::register( false);
             $propagator = TraceContextPropagator::getInstance();
             $parentContext = Context::getCurrent();
             $traceparent = SwooleContext::get(self::OPENTELEMETRY_TRACEPARENT_ID);
@@ -53,7 +53,7 @@ final class OpentelemetryMiddleware
                 $parentContext = TraceContextPropagator::getInstance()->extract($carrier);
             }
 
-            $spanBuilder = $provider->getTracer(env('OTEL_TRACING_NAME','swoolefy-http-request'), '1.0.0')
+            $spanBuilder = Globals::tracerProvider()->getTracer(env('OTEL_TRACING_NAME','swoolefy-http-request'), '1.0.0')
                 ->spanBuilder(sprintf('%s %s %s (client)', strtoupper($request->getUri()->getScheme() ?: 'HTTP'), $request->getMethod(), $request->getUri()->getPath()))
                 ->setParent($parentContext)
                 ->setSpanKind(SpanKind::KIND_CLIENT)

@@ -8,8 +8,7 @@ use function assert;
 use const FILTER_VALIDATE_BOOLEAN;
 use function filter_var;
 use function spl_object_id;
-use Swoole\Coroutine;
-use Swoole\Coroutine\Context as SwooleContext;
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
 
 /**
  * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/context/README.md#context
@@ -17,6 +16,8 @@ use Swoole\Coroutine\Context as SwooleContext;
 final class Context implements ContextInterface
 {
     private const OTEL_PHP_DEBUG_SCOPES_DISABLED = 'OTEL_PHP_DEBUG_SCOPES_DISABLED';
+
+    private const OTEL_PHP_STORAGE_KEY = '__OTEL_PHP_STORAGE';
 
     private static $storages;
 
@@ -40,16 +41,12 @@ final class Context implements ContextInterface
 
     public static function setStorage(ContextStorageInterface&ExecutionContextAwareInterface $storage): void
     {
-        //static::$storages = $storage;
-        Coroutine::getContext()["__storage"] = $storage;
+        static::$storages = $storage;
     }
 
     public static function storage(): ContextStorageInterface&ExecutionContextAwareInterface
     {
-        if (!isset(Coroutine::getContext()["__storage"])) {
-            Coroutine::getContext()["__storage"] = new FiberBoundContextStorageExecutionAwareBC();
-        }
-        return Coroutine::getContext()["__storage"];
+        return static::$storages ??=new FiberBoundContextStorageExecutionAwareBC();
     }
 
     /**

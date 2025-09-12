@@ -39,7 +39,7 @@
     "symfony/polyfill-php82": "^1.26",
     "tbachert/spi": "^1.0.5",
     "google/protobuf": "^3.22 || ^4.0",
-    "symfony/http-client": "7.4.x-dev",
+    "symfony/http-client": "~7.3",
     "nyholm/psr7": "^1.8@dev",
     "guzzlehttp/guzzle": "~7.9.3"
   },

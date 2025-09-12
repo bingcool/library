@@ -51,13 +51,10 @@ class HttpEntryInstrumentation
             return;
         }
 
-        if (SwooleContext::has(self::OTEL_TRACE_PROVIER)) {
-            return SwooleContext::get(self::OTEL_TRACE_PROVIER);
-        }
-
-        $OTEL_MAX_QUEUE_SIZE = intval(env('OTEL_MAX_QUEUE_SIZE', 512));
-        $OTEL_SCHEDULE_DELAY = intval(env('OTEL_SCHEDULE_DELAY_MILLISECONDS', 1));
+        $OTEL_MAX_QUEUE_SIZE = intval(env('OTEL_MAX_QUEUE_SIZE', 32));
+        $OTEL_SCHEDULE_DELAY = intval(env('OTEL_SCHEDULE_DELAY_MILLISECONDS', 500));
         $OTEL_EXPORT_TIMEOUT = intval(env('OTEL_EXPORT_TIMEOUT', 30));
+        $OTEL_SAMPLER_TYPE = env('OTEL_SAMPLER_TYPE', self::OTEL_SAMPLER_TYPE_ALWAYS_ON);
 
         $resource = ResourceInfo::create(Attributes::create([
             ResourceAttributes::SERVICE_NAME => env('OTEL_RESOURCE_SERVICE_NAME',"default-server"),
@@ -80,7 +77,7 @@ class HttpEntryInstrumentation
         $transport = (new OtlpHttpTransportFactory())->create($endpoint . '/v1/traces', 'application/json', $headers);
         $exporter  = new SpanExporter($transport);
 
-        if (env('OTEL_SAMPLER_BATCH_SPAN_ENABLED',false)) {
+        if (env('OTEL_SAMPLER_BATCH_SPAN_ENABLED', false)) {
             $spanProcessor = new BatchSpanProcessor(
                 $exporter,
                 Clock::getDefault(),
@@ -88,18 +85,20 @@ class HttpEntryInstrumentation
                 $OTEL_SCHEDULE_DELAY,
                 $OTEL_EXPORT_TIMEOUT * 1000
             );
+
         } else {
             $spanProcessor = new SimpleSpanProcessor($exporter);
         }
 
-        $OTEL_SAMPLER_TYPE = env('OTEL_SAMPLER_TYPE', self::OTEL_SAMPLER_TYPE_ALWAYS_ON);
         switch ($OTEL_SAMPLER_TYPE) {
             case self::OTEL_SAMPLER_TYPE_PARENTBASED_ALWAYS_ON:
                 $rootSampler = new AlwaysOnSampler();
                 $sampler = new ParentBased($rootSampler);
                 break;
             case self::OTEL_SAMPLER_TYPE_TRACE_ID_RATIO:
-                $sampler = new TraceIdRatioBasedSampler(floatval(env('OTEL_SAMPLER_TRACE_ID_RATIO', 0.5)));
+                $rateio = floatval(env('OTEL_SAMPLER_TRACE_ID_RATIO', 0.5));
+                $ratioSampler = new TraceIdRatioBasedSampler($rateio);
+                $sampler = new ParentBased($ratioSampler);
                 break;
             case self::OTEL_SAMPLER_TYPE_ALWAYS_OFF:
                 $sampler = new AlwaysOffSampler();
@@ -122,5 +121,9 @@ class HttpEntryInstrumentation
 
         // Register the tracer provider
         Globals::registerInitializer(fn(Configurator $configurator) => $configurator->withTracerProvider($tracerProvider));
+        // 2s flush data
+        goTick(2 * 1000, function () use($tracerProvider) {
+            $tracerProvider->forceFlush();
+        });
     }
 }

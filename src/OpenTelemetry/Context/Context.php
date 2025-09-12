@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Common\Library\OpenTelemetry\Context;
 
+use Common\Library\OpenTelemetry\Contrib\Context\Swoole\SwooleContextStorage;
 use function assert;
 use const FILTER_VALIDATE_BOOLEAN;
 use function filter_var;
 use function spl_object_id;
-use Swoolefy\Core\Coroutine\Context as SwooleContext;
 
 /**
  * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/context/README.md#context
@@ -46,7 +46,7 @@ final class Context implements ContextInterface
 
     public static function storage(): ContextStorageInterface&ExecutionContextAwareInterface
     {
-        return static::$storages ??=new FiberBoundContextStorageExecutionAwareBC();
+        return static::$storages ??= new SwooleContextStorage(new ContextStorage());
     }
 
     /**

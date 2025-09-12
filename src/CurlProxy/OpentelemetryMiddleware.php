@@ -119,7 +119,6 @@ final class OpentelemetryMiddleware
             if ($span) {
                 $span->end();
             }
-
             return $response;
         };
         return self::mapResponse($fn);

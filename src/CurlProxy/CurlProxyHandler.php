@@ -17,9 +17,14 @@ use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\RequestInterface;
 use Swoolefy\Core\Coroutine\Context as SwooleContext;
 use Swoolefy\Core\Log\LogManager;
+use Swoolefy\Core\Swfy;
 
 class CurlProxyHandler
 {
+    const _HTTP_CURL_MAX_SPAN_DEFAULT = 100;
+
+    const __HTTP_CURL_MAX_SPAN_TRACE = '__http_curl_max_span_trace';
+
     /** @var CurlFactoryInterface */
     private $factory;
 
@@ -94,8 +99,23 @@ class CurlProxyHandler
         $stack->push(RequestMiddleware::requestRecordLog());
         // 记录请求返回的原始数据
         $stack->push(ResponseMiddleware::responseRecordLog());
-
-        if (env('OTEL_INSTRUMENTATION_GUZZLE_ENABLED', false)) {
+        // worker进程中开启opentelemetry追踪
+        if (env('OTEL_INSTRUMENTATION_GUZZLE_ENABLED', false) && Swfy::isWorkerProcess()) {
+            if (!SwooleContext::has(self::__HTTP_CURL_MAX_SPAN_TRACE)) {
+                $currentTraceSpanNum = 1;
+                SwooleContext::set(self::__HTTP_CURL_MAX_SPAN_TRACE, $currentTraceSpanNum);
+            } else {
+                $currentTraceSpanNum = SwooleContext::get(self::__HTTP_CURL_MAX_SPAN_TRACE);
+                $maxTraceSpanNum = env('OTEL_INSTRUMENTATION_GUZZLE_MAX_TRACE_SPANS_NUM');
+                if (empty($maxTraceSpanNum)) {
+                    $maxTraceSpanNum = self::_HTTP_CURL_MAX_SPAN_DEFAULT;
+                }
+                if ($currentTraceSpanNum > $maxTraceSpanNum) {
+                    return $stack;
+                }
+                // 自增1
+                SwooleContext::set(self::__HTTP_CURL_MAX_SPAN_TRACE, ++$currentTraceSpanNum);
+            }
             // 开始curl opentelemetry追踪
             $stack->push(OpentelemetryMiddleware::opentelemetryStartTrace());
             // 结束curl opentelemetry追踪

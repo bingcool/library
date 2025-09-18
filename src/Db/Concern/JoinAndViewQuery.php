@@ -13,6 +13,7 @@ namespace Common\Library\Db\Concern;
 
 
 use Common\Library\Db\Raw;
+use Common\Library\Db\SelectorTable;
 
 /**
  * JOIN和VIEW查询
@@ -97,6 +98,12 @@ trait JoinAndViewQuery
             return $table;
         } elseif ($join instanceof Raw) {
             return $join;
+        }else if ($join instanceof SelectorTable) {
+            if ($join->aliasName) {
+                $join = join(' ', [$join->tableName, $join->aliasName]);
+            }else {
+                $join = $join->tableName;
+            }
         }
 
         $join = trim($join);

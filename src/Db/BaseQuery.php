@@ -11,8 +11,8 @@
 
 namespace Common\Library\Db;
 
-use Common\Library\Db\Helper\Str;
 use Common\Library\Db\Concern;
+use Common\Library\Db\Helper\Str;
 use Common\Library\Exception\DbException;
 use Common\Library\Exception\DbNotFoundException;
 
@@ -605,23 +605,29 @@ abstract class BaseQuery
     /**
      * table别名函数
      *
-     * @param $table
+     * @param string|\Common\Library\Db\SelectorTable $table
      * @param array|string $alias
      * @return $this
      */
-    public function from(string $table, $alias = '')
+    public function from($table, $alias = '')
     {
         return $this->table($table, $alias);
     }
+
     /**
      * 指定当前操作的数据表
      * @access public
-     * @param mixed $table 表名
+     * @param string|array|\Common\Library\Db\SelectorTable $table 表名
      * @param array|string $alias
      * @return $this
      */
     public function table($table, $alias = '')
     {
+        if ($table instanceof \Common\Library\Db\SelectorTable) {
+            $alias = $table->aliasName;
+            $table = $table->tableName;
+        }
+
         if (is_string($table)) {
             if (strpos($table, ')')) {
                 // 子查询

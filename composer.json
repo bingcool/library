@@ -37,7 +37,7 @@
     "ramsey/uuid": "^4.0",
     "symfony/polyfill-mbstring": "^1.23",
     "symfony/polyfill-php82": "^1.26",
-    "tbachert/spi": "^1.0.5",
+    "tbachert/spi": "^1.0.0",
     "google/protobuf": "^4.0",
     "symfony/http-client": "~7.3",
     "nyholm/psr7": "^1.1",

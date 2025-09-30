@@ -41,7 +41,7 @@
     "google/protobuf": "^4.0",
     "symfony/http-client": "~7.3",
     "nyholm/psr7": "^1.1",
-    "guzzlehttp/guzzle": "~7.9.3"
+    "guzzlehttp/guzzle": "~7.9.0"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",

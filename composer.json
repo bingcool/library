@@ -51,8 +51,8 @@
   "autoload": {
     "psr-4": {
       "Common\\Library\\": "src/",
-      "Opentelemetry\\Proto\\": "src/Opentelemetry/gen-otlp-protobuf/Opentelemetry/Proto/",
-      "GPBMetadata\\Opentelemetry\\": "src/Opentelemetry/gen-otlp-protobuf/GPBMetadata/Opentelemetry/"
+      "Opentelemetry\\Proto\\": "src/OpenTelemetry/gen-otlp-protobuf/Opentelemetry/Proto/",
+      "GPBMetadata\\Opentelemetry\\": "src/OpenTelemetry/gen-otlp-protobuf/GPBMetadata/Opentelemetry/"
     },
     "files": [
       "src/Helper.php",

@@ -11,7 +11,8 @@
 
 namespace Common\Library\Db\Concern;
 
-use Common\Library\Exception\DbException;
+use Common\Library\Exception\DbNotFoundException;
+
 /**
  * 查询数据处理
  */
@@ -108,12 +109,12 @@ trait ResultOperation
      * 查询失败 抛出异常
      * @access protected
      * @return void
-     * @throws DbException
+     * @throws DbNotFoundException
      */
     protected function throwNotFound(): void
     {
         $table = $this->getTable();
-        throw new DbException('table data not Found:' . $table);
+        throw new DbNotFoundException('table data not Found:' . $table);
     }
 
 }

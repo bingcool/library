@@ -84,12 +84,12 @@ class CurlProxyHandler
         $handler = new static();
         $stack   = HandlerStack::create($handler);
 
-        if (Context::has('trace-id')) {
-            $traceId = Context::get('trace-id');
+        if (Context::has('x-trace-id')) {
+            $traceId = Context::get('x-trace-id');
         }
 
         // 设置traceId
-        $stack->push(RequestMiddleware::addHeader('trace-id', $traceId ?? ''));
+        $stack->push(RequestMiddleware::addHeader('x-trace-id', $traceId ?? ''));
         // 记录请求参数
         $stack->push(RequestMiddleware::requestRecordLog());
         // 记录请求返回的原始数据

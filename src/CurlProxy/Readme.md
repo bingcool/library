@@ -1,7 +1,7 @@
 使用:  
 1、只需把代理的handler注入进来即可   
 2、其他的按照GuzzleHttp原始操作即可   
-3、请求时，自动注入trace-id,同时会在guzzle_curl.log记录一条请求参数日志   
+3、请求时，自动注入x-trace-id,同时会在guzzle_curl.log记录一条请求参数日志   
 4、响应时，自动在guzzle_curl.log记录一条返回数据的日志    
 
 ```

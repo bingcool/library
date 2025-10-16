@@ -1383,8 +1383,8 @@ abstract class PDOConnection implements ConnectionInterface
             if($this->isCoroutine()) {
                 $cid = \Swoole\Coroutine::getCid();
                 $traceId = '';
-                if (\Swoolefy\Core\Coroutine\Context::has('trace-id')) {
-                    $traceId = \Swoolefy\Core\Coroutine\Context::get('trace-id');
+                if (\Swoolefy\Core\Coroutine\Context::has('x-trace-id')) {
+                    $traceId = \Swoolefy\Core\Coroutine\Context::get('x-trace-id');
                 }
                 $sqlFlag = "sql-cid-{$cid}";
                 $logger = LogManager::getInstance()->getLogger(LogManager::SQL_LOG);
@@ -1393,7 +1393,7 @@ abstract class PDOConnection implements ConnectionInterface
                     if (!file_exists($logFilePath)) {
                         fopen($logFilePath, 'w');
                     }
-                    $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【Trace-Id: {$traceId}】【{$sqlFlag}】: ".$realSql;
+                    $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【x-trace-id: {$traceId}】【{$sqlFlag}】: ".$realSql;
                     $logger->info($sqlLog);
                 }
             }
@@ -1431,8 +1431,8 @@ abstract class PDOConnection implements ConnectionInterface
         if (class_exists('swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
             goApp(function () use($realRunTime, $realSql) {
                 $traceId = '';
-                if (\Swoolefy\Core\Coroutine\Context::has('trace-id')) {
-                    $traceId = \Swoolefy\Core\Coroutine\Context::get('trace-id');
+                if (\Swoolefy\Core\Coroutine\Context::has('x-trace-id')) {
+                    $traceId = \Swoolefy\Core\Coroutine\Context::get('x-trace-id');
                 }
                 try {
                     $fn = static::$slowSqlNoticeCallback['fn'];

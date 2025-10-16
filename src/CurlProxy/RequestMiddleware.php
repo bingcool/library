@@ -55,8 +55,8 @@ final class RequestMiddleware
                 $method   = $request->getMethod();
                 $body     = $request->getBody()->getContents();
                 $traceId = '';
-                if (Context::has('trace-id')) {
-                    $traceId = Context::get('trace-id');
+                if (Context::has('x-trace-id')) {
+                    $traceId = Context::get('x-trace-id');
                 }
                 $jsonData = [
                     'host'   => $host,

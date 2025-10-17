@@ -14,7 +14,6 @@ namespace Common\Library\Db;
 use Common\Library\Db\Concern;
 use Common\Library\Db\Helper\Str;
 use Common\Library\Exception\DbException;
-use Common\Library\Exception\DbNotFoundException;
 
 /**
  * 数据查询基础类
@@ -27,6 +26,7 @@ abstract class BaseQuery
     use Concern\AggregateQuery;
     use Concern\Transaction;
     use Concern\ResultOperation;
+    use Concern\ParamsBind;
 
     /**
      * 当前数据库连接对象
@@ -74,6 +74,7 @@ abstract class BaseQuery
      * @var array
      */
     protected $options = [];
+
     /**
      * @var \Common\Library\Db\AbstractBuilder
      */
@@ -600,6 +601,163 @@ abstract class BaseQuery
         $this->options['page'] = [$page, $listRows];
 
         return $this;
+    }
+
+    /**
+     * 分页查询.
+     *
+     * @param int|array|null $listRows 每页数量 数组表示配置参数
+     * @param int             $page     页码
+     * @param int|bool       $simple   是否简洁模式或者总记录数
+     *
+     * @return Paginator
+     *
+     * @throws DbException
+     */
+    public function paginate(
+        int | array | null $listRows,
+        int $page,
+        int | bool $simple = false
+    ): Paginator
+    {
+        if (is_int($simple)) {
+            $total  = $simple;
+            $simple = false;
+        }
+
+        $defaultConfig = [
+            'query' => [], //url额外参数
+            'fragment' => '', //url锚点
+            'var_page' => 'page', //分页变量
+            'page' => $page,
+            'list_rows' => 15, //每页数量
+        ];
+
+        if (is_array($listRows)) {
+            $config   = array_merge($defaultConfig, $listRows);
+            $pageSize = intval($config['list_rows']);
+        } else {
+            $config   = $defaultConfig;
+            $pageSize = intval($listRows ?: $config['list_rows']);
+        }
+
+        $page           = isset($config['page']) ? (int) $config['page'] : Paginator::getCurrentPage($config['var_page']);
+        $page           = max($page, 1);
+        $config['path'] = $config['path'] ?? Paginator::getCurrentPath();
+
+        if (!isset($total) && !$simple) {
+            $options = $this->getOptions();
+
+            unset($this->options['order'], $this->options['cache'], $this->options['limit'], $this->options['page'], $this->options['field']);
+
+            $bind  = $this->bind;
+            $total = $this->count();
+            if ($total > 0) {
+                $results = $this->options($options)->bind($bind)->page($page, $pageSize)->select();
+            } else {
+                $results = new Collection([]);
+            }
+        } elseif ($simple) {
+            $results = $this->limit(($page - 1) * $pageSize, $pageSize + 1)->select();
+            $total   = null;
+        } else {
+            $results = $this->page($page, $pageSize)->select();
+        }
+
+        $this->removeOption('limit');
+        $this->removeOption('page');
+
+        return Paginator::make($results, $pageSize, $page, $total, $simple, $config);
+    }
+
+    /**
+     * 根据数字类型字段进行分页查询（大数据）
+     * 场景：大数据集、无限滚动、时间线 如微博、朋友圈，适合无限滚动加载
+     * 仅支持上一页/下一页
+     *
+     * @param int|array|null $listRows 每页数量或者分页配置
+     * @param int            $lastId   每页数据最后一个主键ID
+     * @param string|null    $key      分页索引键
+     * @param string|null    $sort     索引键排序 asc|desc
+     *
+     * @return Paginator
+     *
+     * @throws DbException
+     */
+    public function paginateX(
+        int | array | null $listRows = null,
+        ?int $lastId = null,
+        ?string $key = null,
+        ?string $sort = null): Paginator
+    {
+        $defaultConfig = [
+            'query' => [], //url额外参数
+            'fragment' => '', //url锚点
+            'var_page' => 'page', //分页变量
+            'page' => 1,
+            'list_rows' => 15, //每页数量
+        ];
+
+        $config   = is_array($listRows) ? array_merge($defaultConfig, $listRows) : $defaultConfig;
+        $pageSize = is_int($listRows) ? $listRows : (int) $config['list_rows'];
+        $page     = isset($config['page']) ? (int) $config['page'] : Paginator::getCurrentPage($config['var_page']);
+        $page     = max($page, 1);
+
+        $config['path'] = $config['path'] ?? Paginator::getCurrentPath();
+
+        $key     = $key ?: $this->getPk();
+        $options = $this->getOptions();
+
+        if (is_null($sort)) {
+            $order = $options['order'] ?? '';
+            if (!empty($order)) {
+                $sort = $order[$key] ?? 'desc';
+            } else {
+                $this->order($key, 'desc');
+                $sort = 'desc';
+            }
+        } else {
+            $this->order($key, $sort);
+        }
+
+        if (empty($lastId)) {
+            $newOption = $options;
+            unset($newOption['field'], $newOption['page']);
+            $data = $this->newQuery()
+                ->options($newOption)
+                ->field($key)
+                ->where(true)
+                ->order($key, $sort)
+                ->limit(1)
+                ->find();
+
+            $result = $data[$key] ?? 0;
+            if (is_numeric($result)) {
+                $newLastId = 'asc' == $sort ? ($result - 1) + ($page - 1) * $pageSize : ($result + 1) - ($page - 1) * $pageSize;
+            } else {
+                throw new DbException('not support type');
+            }
+        }else {
+            $newLastId = $lastId;
+        }
+
+        $results = $this->when($lastId, function ($query) use ($key, $sort, $lastId, $newLastId) {
+            // 首次查询
+            if (empty($lastId)) {
+                $query->where($key, 'asc' == $sort ? '<=' : '>=', $lastId);
+            }else {
+                // 后续多次查询
+                $query->where($key, 'asc' == $sort ? '>' : '<', $newLastId);
+            }
+        })->limit($pageSize)->select();
+
+        $this->options($options);
+
+        $paginator = Paginator::make($results, $pageSize, $page, null, true, $config);
+        $last = $results->last();
+        $paginator->setLastId($last[$key] ?? 0);
+        return $paginator;
+
     }
 
     /**

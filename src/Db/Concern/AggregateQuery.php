@@ -11,6 +11,7 @@
 
 namespace Common\Library\Db\Concern;
 
+use Common\Library\Db\Query;
 use Common\Library\Db\Raw;
 use Common\Library\Exception\DbException;
 
@@ -19,6 +20,14 @@ use Common\Library\Exception\DbException;
  */
 trait AggregateQuery
 {
+    /**
+     * @return Query
+     */
+    public function clone(): Query
+    {
+        return clone $this;
+    }
+
     /**
      * 聚合查询
      * @access protected

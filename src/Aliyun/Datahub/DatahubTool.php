@@ -11,6 +11,8 @@
 
 namespace Common\Library\Aliyun\Datahub;
 
+use Common\Library\Exception\DatahubException;
+
 class DatahubTool extends AbstractBaseDatahub
 {
     /**
@@ -69,7 +71,7 @@ class DatahubTool extends AbstractBaseDatahub
         }else if ($recordType == DatahubConst::RecordTypeBlob) {
             $params['RecordType'] = $recordType;
         } else {
-            throw new DataException('[createTopic] argument of `recordType` is error');
+            throw new DatahubException('[createTopic] argument of `recordType` is error');
         }
 
         $result = $this->post($uri, $params);
@@ -94,7 +96,7 @@ class DatahubTool extends AbstractBaseDatahub
      * 创建订阅subId
      *
      * @param string $description
-     * @return void
+     * @return mixed
      */
     public function createSubscription(string $description)
     {

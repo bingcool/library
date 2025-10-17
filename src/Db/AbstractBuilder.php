@@ -507,9 +507,25 @@ abstract class AbstractBuilder
         }
 
         if (is_string($field) && 'LIKE' != $exp) {
-            $bindType = $binds[$field] ?? PDO::PARAM_STR;
+            $bindType = PDO::PARAM_STR;
+            if (isset($binds[$field])) {
+                $bindType = $binds[$field];
+            }else {
+                // 别名处理eg: $field='t3.id', $binds=['id'=>PDO::PARAM_INT]
+                if (str_contains($field, '.')) {
+                    $fieldItems = explode('.', $field);
+                    $bindType = $binds[$fieldItems[1]] ?? PDO::PARAM_STR;
+                }
+            }
         } else {
             $bindType = PDO::PARAM_STR;
+        }
+
+        // 如果达到最的PHP_INT_MAX,转为string
+        if ($bindType == PDO::PARAM_INT) {
+            if (is_numeric($value) && $value >= PHP_INT_MAX) {
+                $bindType = PDO::PARAM_STR;
+            }
         }
 
         if ($value instanceof Raw) {

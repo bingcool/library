@@ -108,8 +108,13 @@ trait ParamsBind
 
             if (is_numeric($key)) {
                 $sql = substr_replace($sql, ':' . $name, strpos($sql, '?'), 1);
+            } elseif (str_ends_with($sql, ':' . $key)) {
+                $sql = substr_replace($sql, ':' . $name . ' ', strrpos($sql, ':' . $key), strlen(':' . $key));
             } else {
-                $sql = str_replace(':' . $key, ':' . $name, $sql);
+                $sql = str_replace(
+                    [':' . $key . ' ', ':' . $key . ',', ':' . $key . ')'],
+                    [':' . $name . ' ', ':' . $name . ',', ':' . $name . ')'],
+                    $sql);
             }
         }
     }

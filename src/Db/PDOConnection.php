@@ -177,6 +177,7 @@ abstract class PDOConnection implements ConnectionInterface
         'str' => PDO::PARAM_STR,
         'integer' => PDO::PARAM_INT,
         'int' => PDO::PARAM_INT,
+        'bigint' => PDO::PARAM_INT,
         'boolean' => PDO::PARAM_BOOL,
         'bool' => PDO::PARAM_BOOL,
         'float' => self::PARAM_FLOAT,
@@ -920,11 +921,11 @@ abstract class PDOConnection implements ConnectionInterface
     {
         if (0 === strpos($type, 'set') || 0 === strpos($type, 'enum')) {
             $result = 'string';
-        } elseif (preg_match('/(double|float|decimal|real|numeric)/is', $type)) {
+        } elseif (preg_match('/(double|float|decimal|real|numeric)/i', $type)) {
             $result = 'float';
-        } elseif (preg_match('/(int|serial|bit)/is', $type)) {
+        } elseif (preg_match('/(int|serial|bit|bigint)/i', $type)) {
             $result = 'int';
-        } elseif (preg_match('/bool/is', $type)) {
+        } elseif (preg_match('/bool/i', $type)) {
             $result = 'bool';
         } elseif (0 === strpos($type, 'timestamp')) {
             $result = 'timestamp';
@@ -946,15 +947,15 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function getFieldBindType(string $type): int
     {
-        if (in_array($type, ['integer', 'string', 'float', 'boolean', 'bool', 'int', 'str'])) {
+        if (in_array($type, ['integer', 'string', 'float', 'boolean', 'bool', 'int', 'str','bigint'])) {
             $bind = $this->bindType[$type];
         } elseif (0 === strpos($type, 'set') || 0 === strpos($type, 'enum')) {
             $bind = PDO::PARAM_STR;
-        } elseif (preg_match('/(double|float|decimal|real|numeric)/is', $type)) {
+        } elseif (preg_match('/(double|float|decimal|real|numeric)/i', $type)) {
             $bind = self::PARAM_FLOAT;
-        } elseif (preg_match('/(int|serial|bit)/is', $type)) {
+        } elseif (preg_match('/(int|serial|bit|bigint)/i', $type)) {
             $bind = PDO::PARAM_INT;
-        } elseif (preg_match('/bool/is', $type)) {
+        } elseif (preg_match('/bool/i', $type)) {
             $bind = PDO::PARAM_BOOL;
         } else {
             $bind = PDO::PARAM_STR;
@@ -1393,7 +1394,7 @@ abstract class PDOConnection implements ConnectionInterface
                     if (!file_exists($logFilePath)) {
                         fopen($logFilePath, 'w');
                     }
-                    $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【x-trace-id: {$traceId}】【{$sqlFlag}】: ".$realSql;
+                    $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【X-Trace-Id: {$traceId}】【{$sqlFlag}】: ".$realSql;
                     $logger->info($sqlLog);
                 }
             }

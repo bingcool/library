@@ -11,7 +11,7 @@
 
 namespace Common\Library\Uuid;
 
-use SplQueue;
+use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 use Common\Library\Redis\RedisConnection;
 
@@ -113,50 +113,59 @@ class UuidManager
     }
 
     /**
-     * pre GenerateId
+     * registerTickPreBatchGenerateIds 注册定时器产生GenerateId
      *
-     * @param float $timeOut
-     * @param int $poolSize
+     * @param int $timeMs 定时预产生uuid,单位：毫秒,建议设置为1000~2000毫秒
+     * @param int $poolSize 预产生uuid数量,建议100~1000之间数值
      * @return bool
      */
-    public function tickPreBatchGenerateIds(float $timeOut, int $poolSize)
+    public function registerTickPreBatchGenerateIds(int $timeMs, int $poolSize)
     {
         if (!(self::$poolIdsQueue instanceof Channel)) {
             self::$poolIdsQueue = new Channel($poolSize);
         }
 
-        $pushTickChannel  = new Channel(1);
-        $this->startTime  = time();
+        if ($this->startTime > 0) {
+            return false;
+        }
 
-        if($poolSize <= 1) {
+        $this->startTime  = time();
+        if ($poolSize <= 1) {
             $poolSize = 1;
         }
 
-        goApp(function () use($poolSize, $timeOut, $pushTickChannel) {
-            // generateId
-            while(!$pushTickChannel->pop($timeOut)) {
-                try {
-                    if(time() >= $this->startTime + $timeOut * 3) {
-                        $this->startTime = time();
-                        if(self::$poolIdsQueue->length() > 0) {
-                            while (self::$poolIdsQueue->pop(0.02)) {
+        if ($timeMs <= 1000) {
+            $timeMs = 1000;
+        }
 
-                            }
+        if ($timeMs > 5000) {
+            $timeMs = 5000;
+        }
+
+        $timeOutSecond = $timeMs / 1000;
+
+        goTick($timeMs, function () use($poolSize, $timeOutSecond) {
+            try {
+                if(time() >= $this->startTime + $timeOutSecond * 3) {
+                    $this->startTime = time();
+                    if(self::$poolIdsQueue->length() > 0) {
+                        while (self::$poolIdsQueue->pop(0.02)) {
+
                         }
                     }
-
-                    $maxId = $this->generateId($poolSize);
-                    $minId = $maxId - $poolSize;
-                    if ($minId > 0) {
-                        for ($i = 0; $i < $poolSize; $i++) {
-                            self::$poolIdsQueue->push($minId + $i, 0.05);
-                        }
-                    }
-                }catch (\Throwable $throwable){
-
                 }
+
+                $maxId = $this->generateId($poolSize);
+                $minId = $maxId - $poolSize;
+                if ($minId > 0) {
+                    for ($i = 0; $i < $poolSize; $i++) {
+                        self::$poolIdsQueue->push($minId + $i, 0.05);
+                    }
+                }
+            }catch (\Throwable $throwable){
+
             }
-        });
+        }, true);
 
         return true;
     }

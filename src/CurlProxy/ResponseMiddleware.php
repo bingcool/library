@@ -14,7 +14,7 @@ namespace Common\Library\CurlProxy;
 use Closure;
 use Throwable;
 use Psr\Http\Message\ResponseInterface;
-use Swoolefy\Core\Coroutine\Context;
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
 
 final class ResponseMiddleware
 {
@@ -30,7 +30,7 @@ final class ResponseMiddleware
             try {
                 $logger = CurlProxyHandler::buildLogChannel();
                 if ($logger) {
-                    $info = Context::get('__guzzle_curl_path');
+                    $info = SwooleContext::get(OpentelemetryMiddleware::GUZZLE_CURL_PATH);
                     $path = $info['path'] ?? '';
                     $traceId = $info['trace_id'] ?? '';
                     $dateTime = date('Y-m-d H:i:s');
@@ -45,6 +45,7 @@ final class ResponseMiddleware
 
         return self::mapResponse($fn);
     }
+
 
     /**
      * @param Closure $fn

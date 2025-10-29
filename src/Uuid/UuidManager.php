@@ -183,13 +183,13 @@ class UuidManager
             $count = 1;
         }
 
-        $usleepTime = 15 * 1000;
+        $sleepTimeSecond = 0.15;
         do {
             $dataArr = $this->doHandle($redis ?? $this->redis, $count);
             if (!empty($dataArr)) {
                 break;
             }
-            usleep($usleepTime);
+            Coroutine::sleep($sleepTimeSecond);
             --$this->retryTimes;
         } while ($this->retryTimes);
 
@@ -229,11 +229,13 @@ class UuidManager
     }
 
     /**
+     * 获取UUIDS
+     *
      * @param RedisConnection $redis
      * @param int $num
      * @return array
      */
-    public function getIncrIds(int $num = 1)
+    public function getIncrIds(int $num = 1): array
     {
         if (!(self::$poolIdsQueue instanceof Channel)) {
             self::$poolIdsQueue = new Channel(100);

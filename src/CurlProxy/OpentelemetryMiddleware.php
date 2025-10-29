@@ -14,7 +14,6 @@ namespace Common\Library\CurlProxy;
 use Closure;
 use Common\Library\OpenTelemetry\API\Globals;
 use Common\Library\OpenTelemetry\GuzzleAutoInstrumentation\HeadersPropagator;
-use Common\Library\OpenTelemetry\HttpEntryInstrumentation;
 use Common\Library\OpenTelemetry\SemConv\TraceAttributes;
 use Common\Library\OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
 use Common\Library\OpenTelemetry\API\Trace\Span;

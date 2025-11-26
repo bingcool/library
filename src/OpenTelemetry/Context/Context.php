@@ -85,10 +85,7 @@ final class Context implements ContextInterface
 
     private static function debugScopesDisabled(): bool
     {
-        return filter_var(
-            $_SERVER[self::OTEL_PHP_DEBUG_SCOPES_DISABLED] ?? \getenv(self::OTEL_PHP_DEBUG_SCOPES_DISABLED) ?: \ini_get(self::OTEL_PHP_DEBUG_SCOPES_DISABLED),
-            FILTER_VALIDATE_BOOLEAN
-        );
+        return true;
     }
 
     public function withContextValue(ImplicitContextKeyedInterface $value): ContextInterface

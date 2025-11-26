@@ -13,6 +13,7 @@ namespace Common\Library\CurlProxy;
 
 use Closure;
 use Common\Library\OpenTelemetry\API\Globals;
+use Common\Library\OpenTelemetry\Context\Context as OpenTelemetryContext;
 use Common\Library\OpenTelemetry\GuzzleAutoInstrumentation\HeadersPropagator;
 use Common\Library\OpenTelemetry\SemConv\TraceAttributes;
 use Common\Library\OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
@@ -32,8 +33,6 @@ final class OpentelemetryMiddleware
 
     const OPENTELEMETRY_TRACE_ROOT_FLAG = '__trace_root_flag';
 
-    CONST OPENTELEMETRY_SPAN_TRACE = '__span_trace';
-
     const GUZZLE_CURL_PATH = '__guzzle_curl_path';
 
     /**
@@ -42,11 +41,9 @@ final class OpentelemetryMiddleware
     public static function opentelemetryStartTrace()
     {
         $fn = function (RequestInterface $request) {
-            $propagator = TraceContextPropagator::getInstance();
-            $parentContext = Context::getCurrent();
-            $traceparent = SwooleContext::get(self::OPENTELEMETRY_TRACEPARENT_ID);
-
-            $isTraceRootFlag = SwooleContext::get(self::OPENTELEMETRY_TRACE_ROOT_FLAG);
+            $propagator    = TraceContextPropagator::getInstance();
+            $parentContext = OpenTelemetryContext::getCurrent();
+            $traceparent   = SwooleContext::get(self::OPENTELEMETRY_TRACEPARENT_ID);
             if (!empty($traceparent)) {
                 $carrier[self::OPENTELEMETRY_TRACEPARENT_ID] = $traceparent;
                 $parentContext = TraceContextPropagator::getInstance()->extract($carrier);
@@ -91,14 +88,12 @@ final class OpentelemetryMiddleware
                 $span->setAttribute(TraceAttributes::HTTP_REQUEST_HEADERS, json_encode($request->getHeaders(), JSON_UNESCAPED_UNICODE));
             }
 
-            !$isTraceRootFlag && $span->activate();
-
+            $scope   = $span->activate();
             $context = $span->storeInContext($parentContext);
             $propagator->inject($request, HeadersPropagator::instance(), $context);
             Context::storage()->attach($context);
-
-            SwooleContext::set(self::OPENTELEMETRY_SPAN_TRACE, $span);
-
+            $span->end();
+            $scope->detach();
             return $request;
         };
 
@@ -111,13 +106,6 @@ final class OpentelemetryMiddleware
     public static function opentelemetryEndTrace()
     {
         $fn = function (ResponseInterface $response) {
-            /**
-             * @var Span $span
-             */
-            $span = SwooleContext::get(OpentelemetryMiddleware::OPENTELEMETRY_SPAN_TRACE);
-            if ($span) {
-                $span->end();
-            }
             return $response;
         };
         return self::mapResponse($fn);

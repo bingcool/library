@@ -113,7 +113,6 @@ class CurlProxyHandler
                 if ($currentTraceSpanNum > $maxTraceSpanNum) {
                     return $stack;
                 }
-                // 自增1
                 SwooleContext::set(self::__HTTP_CURL_MAX_SPAN_TRACE, ++$currentTraceSpanNum);
             }
             // 开始curl opentelemetry追踪

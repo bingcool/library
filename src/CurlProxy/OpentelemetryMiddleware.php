@@ -22,7 +22,6 @@ use Common\Library\OpenTelemetry\API\Trace\SpanKind;;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Swoolefy\Core\Coroutine\Context as SwooleContext;
-use Common\Library\OpenTelemetry\Context\Context;
 
 final class OpentelemetryMiddleware
 {
@@ -34,6 +33,8 @@ final class OpentelemetryMiddleware
     const OPENTELEMETRY_TRACE_ROOT_FLAG = '__trace_root_flag';
 
     const GUZZLE_CURL_PATH = '__guzzle_curl_path';
+
+    const IS_CALL_ENDOPENTELEMETRY = '__is_call_end_opentelemetry';
 
     /**
      * @return Closure
@@ -91,7 +92,7 @@ final class OpentelemetryMiddleware
             $scope   = $span->activate();
             $context = $span->storeInContext($parentContext);
             $propagator->inject($request, HeadersPropagator::instance(), $context);
-            Context::storage()->attach($context);
+            OpenTelemetryContext::storage()->attach($context);
             $span->end();
             $scope->detach();
             return $request;

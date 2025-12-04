@@ -11,7 +11,6 @@
 
 namespace Common\Library\CurlProxy;
 
-
 use Closure;
 use Throwable;
 use Psr\Http\Message\RequestInterface;

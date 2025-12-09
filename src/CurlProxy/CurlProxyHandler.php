@@ -15,8 +15,9 @@ use GuzzleHttp\Handler\CurlFactory;
 use GuzzleHttp\Handler\CurlFactoryInterface;
 use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\RequestInterface;
-use Swoolefy\Core\Coroutine\Context;
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
 use Swoolefy\Core\Log\LogManager;
+use Swoolefy\Core\Swfy;
 
 class CurlProxyHandler
 {
@@ -65,10 +66,10 @@ class CurlProxyHandler
             $logger = LogManager::getInstance()->getLogger(LogManager::GUZZLE_CURL_LOG);
             if ($logger) {
                 $logFilePath = $logger->getLogFilePath();
-                if (!Context::has('is_exist_guzzle_curl_log_file')) {
+                if (!SwooleContext::has('is_exist_guzzle_curl_log_file')) {
                     if (!file_exists($logFilePath)) {
                         fopen($logFilePath, 'w');
-                        Context::set('is_exist_guzzle_curl_log_file', 1);
+                        SwooleContext::set('is_exist_guzzle_curl_log_file', 1);
                     }
                 }
                 return $logger;
@@ -84,8 +85,8 @@ class CurlProxyHandler
         $handler = new static();
         $stack   = HandlerStack::create($handler);
 
-        if (Context::has('x-trace-id')) {
-            $traceId = Context::get('x-trace-id');
+        if (SwooleContext::has('x-trace-id')) {
+            $traceId = SwooleContext::get('x-trace-id');
         }
 
         // 设置traceId

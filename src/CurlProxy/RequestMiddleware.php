@@ -11,11 +11,10 @@
 
 namespace Common\Library\CurlProxy;
 
-
 use Closure;
 use Throwable;
 use Psr\Http\Message\RequestInterface;
-use Swoolefy\Core\Coroutine\Context;
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
 
 final class RequestMiddleware
 {
@@ -55,8 +54,8 @@ final class RequestMiddleware
                 $method   = $request->getMethod();
                 $body     = $request->getBody()->getContents();
                 $traceId = '';
-                if (Context::has('x-trace-id')) {
-                    $traceId = Context::get('x-trace-id');
+                if (SwooleContext::has('x-trace-id')) {
+                    $traceId = SwooleContext::get('x-trace-id');
                 }
                 $jsonData = [
                     'host'   => $host,
@@ -69,7 +68,7 @@ final class RequestMiddleware
 
                 $logger = CurlProxyHandler::buildLogChannel();
                 if ($logger) {
-                    Context::set('__guzzle_curl_path', [
+                    SwooleContext::set('__guzzle_curl_path', [
                         'path'   => $path,
                         'trace_id' => $traceId ,
                     ]);

@@ -71,9 +71,15 @@ class RedisCache implements CacheInterface
     {
         $result = $this->driver->get($key);
         if (is_string($result)) {
-            $result = json_decode($result, true) ?? $result;
+            if (\PHP_VERSION_ID >= 80300 && json_validate($result)) {
+                $result = json_decode($result, true);
+                if (is_null($result)) {
+                    throw new \InvalidArgumentException('json_decode error');
+                }
+            } else {
+                $result = json_decode($result, true) ?? $result;
+            }
         }
-        
         return $result;
     }
 
@@ -108,12 +114,46 @@ class RedisCache implements CacheInterface
     /**
      * @param array $values
      * @param int|null $ttl
+     * @param bool $isOverwrite // 是否覆盖已设置的key值（即重新设置）
      * @return bool
      */
-    public function setMultiple(array $values, ?int $ttl = null)
+    public function setMultiple(array $values, ?int $ttl = null, bool $isOverwrite = true)
     {
-        foreach ($values as $key=>$value) {
-            $this->set($key, $value, $ttl);
+        if ($isOverwrite) {
+            $luaScript = <<<LUA
+        for i = 1, #KEYS do
+            redis.call('SET', KEYS[i], ARGV[i])
+            redis.call('EXPIRE', KEYS[i], ARGV[#KEYS + 1])
+        end
+        return 'OK'
+LUA;
+        } else {
+            $luaScript = <<<LUA
+        for i = 1, #KEYS do
+            if redis.call('EXISTS', KEYS[i]) == 0 then
+                redis.call('SET', KEYS[i], ARGV[i])
+                redis.call('EXPIRE', KEYS[i], ARGV[#KEYS + 1])
+            end
+        end
+        return 'OK'
+LUA;
+        }
+        $keys       = array_keys($values);
+        $valueItems = array_values($values);
+        foreach ($valueItems as &$item) {
+            if (is_array($item)) {
+                $item = json_encode($item, JSON_UNESCAPED_UNICODE);
+            }
+        }
+        $args       = array_merge($valueItems, [$ttl]);
+        $mixedArgs  = array_merge($keys, $args);
+        if ($this->isPredisDriver) {
+            $result = $this->driver->eval($luaScript, count($keys), ...$mixedArgs);
+        }else {
+            $result = $this->driver->eval($luaScript, $mixedArgs, count($keys));
+        }
+        if ($result != 'OK') {
+            return false;
         }
         return true;
     }

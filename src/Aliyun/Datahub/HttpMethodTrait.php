@@ -178,9 +178,7 @@ trait HttpMethodTrait
             ]);
         }
 
-        $result = json_decode($response->getBody()->getContents(), true);
-
-        var_dump($result);
+        json_decode($response->getBody()->getContents(), true);
     }
 
     /**

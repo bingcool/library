@@ -26,7 +26,7 @@
     "ext-openssl": "*",
     "psr/clock": "*",
     "predis/predis": "^3.0",
-    "malkusch/lock": "~2.2.0",
+    "malkusch/lock": "^2.2.0",
     "php-amqplib/php-amqplib": "~3.5.0",
     "php-http/discovery": "^1.14",
     "psr/http-client-implementation": "^1.0",

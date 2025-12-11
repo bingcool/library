@@ -54,8 +54,8 @@ final class RequestMiddleware
                 $method   = $request->getMethod();
                 $body     = $request->getBody()->getContents();
                 $traceId = '';
-                if (SwooleContext::has('x-trace-id')) {
-                    $traceId = SwooleContext::get('x-trace-id');
+                if (SwooleContext::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+                    $traceId = SwooleContext::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
                 }
                 $jsonData = [
                     'host'   => $host,
@@ -68,7 +68,7 @@ final class RequestMiddleware
 
                 $logger = CurlProxyHandler::buildLogChannel();
                 if ($logger) {
-                    SwooleContext::set('__guzzle_curl_path', [
+                    SwooleContext::set(OpentelemetryMiddleware::GUZZLE_CURL_PATH, [
                         'path'   => $path,
                         'trace_id' => $traceId ,
                     ]);

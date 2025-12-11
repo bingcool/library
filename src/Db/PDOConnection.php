@@ -13,8 +13,9 @@ namespace Common\Library\Db;
 
 use PDO;
 use PDOStatement;
-use Common\Library\Exception\DbException;
 use Swoolefy\Core\Log\LogManager;
+use Common\Library\Exception\DbException;
+use Common\Library\CurlProxy\OpentelemetryMiddleware;
 
 /**
  * Class PDOConnection
@@ -1384,8 +1385,8 @@ abstract class PDOConnection implements ConnectionInterface
             if($this->isCoroutine()) {
                 $cid = \Swoole\Coroutine::getCid();
                 $traceId = '';
-                if (\Swoolefy\Core\Coroutine\Context::has('x-trace-id')) {
-                    $traceId = \Swoolefy\Core\Coroutine\Context::get('x-trace-id');
+                if (\Swoolefy\Core\Coroutine\Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+                    $traceId = \Swoolefy\Core\Coroutine\Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
                 }
                 $sqlFlag = "sql-cid-{$cid}";
                 $logger = LogManager::getInstance()->getLogger(LogManager::SQL_LOG);
@@ -1432,8 +1433,8 @@ abstract class PDOConnection implements ConnectionInterface
         if (class_exists('swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
             goApp(function () use($realRunTime, $realSql) {
                 $traceId = '';
-                if (\Swoolefy\Core\Coroutine\Context::has('x-trace-id')) {
-                    $traceId = \Swoolefy\Core\Coroutine\Context::get('x-trace-id');
+                if (\Swoolefy\Core\Coroutine\Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+                    $traceId = \Swoolefy\Core\Coroutine\Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
                 }
                 try {
                     $fn = static::$slowSqlNoticeCallback['fn'];

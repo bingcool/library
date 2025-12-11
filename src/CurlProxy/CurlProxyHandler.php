@@ -85,12 +85,12 @@ class CurlProxyHandler
         $handler = new static();
         $stack   = HandlerStack::create($handler);
 
-        if (SwooleContext::has('x-trace-id')) {
-            $traceId = SwooleContext::get('x-trace-id');
+        if (SwooleContext::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+            $traceId = SwooleContext::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
         }
 
         // 设置traceId
-        $stack->push(RequestMiddleware::addHeader('x-trace-id', $traceId ?? ''));
+        $stack->push(RequestMiddleware::addHeader(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID, $traceId ?? ''));
         // 记录请求参数
         $stack->push(RequestMiddleware::requestRecordLog());
         // 记录请求返回的原始数据

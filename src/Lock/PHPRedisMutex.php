@@ -13,13 +13,10 @@ namespace Common\Library\Lock;
 
 use malkusch\lock\exception\LockAcquireException;
 use malkusch\lock\exception\LockReleaseException;
-use Swoole\Coroutine\Channel;
+use malkusch\lock\util\Loop;
 use Swoolefy\Core\BaseObject;
 use Swoolefy\Core\BaseServer;
 use Swoolefy\Core\EventController;
-use Throwable;
-use \RedisException;
-use \RedisCluster;
 use \Redis;
 
 class PHPRedisMutex extends \malkusch\lock\mutex\RedisMutex
@@ -44,7 +41,9 @@ class PHPRedisMutex extends \malkusch\lock\mutex\RedisMutex
     /**
      * @param array $redisAPIs
      * @param string $name
-     * @param int $timeout
+     * @param int $timeout // 出单位秒. 锁的超时释放时间.
+     * 并发情况下，不同请求实例获取锁的最大等待时间，在这个时间内获取不到锁将抛出\malkusch\lock\exception\TimeoutException超时异常
+     * 业务侧需要捕捉这个异常返回给前端请求
      */
     public function __construct(array $redisAPIs, string $name, int $timeout = 3)
     {

@@ -68,9 +68,9 @@ final class RequestMiddleware
 
                 $logger = CurlProxyHandler::buildLogChannel();
                 if ($logger) {
-                    SwooleContext::set('__guzzle_curl_path', [
+                    SwooleContext::set(OpentelemetryMiddleware::GUZZLE_CURL_PATH, [
                         'path'   => $path,
-                        'trace_id' => $traceId ,
+                        'trace_id' => $traceId,
                     ]);
                     $dateTime = date('Y-m-d H:i:s');
                     $logger->info("【request@{$dateTime}】  api={$path}, traceId={$traceId}, 请求参数：" . json_encode($jsonData, JSON_UNESCAPED_UNICODE));

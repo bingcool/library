@@ -11,11 +11,11 @@
 
 namespace Common\Library\Db;
 
-use Common\Library\CurlProxy\OpentelemetryMiddleware;
 use PDO;
 use PDOStatement;
-use Common\Library\Exception\DbException;
 use Swoolefy\Core\Log\LogManager;
+use Common\Library\Exception\DbException;
+use Common\Library\CurlProxy\OpentelemetryMiddleware;
 
 /**
  * Class PDOConnection

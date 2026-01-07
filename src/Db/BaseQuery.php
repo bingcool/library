@@ -615,9 +615,9 @@ abstract class BaseQuery
      * @throws DbException
      */
     public function paginate(
-        int | array | null $listRows,
+        $listRows,
         int $page,
-        int | bool $simple = false
+        bool $simple = false
     ): Paginator
     {
         if (is_int($simple)) {
@@ -685,7 +685,7 @@ abstract class BaseQuery
      * @throws DbException
      */
     public function paginateX(
-        int | array | null $listRows = null,
+        $listRows = null,
         ?int $lastId = null,
         ?string $key = null,
         ?string $sort = null): Paginator

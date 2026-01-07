@@ -102,6 +102,24 @@ class DurationLimiter
     }
 
     /**
+     * 获取当前窗口内的请求数
+     * @return int
+     */
+    public function getCurrentCount(): int
+    {
+        $timeStamp = $this->redis->time();
+        $second = intval($timeStamp[0]);
+        $msecond = substr($timeStamp[1], 0, 4);
+
+        $windowEndMilliSecond = $second * 10000 + intval($msecond);
+        $startMilliSecond = $second - $this->windowSizeTime;
+        $windowStartMilliSecond = $startMilliSecond * 10000 + intval($msecond);
+
+        $count = $this->redis->zCount($this->rateKey, $windowStartMilliSecond, $windowEndMilliSecond);
+        return (int)$count;
+    }
+
+    /**
      * @return int
      */
     protected function getRequireId()
@@ -123,22 +141,22 @@ local limitNum = tonumber(ARGV[2]);
 local requireId = tostring(ARGV[3]);
 
 local timeStamp = redis.call('TIME');
-local second = timeStamp[1];
-local msecond = string.sub(timeStamp[2], 1, 4);
+local second = tonumber(timeStamp[1]);
+local tempMsecond = string.sub(timeStamp[2], 1, 4);
+local msecond = tonumber(tempMsecond);
 
--- end time
-local windowEndMilliSecond = table.concat({second,msecond});
+-- 计算窗口结束时间(当前时间)
+local windowEndMilliSecond = second * 10000 + msecond;
 
--- start time
-local startMilliSecond = tonumber(second - tonumber(windowSizeTime));
-local windowStartMilliSecond = tonumber(table.concat({startMilliSecond,msecond}));
+-- 计算窗口开始时间(当前时间减去窗口大小)
+local windowStartMilliSecond = (second - windowSizeTime) * 10000 + msecond;
 
 -- Not EXISTS Key
 if redis.call('EXISTS', rateKey) == 0 then
     redis.call('EXPIRE', rateKey, 24 * 3600)
 end
 
--- delete data
+-- 删除窗口外的过期数据
 redis.call('zRemRangeByScore', rateKey, '-inf', windowStartMilliSecond);
 
 -- get in limit time count

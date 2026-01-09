@@ -107,7 +107,7 @@ class Url extends AbstractPart
         $url = new self($baseUrl);
 
         if (!empty($pathInfo = $request->getServerParams('PATH_INFO'))) {
-            if (strpos($pathInfo, '?') !== false) {
+            if (str_contains($pathInfo, '?')) {
                 [$path, $query] = explode('?', $pathInfo, 2);
             } else {
                 $path  = $pathInfo;

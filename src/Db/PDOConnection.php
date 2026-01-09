@@ -15,6 +15,7 @@ use PDO;
 use PDOStatement;
 use Swoolefy\Core\Log\LogManager;
 use Common\Library\Exception\DbException;
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
 use Common\Library\CurlProxy\OpentelemetryMiddleware;
 
 /**
@@ -60,7 +61,9 @@ abstract class PDOConnection implements ConnectionInterface
         // sql执行日志条目设置,不能设置太大,适合调试使用,设置为0，则不使用
         'spend_log_limit' => 30,
         // 是否开启dubug
-        'debug' => 1,
+        'debug' => 0,
+        // 打印sql输出终端(首先要开启debug)
+        'print_sql' => 0,
     ];
 
     /**
@@ -127,19 +130,14 @@ abstract class PDOConnection implements ConnectionInterface
     protected $lastLogs = [];
 
     /**
-     * @var array
-     */
-    protected $excelSqlArr = [];
-
-    /**
      * @var int
      */
-    public $debug = 1;
+    public $debug = false;
 
     /**
      * @var null|int
      */
-    public $dynamicDebug = null;
+    public $dynamicDebug = false;
 
     /**
      * @var array
@@ -232,17 +230,10 @@ abstract class PDOConnection implements ConnectionInterface
     {
         $this->config = array_merge($this->config, $config);
         $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
+        // 全局debug配置
         $this->debug = (int)$this->config['debug'] ?? 1;
+        // 路由动态设置debug
         $this->enableDynamicDebug();
-    }
-
-    /**
-     * @param bool $isDebug
-     * @return void
-     */
-    public function setDebug(bool $isDebug = true)
-    {
-        $this->debug = (int) $isDebug;
     }
 
     /**
@@ -253,16 +244,25 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function enableDynamicDebug()
     {
-        if (\Swoole\Coroutine::getCid() >=0 && \Swoolefy\Core\Coroutine\Context::has('db_debug')) {
-            $debug = \Swoolefy\Core\Coroutine\Context::get('db_debug');
-            $debug = (int) $debug;
-            if ($debug) {
-                $this->debug = $debug;
-                $this->dynamicDebug = $debug;
-            }else {
-                $this->dynamicDebug = $debug;
-            }
+        if (\Swoole\Coroutine::getCid() >= 0 && SwooleContext::has('db_debug')) {
+            $dynamicDebug = SwooleContext::get('db_debug');
+            $this->dynamicDebug = $dynamicDebug;
         }
+    }
+
+    /**
+     * isEnableDebug 判断是否启用debug
+     *
+     * @return bool
+     */
+    public function isEnableDebug()
+    {
+        if ($this->debug) {
+            return true;
+        } else if (!$this->debug && $this->dynamicDebug) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -293,14 +293,11 @@ abstract class PDOConnection implements ConnectionInterface
             if (empty($this->config['dsn'])) {
                 $this->config['dsn'] = $this->parseDsn();
             }
-            $startTime = $this->debug ? microtime(true) : 0;
             $this->PDOInstance = $this->createPdo($this->config['dsn'], $this->config['username'], $this->config['password'], $params);
-            $endTime = $this->debug ? microtime(true) : 0;
-            $this->log('Connect start', 'Connect successful, Spend Time=' . ($endTime - $startTime));
             return $this->PDOInstance;
         } catch (\PDOException|\Exception|\Throwable $exception) {
             if ($autoConnection) {
-                $this->log('Connect failed, try to connect once again', 'Connect failed, errorMsg=' . $exception->getMessage());
+                $this->log('DB Connect failed, try to connect again', 'Connect failed, errorMsg=' . $exception->getMessage());
                 $force = false;
                 // no start transaction
                 if(empty($this->transTimes)) {
@@ -365,12 +362,9 @@ abstract class PDOConnection implements ConnectionInterface
         // 记录SQL语句
         $this->queryStr = $sql;
         $this->bind = $bindParams;
-        $readSql = "";
         try {
-            if ($this->debug) {
+            if ($this->isEnableDebug()) {
                 $queryStartTime = microtime(true);
-                $readSql = $this->getRealSql($this->queryStr, $this->bind);
-                $this->log('Execute sql start', "sql={$readSql},bindParams=" . json_encode($bindParams, JSON_UNESCAPED_UNICODE));
             }
             // 预处理
             $this->PDOStatement = $this->PDOInstance->prepare($sql);
@@ -390,18 +384,8 @@ abstract class PDOConnection implements ConnectionInterface
                 return $this->close()->PDOStatementHandle($sql, $bindParams);
             }
             throw $e;
-        } catch (\Exception|\Throwable $t) {
-            $this->log('Execute sql error', $t->getMessage());
-            throw $t;
-        } finally {
-            if ($this->debug) {
-                if (count($this->excelSqlArr) <= 100) {
-                    if (empty($readSql)) {
-                        $readSql = $this->getRealSql($this->queryStr, $this->bind);
-                    }
-                    $this->excelSqlArr[] = $readSql;
-                }
-            }
+        } catch (\Exception|\Throwable $exception) {
+            throw $exception;
         }
     }
 
@@ -1377,16 +1361,17 @@ abstract class PDOConnection implements ConnectionInterface
         $queryEndTime = microtime(true);
         $runTime = number_format(($queryEndTime - $queryStartTime),6);
 
-        if ($this->debug) {
-            $this->log('Execute sql end', 'Execute successful, Execute time=' . $runTime);
+        if ($this->isEnableDebug()) {
             // sql log
-            $realSql = $this->getRealSql($this->queryStr, $this->bind);
+            $realSql  = $this->getRealSql($this->queryStr, $this->bind);
+            $this->log("Execute Sql[{$runTime}s]", sprintf("%s", $realSql));
+
             $dateTime = date('Y-m-d H:i:s');
             if($this->isCoroutine()) {
                 $cid = \Swoole\Coroutine::getCid();
                 $traceId = '';
-                if (\Swoolefy\Core\Coroutine\Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
-                    $traceId = \Swoolefy\Core\Coroutine\Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
+                if (SwooleContext::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+                    $traceId = SwooleContext::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
                 }
                 $sqlFlag = "sql-cid-{$cid}";
                 $logger = LogManager::getInstance()->getLogger(LogManager::SQL_LOG);
@@ -1430,11 +1415,11 @@ abstract class PDOConnection implements ConnectionInterface
         if (empty($fn)) {
             return;
         }
-        if (class_exists('swoole\\Coroutine') && \Swoole\Coroutine::getCid() > 0) {
+        if (class_exists('swoole\\Coroutine') && \Swoole\Coroutine::getCid() >= 0) {
             goApp(function () use($realRunTime, $realSql) {
                 $traceId = '';
-                if (\Swoolefy\Core\Coroutine\Context::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
-                    $traceId = \Swoolefy\Core\Coroutine\Context::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
+                if (SwooleContext::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
+                    $traceId = SwooleContext::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
                 }
                 try {
                     $fn = static::$slowSqlNoticeCallback['fn'];
@@ -1459,24 +1444,12 @@ abstract class PDOConnection implements ConnectionInterface
      */
     protected function log(string $action, string $msg = ''): void
     {
-        if ($this->debug) {
-            $spendLogLimit = $this->config['spend_log_limit'] ?? 0;
-            //使用连接池的话，可能会将多次的执行sql流程存在log中，没有释放，此时看到的sql流程就不准确了,或者清空了前面的
-            if ($spendLogLimit) {
-                if (count($this->lastLogs) > $spendLogLimit) {
-                    $this->lastLogs = [];
-                }
-                $this->lastLogs[] = ['time' => date('Y-m-d, H:i:s'), 'action' => $action, 'msg' => $msg];
+        if ($this->isEnableDebug() && (!empty($this->config['print_sql']) || $this->dynamicDebug)) {
+            if (str_contains($msg, 'SHOW FULL COLUMNS')) {
+                return;
             }
+            fmtPrintInfo(sprintf('[cid=%d] %s: %s', \Swoole\Coroutine::getCid(), $action, $msg));
         }
-    }
-
-    /**
-     * @return int|mixed
-     */
-    public function isDebug()
-    {
-        return $this->debug;
     }
 
     /**
@@ -1486,16 +1459,6 @@ abstract class PDOConnection implements ConnectionInterface
     public function getLastLogs(): array
     {
         return $this->lastLogs;
-    }
-
-    /**
-     * 获取执行的sql，最大限制500条，有些循环执行的数量可能会很大，后面就忽略，防止oom，主要调试用
-     *
-     * @return array
-     */
-    public function getExcelSqls()
-    {
-        return $this->excelSqlArr;
     }
 
     /**

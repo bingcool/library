@@ -29,34 +29,35 @@ class AmqpDelayDirectQueue extends AmqpAbstract {
     public function publish(AMQPMessage $message, bool $mandatory = false, bool $immediate = false, $ticket = null)
     {
         if (empty($this->amqpConfig->routingKey) || empty($this->amqpConfig->bindingKey)) {
+            throw new AmqpException('Empty routingKey or empty bindingKey');
+        }
+
+        if ($this->amqpConfig->routingKey != $this->amqpConfig->bindingKey) {
             throw new AmqpException('Amqp Direct routingKey != bindingKey');
         }
 
-        if($this->amqpConfig->routingKey != $this->amqpConfig->bindingKey) {
-            throw new AmqpException('Amqp Direct routingKey != bindingKey');
-        }
-
-        if(empty($this->channel)) {
+        if (empty($this->channel)) {
             $this->channel = $this->amqpConnection->channel();
         }
 
-        if($this->ackHandler) {
+        if ($this->ackHandler) {
             $this->channel->set_ack_handler($this->ackHandler);
         }
 
-        if($this->nackHandler) {
+        if ($this->nackHandler) {
             $this->channel->set_nack_handler($this->nackHandler);
         }
 
-        if($this->ackHandler || $this->nackHandler) {
+        if ($this->ackHandler || $this->nackHandler) {
             $this->channel->confirm_select(false);
         }
 
-        // 声明延迟队列
+        // 声明延迟(死信)队列
         $this->exchangeDeclareDelay();
         $this->queueDeclareDelay();
         $this->queueBindDelay();
 
+        // 声明业务队列(不消费业务队列，等ttl到期自动转发到死信队列)
         $this->exchangeDeclare();
         $this->queueDeclare();
         $this->queueBind();

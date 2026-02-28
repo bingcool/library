@@ -179,7 +179,7 @@ trait AmqpTrait
                 $arguments['x-dead-letter-exchange'] = $this->amqpConfig->arguments['x-dead-letter-exchange'];
             }
 
-            if(isset($this->amqpConfig->arguments['x-dead-letter-routing-key'])) {
+            if(isset($this->amqpConfig->arguments['x-dead-letter-routing-key']) && !empty($this->amqpConfig->arguments['x-dead-letter-routing-key'])) {
                 $arguments['x-dead-letter-routing-key'] = $this->amqpConfig->arguments['x-dead-letter-routing-key'];
             }
 

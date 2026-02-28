@@ -44,11 +44,12 @@ class AmqpDelayTopicQueue extends AmqpTopicAbstract {
             $this->channel->confirm_select(false);
         }
 
-        // 声明延迟队列
+        // 声明延迟(死信)队列
         $this->exchangeDeclareDelay();
         $this->queueDeclareDelay();
         $this->queueBindDelay();
 
+        // 声明业务队列(不消费业务队列，等ttl到期自动转发到死信队列)
         $this->exchangeDeclare();
         $this->queueDeclare();
         $this->queueBind();

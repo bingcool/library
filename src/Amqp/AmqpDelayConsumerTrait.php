@@ -171,10 +171,13 @@ trait AmqpDelayConsumerTrait
     protected function queueBindDelay()
     {
         if (isset($this->amqpConfig->arguments['x-dead-letter-queue'])) {
+            $bindingKey = !empty($this->amqpConfig->arguments['x-dead-letter-routing-key']) ?
+                $this->amqpConfig->arguments['x-dead-letter-routing-key'] :
+                $this->amqpConfig->bindingKey;
             $this->channel->queue_bind(
                 $this->amqpConfig->arguments['x-dead-letter-queue'],
                 $this->amqpConfig->arguments['x-dead-letter-exchange'],
-                $this->amqpConfig->arguments['x-dead-letter-routing-key']
+                $bindingKey,
             );
         }
     }

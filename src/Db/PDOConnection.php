@@ -379,7 +379,7 @@ abstract class PDOConnection implements ConnectionInterface
             $this->reConnectTimes = 0;
             return $this->PDOStatement;
         } catch (\PDOException $e) {
-            if ($this->reConnectTimes < 4 && ($this->isBreak($e) || $e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013)) {
+            if ($this->transTimes <= 0 && $this->reConnectTimes < 4 && ($this->isBreak($e) || ($e->errorInfo[1] ?? null) == 2006 || ($e->errorInfo[1] ?? null) == 2013)) {
                 ++$this->reConnectTimes;
                 return $this->close()->PDOStatementHandle($sql, $bindParams);
             }
@@ -400,12 +400,12 @@ abstract class PDOConnection implements ConnectionInterface
     /**
      * 获取PDO对象
      * @access public
-     * @return \PDO|false
+     * @return \PDO|null
      */
-    public function getPdo(): PDo
+    public function getPdo(): ?PDo
     {
         if (!$this->PDOInstance) {
-            return false;
+            return null;
         }
         return $this->PDOInstance;
     }
@@ -783,6 +783,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function quote(string $string, $parameterType = PDO::PARAM_STR): string
     {
+        $this->initConnect();
         $quoteString = $this->PDOInstance->quote($string, $parameterType);
         if ($quoteString === false) {
             $quoteString = addcslashes(str_replace("'", "''", $string), "\000\n\r\\\032");

@@ -403,9 +403,9 @@ trait WhereQuery
         throw new \Exception('sqlite json_contains not support, please use whereRaw() instead');
     }
 
-    protected function whereOrcaleJsonContains(string $field, $condition, string $logic = 'AND')
+    protected function whereOracleJsonContains(string $field, $condition, string $logic = 'AND')
     {
-        throw new \Exception('sqlite json_contains not support, please use whereRaw() instead');
+        throw new \Exception('oracle json_contains not support, please use whereRaw() instead');
     }
 
     public function whereOrJsonContains(string $field, $condition)

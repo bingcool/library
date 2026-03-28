@@ -68,9 +68,9 @@ trait Expression
     public function getExpFields()
     {
         $fields = [];
-        foreach ($this->expressionFields as $field) {
-            $fieldArr = explode('@', $field);
-            $fields[] = $fieldArr[1];
+        foreach ($this->expressionFields as $key => $value) {
+            $fieldArr = explode('@', $key);
+            $fields[] = $fieldArr[1] ?? '';
         }
         return array_unique($fields);
     }

@@ -46,7 +46,7 @@ class Db
      * @return BaseQuery
      * @throws DbException
      */
-    public static function __callStatic($method, $args): BaseQuery
+    public static function __callStatic($method, $args)
     {
         $appConf = Swfy::getAppConf();
         if (empty($appConf['default_db'])) {
@@ -54,8 +54,8 @@ class Db
         }
         $name = $appConf['default_db'];
         $query = self::connect($name);
-        $query->{$method}(...$args);
-        return $query;
+        $result = $query->{$method}(...$args);
+        return $result;
     }
 
 }

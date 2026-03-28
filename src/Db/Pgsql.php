@@ -40,8 +40,8 @@ class Pgsql extends PDOConnection
     {
         $dsn = 'pgsql:dbname=' . $this->config['database'] . ';host=' . $this->config['hostname'];
 
-        if (!empty($config['hostport'])) {
-            $dsn .= ';port=' . $config['hostport'];
+        if (!empty($this->config['hostport'])) {
+            $dsn .= ';port=' . $this->config['hostport'];
         }
 
         return $dsn;

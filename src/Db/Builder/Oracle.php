@@ -83,7 +83,7 @@ class Oracle extends AbstractBuilder
 
         if (strpos($key, '->') && false === strpos($key, '(')) {
             // JSON字段支持
-            [$field, $name] = explode($key, '->');
+            [$field, $name] = explode('->', $key, 2);
             $key            = $field . '."' . $name . '"';
         } elseif (strpos($key, '.') && !preg_match('/[,\'\"\(\)\[\s]/', $key)) {
             [$table, $key] = explode('.', $key, 2);

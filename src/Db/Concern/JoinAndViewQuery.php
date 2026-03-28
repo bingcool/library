@@ -79,14 +79,14 @@ trait JoinAndViewQuery
      */
     public function fullJoin($join, string $condition = null, array $bind = [])
     {
-        return $this->join($join, $condition, 'FULL');
+        return $this->join($join, $condition, 'FULL', $bind);
     }
 
     /**
      * 获取Join表名及别名 支持
      * ['prefix_table或者子查询'=>'alias'] 'table alias'
      * @access protected
-     * @param array|string|Raw $join  JION表名
+     * @param array|string|Raw $join  join 表名
      * @param string           $alias 别名
      * @return string|array|\Common\Library\Db\Raw
      */
@@ -113,7 +113,7 @@ trait JoinAndViewQuery
             $table = $join;
         } else {
             // 使用别名
-            if (stripos($join, ' as ') || strpos($join, ' ')) {
+            if (stripos($join, ' as ') !== false || strpos($join, ' ') !== false) {
                 // 使用别名
                 $items = explode(' ', $join);
                 $table = $items[0];
@@ -155,7 +155,7 @@ trait JoinAndViewQuery
         $table  = $this->getJoinTable($join, $alias);
 
         if (true === $field) {
-            $fields = $alias . '.*';
+            $fields = !empty($alias) ? $alias . '.*' : '*';
         } else {
             if (is_string($field)) {
                 $field = explode(',', $field);
@@ -163,14 +163,14 @@ trait JoinAndViewQuery
 
             foreach ($field as $key => $val) {
                 if (is_numeric($key)) {
-                    $fields[] = $alias . '.' . $val;
+                    $fields[] = !empty($alias) ? $alias . '.' . $val : $val;
 
-                    $this->options['map'][$val] = $alias . '.' . $val;
+                    $this->options['map'][$val] = !empty($alias) ? $alias . '.' . $val : $val;
                 } else {
                     if (preg_match('/[,=\.\'\"\(\s]/', $key)) {
                         $name = $key;
                     } else {
-                        $name = $alias . '.' . $key;
+                        $name = !empty($alias) ? $alias . '.' . $key : $key;
                     }
 
                     $fields[] = $name . ' AS ' . $val;
@@ -201,14 +201,19 @@ trait JoinAndViewQuery
     {
         foreach (['AND', 'OR'] as $logic) {
             if (isset($options['where'][$logic])) {
+                $updated = [];
                 foreach ($options['where'][$logic] as $key => $val) {
                     if (array_key_exists($key, $options['map'])) {
-                        array_shift($val);
-                        array_unshift($val, $options['map'][$key]);
-                        $options['where'][$logic][$options['map'][$key]] = $val;
-                        unset($options['where'][$logic][$key]);
+                        if (is_array($val)) {
+                            array_shift($val);
+                            array_unshift($val, $options['map'][$key]);
+                        }
+                        $updated[$options['map'][$key]] = $val;
+                    } else {
+                        $updated[$key] = $val;
                     }
                 }
+                $options['where'][$logic] = $updated;
             }
         }
 

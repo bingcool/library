@@ -308,7 +308,7 @@ trait WhereQuery
         if (is_numeric($condition)) {
             $value1 = '"' . $condition . '"';
             $value2 = (int)$condition;
-            return $this->whereRaw('json_contains(' . $field . ','.'\''.$value1.'\''.') or json_contains(' . $field . ','.'\''.$value2.'\''.')');
+            return $this->whereRaw('json_contains(' . $field . ', ?) or json_contains(' . $field . ', ?)', [$value1, $value2]);
         }else {
             if (is_array($condition)) {
                 $value = json_encode($condition,JSON_UNESCAPED_UNICODE);
@@ -324,7 +324,7 @@ trait WhereQuery
                     $value = '"' . $condition . '"';
                 }
             }
-            return $this->whereRaw('json_contains(' . $field . ','.'\''.$value.'\''.')');
+            return $this->whereRaw('json_contains(' . $field . ', ?)', [$value]);
         }
     }
 
@@ -382,18 +382,18 @@ trait WhereQuery
             $value1 = json_encode($condition, JSON_UNESCAPED_UNICODE);
             if (!empty($condition1)) {
                 $value2 = json_encode($condition1, JSON_UNESCAPED_UNICODE);
-                return $this->whereRaw("{$field} @> '$value1' or {$field} @> '$value2' ");
+                return $this->whereRaw("{$field} @> ?::jsonb or {$field} @> ?::jsonb", [$value1, $value2]);
             }else {
-                return $this->whereRaw("{$field} @> '$value1'");
+                return $this->whereRaw("{$field} @> ?::jsonb", [$value1]);
             }
         }else {
             if (is_numeric($condition) && is_string($condition)) {
                 $value1 = $condition;
                 $value2 = (int)$condition;
-                return $this->whereRaw("{$field} @> '$value1' or {$field} @> $value2 ");
+                return $this->whereRaw("{$field} @> ?::jsonb or {$field} @> ?::jsonb", [$value1, $value2]);
             }else {
                 $value = $condition;
-                return $this->whereRaw("{$field} @> '$value'");
+                return $this->whereRaw("{$field} @> ?::jsonb", [$value]);
             }
         }
     }
@@ -671,24 +671,32 @@ trait WhereQuery
      */
     public function whereGroupField(array $fieldValues, string $logic = 'AND')
     {
+        $bind = [];
         if (isset($fieldValues[0]) && is_array($fieldValues[0])) {
             $fields = array_keys($fieldValues[0]);
             foreach ($fieldValues as $fieldValue) {
-                $values = array_values($fieldValue);
-                $valuesCollection[] = "(".implode(",", $values).")";
+                $placeholders = [];
+                foreach (array_values($fieldValue) as $val) {
+                    $placeholders[] = '?';
+                    $bind[] = $val;
+                }
+                $valuesCollection[] = "(".implode(",", $placeholders).")";
             }
-
         }else {
             $fields = array_keys($fieldValues);
-            $values = array_values($fieldValues);
-            $valuesCollection[] = "(".implode(",", $values).")";
+            $placeholders = [];
+            foreach (array_values($fieldValues) as $val) {
+                $placeholders[] = '?';
+                $bind[] = $val;
+            }
+            $valuesCollection[] = "(".implode(",", $placeholders).")";
         }
 
         if (empty($valuesCollection)) {
             throw new \Exception("whereGroupField fieldValues is empty");
         }
 
-        $this->whereRaw("(".implode(",", $fields).") in (".implode(",", $valuesCollection).")",[], $logic);
+        $this->whereRaw("(".implode(",", $fields).") in (".implode(",", $valuesCollection).")", $bind, $logic);
         return $this;
     }
 

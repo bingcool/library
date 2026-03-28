@@ -406,7 +406,7 @@ trait Attribute
                 break;
             case 'serialize':
                 try {
-                    $value = unserialize($value);
+                    $value = unserialize($value, ['allowed_classes' => false]);
                 } catch (\Exception $e) {
                     $value = null;
                 }

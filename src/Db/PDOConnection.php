@@ -231,7 +231,7 @@ abstract class PDOConnection implements ConnectionInterface
         $this->config = array_merge($this->config, $config);
         $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
         // 全局debug配置
-        $this->debug = (int)$this->config['debug'] ?? 1;
+        $this->debug = (int)($this->config['debug'] ?? 1);
         // 路由动态设置debug
         $this->enableDynamicDebug();
     }
@@ -1379,7 +1379,7 @@ abstract class PDOConnection implements ConnectionInterface
                 if ($logger) {
                     $logFilePath = $logger->getLogFilePath();
                     if (!file_exists($logFilePath)) {
-                        fopen($logFilePath, 'w');
+                        touch($logFilePath);
                     }
                     $sqlLog = "【{$dateTime}】【Runtime:{$runTime}】【X-Trace-Id: {$traceId}】【{$sqlFlag}】: ".$realSql;
                     $logger->info($sqlLog);

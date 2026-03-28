@@ -523,7 +523,7 @@ abstract class AbstractBuilder
 
         // 如果达到最的PHP_INT_MAX,转为string
         if ($bindType == PDO::PARAM_INT) {
-            if (is_numeric($value) && $value >= PHP_INT_MAX) {
+            if (is_numeric($value) && $value > PHP_INT_MAX) {
                 $bindType = PDO::PARAM_STR;
             }
         }

@@ -94,6 +94,7 @@ class Producer extends AbstractKafka
     {
         if (!$this->rdKafkaProducer) {
             $this->rdKafkaProducer = new \RdKafka\Producer($this->conf);
+            $this->rdKafkaProducer->addBrokers($this->metaBrokerList);
         }
         return $this->rdKafkaProducer;
     }
@@ -131,7 +132,6 @@ class Producer extends AbstractKafka
             throw new \RdKafka\Exception('Kafka ProducerKafka Missing topicName');
         }
         $this->getRdKafkaProducer();
-        $this->rdKafkaProducer->addBrokers($this->metaBrokerList);
         $this->producerTopic = $this->getProducerTopic();
         $this->producerTopic->produce($partition, $msgFlag, $payload, $key);
         $this->rdKafkaProducer->poll(0);
@@ -160,7 +160,6 @@ class Producer extends AbstractKafka
             throw new \RdKafka\Exception('Kafka ProducerKafka Missing topicName');
         }
         $this->getRdKafkaProducer();
-        $this->rdKafkaProducer->addBrokers($this->metaBrokerList);
         $this->producerTopic = $this->getProducerTopic();
         $this->producerTopic->producev($partition, $msgFlag, $payload, $key ?? null, $headers ?? null, $timeoutMs ?? null);
         $this->rdKafkaProducer->poll(0);

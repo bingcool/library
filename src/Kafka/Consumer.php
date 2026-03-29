@@ -103,7 +103,7 @@ class Consumer extends AbstractKafka
      */
     protected function getRebalanceCbCallBack(): callable
     {
-        return $callBack = function (\RdKafka\KafkaConsumer $kafka, $err, array $partitions = null) {
+        return function (\RdKafka\KafkaConsumer $kafka, $err, ?array $partitions = null) {
             switch ($err) {
                 case RD_KAFKA_RESP_ERR__ASSIGN_PARTITIONS:
                     $kafka->assign($partitions);
@@ -164,11 +164,10 @@ class Consumer extends AbstractKafka
     /**
      * @param string|null $topicName
      * @return KafkaConsumer
-     * @throws \Throwable
      */
-    public function subject(string $topicName = null)
+    public function subject(?string $topicName = null)
     {
-        if($this->hasSubject) {
+        if ($this->hasSubject) {
             return $this->rdKafkaConsumer;
         }
 
@@ -180,17 +179,15 @@ class Consumer extends AbstractKafka
             $this->topicName = $topicName;
         }
 
-        try {
-            $rdKafkaConsumer = $this->getRdKafkaConsumer();
-            $rdKafkaConsumer->subscribe([$this->topicName]);
-        } catch (\Throwable $throwable) {
-            throw $throwable;
+        if ($this->topicName === '' || $this->topicName === null) {
+            throw new \RdKafka\Exception('Kafka ConsumerKafka Missing TopicName');
         }
 
+        $this->getRdKafkaConsumer();
+        $this->rdKafkaConsumer->subscribe([$this->topicName]);
+
         $this->hasSubject = true;
-        if(empty($this->rdKafkaConsumer)) {
-            $this->rdKafkaConsumer = $rdKafkaConsumer;
-        }
+
         return $this->rdKafkaConsumer;
     }
 
@@ -204,21 +201,14 @@ class Consumer extends AbstractKafka
     }
 
     /**
-     * setTopicConfToConf
-     * @return void
-     */
-    protected function setTopicConfToConf()
-    {
-        $topicConf = $this->getTopicConf();
-        //$this->conf->setDefaultTopicConf($topicConf);
-    }
-
-    /**
      * @return KafkaConsumer
      */
     protected function getRdKafkaConsumer()
     {
-        $this->setTopicConfToConf();
+        $topicConf = $this->getTopicConf();
+        if (method_exists($this->conf, 'setDefaultTopicConf')) {
+            $this->conf->setDefaultTopicConf($topicConf);
+        }
         $this->rdKafkaConsumer = new KafkaConsumer($this->conf);
         return $this->rdKafkaConsumer;
     }

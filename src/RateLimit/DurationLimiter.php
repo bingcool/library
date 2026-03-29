@@ -14,6 +14,9 @@ namespace Common\Library\RateLimit;
 use Common\Library\Redis\RedisConnection;
 use Common\Library\Exception\RateLimitException;
 
+/**
+ * 滑动窗口限流
+ */
 class DurationLimiter
 {
     /**
@@ -90,43 +93,37 @@ class DurationLimiter
             throw new RateLimitException("RateLimit Missing Params");
         }
 
-        $requireId = $this->getRequireId();
-
         if ($this->isPredisDriver) {
-            $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $this->windowSizeTime, $this->limitNum, $requireId]);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), 1, ...[$this->rateKey, $this->windowSizeTime, $this->limitNum]);
         } else {
-            $isLimit = $this->redis->eval($this->getLuaLimitScript(), [$this->rateKey, $this->windowSizeTime, $this->limitNum, $requireId], 1);
+            $isLimit = $this->redis->eval($this->getLuaLimitScript(), [$this->rateKey, $this->windowSizeTime, $this->limitNum], 1);
         }
 
         return (bool)$isLimit;
     }
 
     /**
-     * 获取当前窗口内的请求数
+     * 获取当前窗口内的请求数（通过 Lua 脚本保证时间一致性）
      * @return int
+     * @throws RateLimitException
      */
     public function getCurrentCount(): int
     {
-        $timeStamp = $this->redis->time();
-        $second = intval($timeStamp[0]);
-        $msecond = substr($timeStamp[1], 0, 4);
+        if (empty($this->rateKey)) {
+            throw new RateLimitException("RateKey Missing Setting rateKey");
+        }
 
-        $windowEndMilliSecond = $second * 10000 + intval($msecond);
-        $startMilliSecond = $second - $this->windowSizeTime;
-        $windowStartMilliSecond = $startMilliSecond * 10000 + intval($msecond);
+        if (empty($this->windowSizeTime)) {
+            throw new RateLimitException("RateLimit Missing Params");
+        }
 
-        $count = $this->redis->zCount($this->rateKey, $windowStartMilliSecond, $windowEndMilliSecond);
+        if ($this->isPredisDriver) {
+            $count = $this->redis->eval($this->getLuaCountScript(), 1, ...[$this->rateKey, $this->windowSizeTime]);
+        } else {
+            $count = $this->redis->eval($this->getLuaCountScript(), [$this->rateKey, $this->windowSizeTime], 1);
+        }
+
         return (int)$count;
-    }
-
-    /**
-     * @return int
-     */
-    protected function getRequireId()
-    {
-        $key = self::PREFIX_LIMIT . 'unique_req_id';
-        $redisIncrement = new \Common\Library\Uuid\UuidIncrement($this->redis, $key);
-        return $redisIncrement->getIncrId();
     }
 
     /**
@@ -138,41 +135,62 @@ class DurationLimiter
 local rateKey = KEYS[1];
 local windowSizeTime = tonumber(ARGV[1]);
 local limitNum = tonumber(ARGV[2]);
-local requireId = tostring(ARGV[3]);
 
 local timeStamp = redis.call('TIME');
 local second = tonumber(timeStamp[1]);
-local tempMsecond = string.sub(timeStamp[2], 1, 4);
-local msecond = tonumber(tempMsecond);
+local microFraction = tonumber(string.sub(timeStamp[2], 1, 4));
 
--- 计算窗口结束时间(当前时间)
-local windowEndMilliSecond = second * 10000 + msecond;
-
--- 计算窗口开始时间(当前时间减去窗口大小)
-local windowStartMilliSecond = (second - windowSizeTime) * 10000 + msecond;
-
--- Not EXISTS Key
-if redis.call('EXISTS', rateKey) == 0 then
-    redis.call('EXPIRE', rateKey, 24 * 3600)
-end
+-- 计算窗口分数：秒 * 10000 + 微秒前4位，精度为万分之一秒
+local windowEndScore = second * 10000 + microFraction;
+local windowStartScore = (second - windowSizeTime) * 10000 + microFraction;
 
 -- 删除窗口外的过期数据
-redis.call('zRemRangeByScore', rateKey, '-inf', windowStartMilliSecond);
+redis.call('ZREMRANGEBYSCORE', rateKey, '-inf', windowStartScore);
 
--- get in limit time count
-local count = redis.call('zCount', rateKey, windowStartMilliSecond, windowEndMilliSecond);
+-- 获取窗口内请求计数
+local count = redis.call('ZCARD', rateKey);
 
--- can access rate limit
+-- 判断是否超出限流阈值
 if (count < limitNum) then
-    redis.call('zAdd', rateKey, windowEndMilliSecond, requireId);
+    -- 使用 当前时间分数:计数 作为唯一 member，避免额外的 Redis 调用
+    local uniqueMember = tostring(windowEndScore) .. ':' .. tostring(count);
+    redis.call('ZADD', rateKey, windowEndScore, uniqueMember);
+    -- 动态 TTL: 窗口大小 * 2，避免固定24小时浪费内存
+    redis.call('EXPIRE', rateKey, windowSizeTime * 2);
     return 0;
-else 
+else
+    redis.call('EXPIRE', rateKey, windowSizeTime * 2);
     return 1;
 end;
 
 LUA;
         return $lua;
+    }
 
+    /**
+     * 获取当前窗口请求数的 Lua 脚本
+     * @return string
+     */
+    protected function getLuaCountScript()
+    {
+        $lua = <<<LUA
+local rateKey = KEYS[1];
+local windowSizeTime = tonumber(ARGV[1]);
+
+local timeStamp = redis.call('TIME');
+local second = tonumber(timeStamp[1]);
+local microFraction = tonumber(string.sub(timeStamp[2], 1, 4));
+
+local windowStartScore = (second - windowSizeTime) * 10000 + microFraction;
+
+-- 删除窗口外的过期数据
+redis.call('ZREMRANGEBYSCORE', rateKey, '-inf', windowStartScore);
+
+-- 返回窗口内的请求数
+return redis.call('ZCARD', rateKey);
+
+LUA;
+        return $lua;
     }
 
     /**

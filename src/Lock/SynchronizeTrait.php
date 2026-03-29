@@ -29,9 +29,8 @@ trait SynchronizeTrait
         $codeResult = null;
         $waitChannel = new Coroutine\Channel(1);
         $resultChannel = new Coroutine\Channel(1);
-        $returnResultBoolFlag = false;
         try {
-            goApp(function () use ($fn, $waitChannel, $resultChannel, &$returnResultBoolFlag) {
+            goApp(function () use ($fn, $waitChannel, $resultChannel) {
                 Coroutine::defer(function () use ($waitChannel, $resultChannel) {
                     try {
                         $this->releaseLock();
@@ -42,13 +41,10 @@ trait SynchronizeTrait
 
                 try {
                     $codeResult = $fn($this);
-                    if (is_bool($codeResult)) {
-                        $codeResult = intval($codeResult);
-                        $returnResultBoolFlag = true;
-                    }
-                    $resultChannel->push($codeResult, 0.1);
+                    // 用数组包装结果，防止 null/false 等值无法通过 channel push
+                    $resultChannel->push(['result' => $codeResult ?? null], 0.1);
                 } catch (\Throwable $exception) {
-                    $resultChannel->push($exception);
+                    $resultChannel->push(['result' => $exception], 0.1);
                 }
             });
         } catch (\Throwable $e) {
@@ -67,25 +63,21 @@ trait SynchronizeTrait
         $waitChannel->pop($this->timeOut);
         $maxRetries = 5;
         $loopTimes = 0;
+        $wrapped = false;
         do {
             if ($resultChannel->length() > 0) {
-                $codeResult = $resultChannel->pop(0.1);
+                $wrapped = $resultChannel->pop(0.1);
                 break;
             }
-            $codeResult = $resultChannel->pop($this->timeOut);
-            if ($codeResult !== false) {
+            $wrapped = $resultChannel->pop($this->timeOut);
+            if ($wrapped !== false) {
                 break;
             }
             $loopTimes++;
         } while ($loopTimes < $maxRetries);
 
-        if ($returnResultBoolFlag === true) {
-            if ($codeResult === 1) {
-                $codeResult = true;
-            } else {
-                $codeResult = false;
-            }
-        }
+        // 从包装数组中解出实际结果
+        $codeResult = is_array($wrapped) && array_key_exists('result', $wrapped) ? $wrapped['result'] : null;
 
         if ($codeResult instanceof \Throwable) {
             throw $codeResult;

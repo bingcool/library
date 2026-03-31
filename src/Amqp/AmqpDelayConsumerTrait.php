@@ -54,6 +54,10 @@ trait AmqpDelayConsumerTrait
             try {
                 if (!$this->amqpConnection->isConnected()) {
                     $this->amqpConnection->reconnect();
+                    $this->channel = null;
+                }
+
+                if(empty($this->channel)) {
                     $this->channel = $this->amqpConnection->channel();
                 }
 

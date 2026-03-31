@@ -133,16 +133,23 @@ trait AmqpTrait
 
     /**
      * @return void
-     * @throws \Exception
      */
     protected function close()
     {
-        if (!empty($this->channel)) {
-            $this->channel->close();
+        try {
+            if (!empty($this->channel)) {
+                $this->channel->close();
+            }
+        } catch (\Throwable $e) {
+            // ignore close channel exception
         }
 
-        if (!empty($this->amqpConnection)) {
-            $this->amqpConnection->close();
+        try {
+            if (!empty($this->amqpConnection)) {
+                $this->amqpConnection->close();
+            }
+        } catch (\Throwable $e) {
+            // ignore close connection exception
         }
     }
 

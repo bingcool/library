@@ -53,7 +53,7 @@ trait AmqpConsumerTrait
             try {
                 if (!$this->amqpConnection->isConnected()) {
                     $this->amqpConnection->reconnect();
-                    $this->channel = $this->amqpConnection->channel();
+                    $this->channel = null;
                 }
 
                 if(empty($this->channel)) {

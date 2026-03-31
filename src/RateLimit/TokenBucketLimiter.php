@@ -65,6 +65,16 @@ class TokenBucketLimiter
     protected $isPredisDriver = false;
 
     /**
+     * @var string|null
+     */
+    protected $cachedLuaLimitScript;
+
+    /**
+     * @var string|null
+     */
+    protected $cachedLuaTokensScript;
+
+    /**
      * TokenBucketLimiter constructor.
      * @param RedisConnection $redis
      */
@@ -90,6 +100,12 @@ class TokenBucketLimiter
      */
     public function setLimitParams(int $capacity, float $rate)
     {
+        if ($capacity < 1) {
+            throw new RateLimitException('RateLimit capacity must be at least 1');
+        }
+        if ($rate <= 0) {
+            throw new RateLimitException('RateLimit rate must be greater than 0');
+        }
         $this->capacity = $capacity;
         $this->rate = $rate;
     }
@@ -103,31 +119,16 @@ class TokenBucketLimiter
      */
     public function isLimit(int $tokens = 1): bool
     {
-        if (empty($this->rateKey)) {
-            throw new RateLimitException("RateKey Missing Setting rateKey");
-        }
-
-        if (empty($this->capacity) || empty($this->rate)) {
-            throw new RateLimitException("RateLimit Missing Params");
-        }
+        $this->assertConfigured();
 
         if ($tokens < 1) {
             throw new RateLimitException("RateLimit tokens must be at least 1");
         }
 
-        if ($this->isPredisDriver) {
-            $isLimit = $this->redis->eval(
-                $this->getLuaLimitScript(),
-                1,
-                ...[$this->rateKey, $this->capacity, $this->rate, $tokens]
-            );
-        } else {
-            $isLimit = $this->redis->eval(
-                $this->getLuaLimitScript(),
-                [$this->rateKey, $this->capacity, $this->rate, $tokens],
-                1
-            );
-        }
+        $isLimit = $this->evalScript(
+            $this->getLuaLimitScript(),
+            [$this->rateKey, $this->capacity, $this->rate, $tokens]
+        );
 
         return (bool)$isLimit;
     }
@@ -140,26 +141,14 @@ class TokenBucketLimiter
      */
     public function getCurrentTokens(): float
     {
-        if (empty($this->rateKey)) {
-            throw new RateLimitException("RateKey Missing Setting rateKey");
-        }
+        $this->assertConfigured();
 
-        if (empty($this->capacity) || empty($this->rate)) {
-            throw new RateLimitException("RateLimit Missing Params");
-        }
-
-        if ($this->isPredisDriver) {
-            $result = $this->redis->eval(
-                $this->getLuaTokensScript(),
-                1,
-                ...[$this->rateKey, $this->capacity, $this->rate]
-            );
-        } else {
-            $result = $this->redis->eval(
-                $this->getLuaTokensScript(),
-                [$this->rateKey, $this->capacity, $this->rate],
-                1
-            );
+        $result = $this->evalScript(
+            $this->getLuaTokensScript(),
+            [$this->rateKey, $this->capacity, $this->rate]
+        );
+        if ($result === false || $result === null) {
+            throw new RateLimitException('Redis eval failed for token bucket query');
         }
 
         return round((float)$result, 4);
@@ -177,7 +166,11 @@ class TokenBucketLimiter
      */
     public function getLuaLimitScript()
     {
-        $lua = <<<'LUA'
+        if ($this->cachedLuaLimitScript !== null) {
+            return $this->cachedLuaLimitScript;
+        }
+
+        $this->cachedLuaLimitScript = <<<'LUA'
 local rateKey = KEYS[1];
 local capacity = tonumber(ARGV[1]);
 local rate = tonumber(ARGV[2]);
@@ -225,7 +218,8 @@ else
     return 1;
 end
 LUA;
-        return $lua;
+
+        return $this->cachedLuaLimitScript;
     }
 
     /**
@@ -239,7 +233,11 @@ LUA;
      */
     protected function getLuaTokensScript()
     {
-        $lua = <<<'LUA'
+        if ($this->cachedLuaTokensScript !== null) {
+            return $this->cachedLuaTokensScript;
+        }
+
+        $this->cachedLuaTokensScript = <<<'LUA'
 local rateKey = KEYS[1];
 local capacity = tonumber(ARGV[1]);
 local rate = tonumber(ARGV[2]);
@@ -262,7 +260,37 @@ local newTokens = math.min(capacity, currentTokens + elapsed * rate);
 
 return tostring(newTokens);
 LUA;
-        return $lua;
+
+        return $this->cachedLuaTokensScript;
+    }
+
+    /**
+     * @param string[] $keysAndArgs [KEYS..., ARGV...] with numKeys=1: [key, argv1, argv2, ...]
+     * @return mixed
+     */
+    protected function evalScript(string $script, array $keysAndArgs, int $numKeys = 1)
+    {
+        if ($this->isPredisDriver) {
+            return $this->redis->eval($script, $numKeys, ...$keysAndArgs);
+        }
+
+        return $this->redis->eval($script, $keysAndArgs, $numKeys);
+    }
+
+    /**
+     * @return void
+     */
+    protected function assertConfigured()
+    {
+        if ($this->rateKey === null || $this->rateKey === '') {
+            throw new RateLimitException('RateKey Missing Setting rateKey');
+        }
+        if (!isset($this->capacity, $this->rate)) {
+            throw new RateLimitException('Capacity Missing Params');
+        }
+        if ($this->capacity < 1 || $this->rate <= 0) {
+            throw new RateLimitException('Capacity Params error');
+        }
     }
 
     /**

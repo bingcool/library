@@ -40,7 +40,7 @@ class RedisCache implements CacheInterface
     /**
      * @param string $key
      * @param $value
-     * @param int|null $ttl
+     * @param int|null $ttl 缓存时间-单位秒
      * @return mixed
      */
     public function set(string $key, $value, ?int $ttl = null)
@@ -49,14 +49,10 @@ class RedisCache implements CacheInterface
             $value = json_encode($value, JSON_UNESCAPED_UNICODE);
         }
 
-        if ($this->isPredisDriver) {
-            if (!is_null($ttl)) {
-                $result = $this->driver->setex($key, $ttl, $value);
-            }else {
-                $result = $this->driver->set($key, $value);
-            }
-        }else {
+        if (!is_null($ttl) && $ttl > 0) {
             $result = $this->driver->setex($key, $ttl, $value);
+        } else {
+            $result = $this->driver->set($key, $value);
         }
 
         return $result;
@@ -112,13 +108,32 @@ class RedisCache implements CacheInterface
     }
 
     /**
-     * @param array $values
+     * @param array $values  ['key1' => 'bar', 'key2' => 'bop']
      * @param int|null $ttl
-     * @param bool $isOverwrite // 是否覆盖已设置的key值（即重新设置）
+     * @param bool $isOverwrite 是否覆盖已设置的key值（即重新设置）
      * @return bool
      */
-    public function setMultiple(array $values, ?int $ttl = null, bool $isOverwrite = true)
+    public function setMultiple(array $values, ?int $ttl = null, bool $isOverwrite = true): bool
     {
+        $keys       = array_keys($values);
+        $valueItems = array_values($values);
+        foreach ($valueItems as &$item) {
+            if (is_array($item)) {
+                $item = json_encode($item, JSON_UNESCAPED_UNICODE);
+            }
+        }
+
+        // TTL 为 null 时，不使用 Lua 脚本，直接批量设置
+        if (is_null($ttl)) {
+            if($isOverwrite) {
+                $this->driver->mset(array_combine($keys, $valueItems));
+            }else {
+                $this->driver->msetnx(array_combine($keys, $valueItems));
+            }
+            return true;
+        }
+
+        // TTL 有值时使用 Lua 脚本保证原子性
         if ($isOverwrite) {
             $luaScript = <<<LUA
         for i = 1, #KEYS do
@@ -137,13 +152,6 @@ LUA;
         end
         return 'OK'
 LUA;
-        }
-        $keys       = array_keys($values);
-        $valueItems = array_values($values);
-        foreach ($valueItems as &$item) {
-            if (is_array($item)) {
-                $item = json_encode($item, JSON_UNESCAPED_UNICODE);
-            }
         }
         $args       = array_merge($valueItems, [$ttl]);
         $mixedArgs  = array_merge($keys, $args);
@@ -179,7 +187,16 @@ LUA;
      */
     public function has(string $key): int
     {
-        return $this->driver->exists($key);
+        if ($this->isPredisDriver) {
+            return $this->driver->exists($key);
+        } else {
+            $result = $this->driver->exists($key);
+            if (is_numeric($result)) {
+                return $result;
+            } else {
+                return 0;
+            }
+        }
     }
 
     /**

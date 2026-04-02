@@ -178,7 +178,7 @@ class Queue
 
     /**
      * @param array $data
-     * @param int $delayTime
+     * @param int $delayTime 单位秒
      * @return void
      */
     public function retry(array $data, int $delayTime = 10)
@@ -194,7 +194,7 @@ class Queue
 
         if (!isset($data['__retry_num'])) {
             $data['__retry_num'] = 1;
-        }else {
+        } else {
             $retryNum = $data['__retry_num'];
             $data['__retry_num'] = $retryNum + 1;
         }

@@ -61,7 +61,7 @@ class ConfigListener
                                  */
                                  $logger = $this->client->getLogger();
                                  if (is_object($logger)) {
-                                     $logger->error(LogLevel::ERROR, sprintf('Nacos pull failed: %s', $e), [], $e);
+                                     $logger->error(sprintf('Nacos pull failed: %s', $e->getMessage()));
                                  }
                             }
                         }
@@ -100,7 +100,7 @@ class ConfigListener
                     }
                 }
             }
-            $result = $configProvider->listen($request, $timeout ?? $listenerConfig->getTimeout());
+            $result = $configProvider->listen($request, 10000 ?? $listenerConfig->getTimeout());
             foreach ($result as $item) {
                 if ($item->getChanged()) {
                     $dataId = $item->getDataId();
@@ -126,7 +126,7 @@ class ConfigListener
              */
             $logger = $this->client->getLogger();
             if (is_object($logger)) {
-                $logger->error(LogLevel::ERROR, sprintf('Nacos listen failed: %s', $th), [], $th);
+                $logger->error(sprintf('Nacos listen failed: %s', $th->getMessage()));
             }
             return false;
         }

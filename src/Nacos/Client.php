@@ -19,7 +19,6 @@ use Common\Library\Nacos\Provider\Operator\OperatorProvider;
 use Common\Library\Nacos\Provider\Service\ServiceProvider;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
-use Psr\Log\LoggerInterface;
 use Swoolefy\Util\Log;
 
 /**
@@ -142,7 +141,7 @@ class Client
                 json_encode($params, \JSON_PRETTY_PRINT),
             ), 0, $e);
         }
-
+        
         if (HttpStatus::OK !== $httpResponse->getStatusCode()) {
             $body = $httpResponse->body();
             $result = json_decode($body, true);

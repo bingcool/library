@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Redis;
+namespace Swoolefy\Library\Redis;
 
 /**
  * Class RedisConnection
- * @package Common\Library\Redis
+ * @package Swoolefy\Library\Redis
  */
 class RedisConnection
 {

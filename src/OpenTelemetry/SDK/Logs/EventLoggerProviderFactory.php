@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
-use Common\Library\OpenTelemetry\SDK\Sdk;
+use Swoolefy\Library\OpenTelemetry\SDK\Sdk;
 
 /**
  * @deprecated

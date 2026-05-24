@@ -9,13 +9,13 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
 use PDO;
 
 /**
  * Class Pgsql
- * @package Common\Library\Db
+ * @package Swoolefy\Library\Db
  */
 class Pgsql extends PDOConnection
 {

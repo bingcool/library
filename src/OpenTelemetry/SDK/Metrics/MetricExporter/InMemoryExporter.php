@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricExporter;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricExporter;
 
 use ArrayObject;
-use Common\Library\OpenTelemetry\SDK\Metrics\AggregationTemporalitySelectorInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\Metric;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricExporterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\PushMetricExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\AggregationTemporalitySelectorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\Metric;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\PushMetricExporterInterface;
 
 /**
  * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk_exporters/in-memory.md

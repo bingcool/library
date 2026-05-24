@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Model;
+namespace Swoolefy\Library\Nacos\Provider\Model;
 
 abstract class BaseRequest
 {

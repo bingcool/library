@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Service\Model;
+namespace Swoolefy\Library\Nacos\Provider\Service\Model;
 
-use Common\Library\Nacos\Model\BaseModel;
+use Swoolefy\Library\Nacos\Model\BaseModel;
 
 class Cluster extends BaseModel
 {

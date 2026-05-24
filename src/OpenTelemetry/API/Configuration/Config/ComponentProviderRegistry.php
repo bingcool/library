@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Configuration\Config;
+namespace Swoolefy\Library\OpenTelemetry\API\Configuration\Config;
 
 use function class_alias;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;

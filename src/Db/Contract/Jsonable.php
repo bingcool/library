@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Contract;
+namespace Swoolefy\Library\Db\Contract;
 
 interface Jsonable
 {

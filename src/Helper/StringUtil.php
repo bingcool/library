@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Helper;
+namespace Swoolefy\Library\Helper;
 
 class StringUtil
 {

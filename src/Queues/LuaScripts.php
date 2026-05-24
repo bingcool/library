@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Queues;
+namespace Swoolefy\Library\Queues;
 
 class LuaScripts
 {

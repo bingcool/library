@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
 use Psr\Log\InvalidArgumentException;
 use Psr\Log\LoggerInterface;

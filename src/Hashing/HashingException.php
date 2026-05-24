@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Hashing;
+namespace Swoolefy\Library\Hashing;
 
-use Common\Library\Exception\CommonException;
+use Swoolefy\Library\Exception\CommonException;
 
 class HashingException extends CommonException
 {

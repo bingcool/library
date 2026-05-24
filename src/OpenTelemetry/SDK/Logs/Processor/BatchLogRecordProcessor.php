@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs\Processor;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs\Processor;
 
 use InvalidArgumentException;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\API\Common\Time\ClockInterface;
-use Common\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\API\Metrics\ObserverInterface;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\LogRecordExporterInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\LogRecordProcessorInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\ReadWriteLogRecord;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\ClockInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObserverInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\LogRecordExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\LogRecordProcessorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\ReadWriteLogRecord;
 use SplQueue;
 use Throwable;
 

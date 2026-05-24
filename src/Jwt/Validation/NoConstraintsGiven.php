@@ -10,9 +10,9 @@
  */
 
 
-namespace Common\Library\Jwt\Validation;
+namespace Swoolefy\Library\Jwt\Validation;
 
-use Common\Library\Jwt\Exception;
+use Swoolefy\Library\Jwt\Exception;
 use RuntimeException;
 
 final class NoConstraintsGiven extends RuntimeException implements Exception

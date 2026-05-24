@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Client;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Client;
 
 use Generator;
 use Http\Discovery\Psr18ClientDiscovery;
-use Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\Buzz;
-use Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\CurlClient;
-use Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\DiscoveryInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\Guzzle;
-use Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\Symfony;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\Buzz;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\CurlClient;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\DiscoveryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\Guzzle;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery\Symfony;
 use Psr\Http\Client\ClientInterface;
 
 class Discovery

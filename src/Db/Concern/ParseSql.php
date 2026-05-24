@@ -9,14 +9,14 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Swoolefy\Library\Db\Concern;
 
-use Common\Library\Db\PDOConnection;
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Db\PDOConnection;
+use Swoolefy\Library\Exception\DbException;
 
 /**
  * Trait ParseSql
- * @package Common\Library\Db\Concern
+ * @package Swoolefy\Library\Db\Concern
  */
 trait ParseSql
 {

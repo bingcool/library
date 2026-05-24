@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
-use Common\Library\OpenTelemetry\API\Common\Time\Clock;
-use Common\Library\OpenTelemetry\API\Logs\EventLoggerInterface;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\Clock;
+use Swoolefy\Library\OpenTelemetry\API\Logs\EventLoggerInterface;
 
 /**
  * @phan-suppress PhanDeprecatedInterface

@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Hashing;
+namespace Swoolefy\Library\Hashing;
 
-use Common\Library\Hashing\Contracts\Hasher as HasherContract;
+use Swoolefy\Library\Hashing\Contracts\Hasher as HasherContract;
 use RuntimeException;
 
 class ArgonHasher extends AbstractHasher implements HasherContract

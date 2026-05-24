@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Time;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Time;
 
-use Common\Library\OpenTelemetry\API\Common\Time\Clock;
-use Common\Library\OpenTelemetry\API\Common\Time\ClockInterface;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\Clock;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\ClockInterface;
 
 /**
- * @deprecated use Common\Library\OpenTelemetry\API\Common\Time\Clock
+ * @deprecated use Swoolefy\Library\OpenTelemetry\API\Common\Time\Clock
  * @codeCoverageIgnore
  */
 class ClockFactory

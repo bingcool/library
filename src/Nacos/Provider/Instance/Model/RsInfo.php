@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Instance\Model;
+namespace Swoolefy\Library\Nacos\Provider\Instance\Model;
 
-use Common\Library\Nacos\Model\BaseModel;
+use Swoolefy\Library\Nacos\Model\BaseModel;
 
 class RsInfo extends BaseModel
 {

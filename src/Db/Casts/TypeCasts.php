@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Casts;
+namespace Swoolefy\Library\Db\Casts;
 
 class TypeCasts
 {

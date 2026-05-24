@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
 /**
  * @todo enum (php >= 8.1)

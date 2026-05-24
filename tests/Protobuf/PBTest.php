@@ -1,9 +1,9 @@
 <?php
 
-namespace Common\Library\Tests\Protobuf;
+namespace Swoolefy\Library\Tests\Protobuf;
 
 use PHPUnit\Framework\TestCase;
-use Common\Library\Protobuf\Serializer;
+use Swoolefy\Library\Protobuf\Serializer;
 
 class PBTest extends TestCase
 {
@@ -14,7 +14,7 @@ class PBTest extends TestCase
     {
         parent::__construct($name, $data, $dataName);
 
-        $this->serializer = new \Common\Library\Protobuf\Serializer();
+        $this->serializer = new \Swoolefy\Library\Protobuf\Serializer();
     }
 
     public function testSerializer()

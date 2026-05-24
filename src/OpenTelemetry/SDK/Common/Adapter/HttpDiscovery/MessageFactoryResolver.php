@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Adapter\HttpDiscovery;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Adapter\HttpDiscovery;
 
 use Http\Discovery\Psr17FactoryDiscovery;
-use Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Message\FactoryResolverInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Message\FactoryResolverInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ServerRequestFactoryInterface;

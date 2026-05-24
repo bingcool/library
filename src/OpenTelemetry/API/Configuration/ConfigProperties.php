@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Configuration;
+namespace Swoolefy\Library\OpenTelemetry\API\Configuration;
 
 interface ConfigProperties
 {

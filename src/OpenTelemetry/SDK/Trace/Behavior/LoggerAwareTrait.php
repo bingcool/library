@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\Behavior;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\Behavior;
 
 use Psr\Log\LoggerAwareTrait as PsrTrait;
 use Psr\Log\LoggerInterface;

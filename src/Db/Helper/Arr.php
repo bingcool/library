@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Helper;
+namespace Swoolefy\Library\Db\Helper;
 
 use ArrayAccess;
 use InvalidArgumentException;
-use Common\Library\Db\Collection;
+use Swoolefy\Library\Db\Collection;
 
 class Arr
 {

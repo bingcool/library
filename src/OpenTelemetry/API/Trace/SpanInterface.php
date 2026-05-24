@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Trace;
+namespace Swoolefy\Library\OpenTelemetry\API\Trace;
 
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\Context\ImplicitContextKeyedInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ImplicitContextKeyedInterface;
 use Throwable;
 
 /**

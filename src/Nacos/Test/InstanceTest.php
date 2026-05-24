@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Test;
+namespace Swoolefy\Library\Nacos\Test;
 
-use Common\Library\Nacos\Provider\Instance\InstanceProvider;
-use Common\Library\Nacos\Provider\Instance\Model\RsInfo;
+use Swoolefy\Library\Nacos\Provider\Instance\InstanceProvider;
+use Swoolefy\Library\Nacos\Provider\Instance\Model\RsInfo;
 
 class InstanceTest extends BaseTest
 {
@@ -70,7 +70,7 @@ class InstanceTest extends BaseTest
             $this->getProvider()->beat(self::SERVICE_NAME, $beat);
             $response = $this->getProvider()->detail(self::IP, self::PORT, self::SERVICE_NAME);
             $this->assertEquals(self::RETURN_SERVICE_NAME, $response->getService());
-        } catch (\Common\Library\Nacos\Exception\NacosApiException $e) {
+        } catch (\Swoolefy\Library\Nacos\Exception\NacosApiException $e) {
             if (str_contains($e->getMessage(), 'no ips found')) {
                 $this->markTestSkipped('Ephemeral instance not visible for detail on this Nacos version');
             }

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\Stream;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream;
 
 use function assert;
 use GMP;
-use Common\Library\OpenTelemetry\SDK\Metrics\AggregationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\AggregationInterface;
 
 /**
  * @internal

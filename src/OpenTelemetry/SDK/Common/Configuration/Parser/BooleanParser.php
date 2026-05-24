@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Configuration\Parser;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Parser;
 
 use InvalidArgumentException;
 

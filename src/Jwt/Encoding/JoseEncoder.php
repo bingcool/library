@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt\Encoding;
+namespace Swoolefy\Library\Jwt\Encoding;
 
 use JsonException;
-use Common\Library\Jwt\Decoder;
-use Common\Library\Jwt\Encoder;
+use Swoolefy\Library\Jwt\Decoder;
+use Swoolefy\Library\Jwt\Encoder;
 
 final class JoseEncoder implements Encoder, Decoder
 {

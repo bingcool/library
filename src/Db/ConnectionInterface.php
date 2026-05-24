@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
 /**
  * Interface ConnectionInterface
- * @package Common\Library\Db
+ * @package Swoolefy\Library\Db
  */
 interface ConnectionInterface
 {

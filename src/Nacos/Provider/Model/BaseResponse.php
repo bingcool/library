@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Model;
+namespace Swoolefy\Library\Nacos\Provider\Model;
 
-use Common\Library\Nacos\Http\HttpResponse;
+use Swoolefy\Library\Nacos\Http\HttpResponse;
 
 abstract class BaseResponse implements \JsonSerializable
 {

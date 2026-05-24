@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Config;
+namespace Swoolefy\Library\Nacos\Provider\Config;
 
 use Psr\Log\LogLevel;
-use Common\Library\Nacos\Client;
-use Common\Library\Nacos\Exception\NacosApiException;
-use Common\Library\Nacos\Exception\NacosException;
-use Common\Library\Nacos\Provider\Config\Model\ListenerConfig;
-use Common\Library\Nacos\Provider\Config\Model\ListenerItem;
-use Common\Library\Nacos\Provider\Config\Model\ListenerRequest;
+use Swoolefy\Library\Nacos\Client;
+use Swoolefy\Library\Nacos\Exception\NacosApiException;
+use Swoolefy\Library\Nacos\Exception\NacosException;
+use Swoolefy\Library\Nacos\Provider\Config\Model\ListenerConfig;
+use Swoolefy\Library\Nacos\Provider\Config\Model\ListenerItem;
+use Swoolefy\Library\Nacos\Provider\Config\Model\ListenerRequest;
 
 class ConfigListener
 {

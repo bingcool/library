@@ -9,18 +9,18 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
 use PDO;
 use PDOStatement;
 use Swoolefy\Core\Log\LogManager;
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Exception\DbException;
 use Swoolefy\Core\Coroutine\Context as SwooleContext;
-use Common\Library\CurlProxy\OpentelemetryMiddleware;
+use Swoolefy\Library\CurlProxy\OpentelemetryMiddleware;
 
 /**
  * Class PDOConnection
- * @package Common\Library\Db
+ * @package Swoolefy\Library\Db
  */
 abstract class PDOConnection implements ConnectionInterface
 {

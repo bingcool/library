@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Swoolefy\Library\Db\Concern;
 
 trait TableFieldInfo
 {

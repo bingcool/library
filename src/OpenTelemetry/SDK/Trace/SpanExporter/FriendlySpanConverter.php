@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\SpanExporter;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporter;
 
-use Common\Library\OpenTelemetry\API\Trace\SpanContextInterface;
-use Common\Library\OpenTelemetry\API\Trace\SpanKind;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Trace\EventInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\LinkInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanDataInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\StatusDataInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanContextInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanKind;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\EventInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\LinkInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanDataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\StatusDataInterface;
 use ReflectionClass;
 
 class FriendlySpanConverter implements SpanConverterInterface

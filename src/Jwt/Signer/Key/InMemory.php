@@ -10,10 +10,10 @@
  */
 
 
-namespace Common\Library\Jwt\Signer\Key;
+namespace Swoolefy\Library\Jwt\Signer\Key;
 
-use Common\Library\Jwt\Encoding\CannotDecodeContent;
-use Common\Library\Jwt\Signer\Key;
+use Swoolefy\Library\Jwt\Encoding\CannotDecodeContent;
+use Swoolefy\Library\Jwt\Signer\Key;
 use SplFileObject;
 use Throwable;
 

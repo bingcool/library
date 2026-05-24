@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Adapter\HttpDiscovery;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Adapter\HttpDiscovery;
 
 use Http\Client\HttpAsyncClient;
 use Http\Discovery\HttpAsyncClientDiscovery;
-use Common\Library\OpenTelemetry\SDK\Common\Http\HttpPlug\Client\ResolverInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Http\HttpPlug\Client\ResolverInterface;
 
 final class HttpPlugClientResolver implements ResolverInterface
 {

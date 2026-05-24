@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Exception;
+namespace Swoolefy\Library\Exception;
 
 class RateLimitException extends CommonException
 {

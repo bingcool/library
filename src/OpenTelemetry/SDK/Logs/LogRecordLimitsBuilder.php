@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
 use const PHP_INT_MAX;
 
 class LogRecordLimitsBuilder

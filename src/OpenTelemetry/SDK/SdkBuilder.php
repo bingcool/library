@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK;
+namespace Swoolefy\Library\OpenTelemetry\SDK;
 
-use Common\Library\OpenTelemetry\API\Instrumentation\Configurator;
-use Common\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Logs\NoopEventLoggerProvider;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\Context\Propagation\NoopTextMapPropagator;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
-use Common\Library\OpenTelemetry\Context\ScopeInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Util\ShutdownHandler;
-use Common\Library\OpenTelemetry\SDK\Logs\LoggerProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\NoopLoggerProvider;
-use Common\Library\OpenTelemetry\SDK\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\NoopMeterProvider;
-use Common\Library\OpenTelemetry\SDK\Trace\NoopTracerProvider;
-use Common\Library\OpenTelemetry\SDK\Trace\TracerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Instrumentation\Configurator;
+use Swoolefy\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\NoopEventLoggerProvider;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\NoopTextMapPropagator;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ScopeInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Util\ShutdownHandler;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\LoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\NoopLoggerProvider;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\NoopMeterProvider;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\NoopTracerProvider;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\TracerProviderInterface;
 
 class SdkBuilder
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Behavior\Internal;
+namespace Swoolefy\Library\OpenTelemetry\API\Behavior\Internal;
 
-use Common\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\LogWriterInterface;
-use Common\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\NoopLogWriter;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\LogWriterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\NoopLogWriter;
 use Psr\Log\LogLevel;
 
 /**

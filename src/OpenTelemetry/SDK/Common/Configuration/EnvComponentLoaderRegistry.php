@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Configuration;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration;
 
 use function array_map;
 use function implode;
 use InvalidArgumentException;
 use LogicException;
-use Common\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvComponentLoader;
-use Common\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvResolver;
-use Common\Library\OpenTelemetry\API\Configuration\Context;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvComponentLoader;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvResolver;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\Context;
 use ReflectionIntersectionType;
 use ReflectionMethod;
 use ReflectionNamedType;

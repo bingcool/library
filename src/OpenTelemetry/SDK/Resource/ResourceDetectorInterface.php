@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Resource;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Resource;
 
 interface ResourceDetectorInterface
 {

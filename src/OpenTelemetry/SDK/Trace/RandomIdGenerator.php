@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace;
 
-use Common\Library\OpenTelemetry\API\Trace\SpanContextValidator;
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanContextValidator;
 use Throwable;
 
 class RandomIdGenerator implements IdGeneratorInterface

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Instrumentation;
+namespace Swoolefy\Library\OpenTelemetry\API\Instrumentation;
 
-use Common\Library\OpenTelemetry\API\Metrics\MeterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\API\Trace\TracerInterface;
-use Common\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TracerInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use Psr\Log\LoggerInterface;
 
 interface InstrumentationInterface

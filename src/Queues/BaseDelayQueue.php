@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Queues;
+namespace Swoolefy\Library\Queues;
 
-use Common\Library\Redis\RedisConnection;
-use Common\Library\Exception\QueueException;
-use Common\Library\Queues\Interfaces\AbstractDelayQueueInterface;
+use Swoolefy\Library\Redis\RedisConnection;
+use Swoolefy\Library\Exception\QueueException;
+use Swoolefy\Library\Queues\Interfaces\AbstractDelayQueueInterface;
 
 class BaseDelayQueue extends AbstractDelayQueueInterface
 {

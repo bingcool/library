@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Swoolefy\Library\Db\Concern;
 
 /**
  * Trait Attribute
- * @package Common\Library\Db\Concern
+ * @package Swoolefy\Library\Db\Concern
  */
 trait Attribute
 {

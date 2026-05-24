@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Instrumentation;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation;
 
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
 
 interface InstrumentationScopeInterface
 {

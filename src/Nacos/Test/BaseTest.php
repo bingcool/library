@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Test;
+namespace Swoolefy\Library\Nacos\Test;
 
 use PHPUnit\Framework\TestCase;
-use Common\Library\Nacos\Client;
-use Common\Library\Nacos\ClientConfig;
+use Swoolefy\Library\Nacos\Client;
+use Swoolefy\Library\Nacos\ClientConfig;
 
 abstract class BaseTest extends TestCase
 {

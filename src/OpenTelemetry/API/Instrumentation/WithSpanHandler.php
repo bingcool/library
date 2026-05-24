@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Instrumentation;
+namespace Swoolefy\Library\OpenTelemetry\API\Instrumentation;
 
-use Common\Library\OpenTelemetry\API\Trace\Span;
-use Common\Library\OpenTelemetry\API\Trace\SpanKind;
-use Common\Library\OpenTelemetry\API\Trace\StatusCode;
-use Common\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\API\Trace\Span;
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanKind;
+use Swoolefy\Library\OpenTelemetry\API\Trace\StatusCode;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
 use Throwable;
 
 /**

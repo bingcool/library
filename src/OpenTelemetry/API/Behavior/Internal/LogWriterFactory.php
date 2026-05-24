@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Behavior\Internal;
+namespace Swoolefy\Library\OpenTelemetry\API\Behavior\Internal;
 
-use Common\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\ErrorLogWriter;
-use Common\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\LogWriterInterface;
-use Common\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\NoopLogWriter;
-use Common\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\Psr3LogWriter;
-use Common\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\StreamLogWriter;
-use Common\Library\OpenTelemetry\API\Instrumentation\ConfigurationResolver;
-use Common\Library\OpenTelemetry\API\LoggerHolder;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\ErrorLogWriter;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\LogWriterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\NoopLogWriter;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\Psr3LogWriter;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\Internal\LogWriter\StreamLogWriter;
+use Swoolefy\Library\OpenTelemetry\API\Instrumentation\ConfigurationResolver;
+use Swoolefy\Library\OpenTelemetry\API\LoggerHolder;
 
 class LogWriterFactory
 {

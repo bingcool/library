@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Uuid;
+namespace Swoolefy\Library\Uuid;
 
-use Common\Library\Redis\RedisConnection;
+use Swoolefy\Library\Redis\RedisConnection;
 
 class UuidIncrement
 {
@@ -202,7 +202,7 @@ class UuidIncrement
      */
     public function isPredisDriver()
     {
-        if ($this->redis instanceof \Common\Library\Redis\Predis) {
+        if ($this->redis instanceof \Swoolefy\Library\Redis\Predis) {
             $this->isPredisDriver = true;
         }
         return $this->isPredisDriver;

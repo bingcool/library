@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Config\Model;
+namespace Swoolefy\Library\Nacos\Provider\Config\Model;
 
-use Common\Library\Nacos\Provider\Model\BaseRequest;
+use Swoolefy\Library\Nacos\Provider\Model\BaseRequest;
 
 class ListenerRequest extends BaseRequest
 {

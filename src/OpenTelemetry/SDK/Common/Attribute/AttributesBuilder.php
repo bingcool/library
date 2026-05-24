@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Attribute;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute;
 
 use function array_key_exists;
 use function count;
 use function is_array;
 use function is_string;
 use function mb_substr;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
 
 /**
  * @internal

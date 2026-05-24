@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Instrumentation;
+namespace Swoolefy\Library\OpenTelemetry\API\Instrumentation;
 
-use Common\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Logs\NoopEventLoggerProvider;
-use Common\Library\OpenTelemetry\API\Logs\NoopLoggerProvider;
-use Common\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\API\Metrics\Noop\NoopMeterProvider;
-use Common\Library\OpenTelemetry\API\Trace\NoopTracerProvider;
-use Common\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\Context\ImplicitContextKeyedInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\NoopTextMapPropagator;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
-use Common\Library\OpenTelemetry\Context\ScopeInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\NoopEventLoggerProvider;
+use Swoolefy\Library\OpenTelemetry\API\Logs\NoopLoggerProvider;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\Noop\NoopMeterProvider;
+use Swoolefy\Library\OpenTelemetry\API\Trace\NoopTracerProvider;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ImplicitContextKeyedInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\NoopTextMapPropagator;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ScopeInterface;
 
 /**
  * Configures the global (context scoped) instrumentation instances.

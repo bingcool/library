@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Export\Stream;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Export\Stream;
 
 use BadMethodCallException;
 use ErrorException;
 use function fflush;
 use function fwrite;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CompletedFuture;
-use Common\Library\OpenTelemetry\SDK\Common\Future\ErrorFuture;
-use Common\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CompletedFuture;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\ErrorFuture;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
 use function restore_error_handler;
 use RuntimeException;
 use function set_error_handler;

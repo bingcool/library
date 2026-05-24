@@ -10,7 +10,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Lock;
+namespace Swoolefy\Library\Lock;
 
 class PredisMutex extends \malkusch\lock\mutex\PredisMutex
 {

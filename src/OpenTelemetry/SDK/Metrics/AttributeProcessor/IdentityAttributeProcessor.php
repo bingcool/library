@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\AttributeProcessor;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\AttributeProcessor;
 
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\AttributeProcessorInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\AttributeProcessorInterface;
 
 /**
  * @internal

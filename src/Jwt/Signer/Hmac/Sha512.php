@@ -10,9 +10,9 @@
  */
 
 
-namespace Common\Library\Jwt\Signer\Hmac;
+namespace Swoolefy\Library\Jwt\Signer\Hmac;
 
-use Common\Library\Jwt\Signer\Hmac;
+use Swoolefy\Library\Jwt\Signer\Hmac;
 
 final class Sha512 extends Hmac
 {

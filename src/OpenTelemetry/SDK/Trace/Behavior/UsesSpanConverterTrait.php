@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\Behavior;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\Behavior;
 
-use Common\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanDataInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporter\NullSpanConverter;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanDataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporter\NullSpanConverter;
 
 trait UsesSpanConverterTrait
 {

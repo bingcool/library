@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Ns;
+namespace Swoolefy\Library\Nacos\Provider\Ns;
 
-use Common\Library\Nacos\Provider\BaseProvider;
-use Common\Library\Nacos\Provider\Ns\Model\NamespaceItem;
-use Common\Library\Nacos\Http\RequestMethod;
+use Swoolefy\Library\Nacos\Provider\BaseProvider;
+use Swoolefy\Library\Nacos\Provider\Ns\Model\NamespaceItem;
+use Swoolefy\Library\Nacos\Http\RequestMethod;
 
 class NamespaceProvider extends BaseProvider
 {

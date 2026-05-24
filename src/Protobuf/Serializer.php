@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Protobuf;
+namespace Swoolefy\Library\Protobuf;
 
 use Google\Protobuf\Any;
 use Google\Protobuf\Descriptor;
@@ -18,7 +18,7 @@ use Google\Protobuf\FieldDescriptor;
 use Google\Protobuf\Internal\Message;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\GPBLabel;
-use Common\Library\Exception\ValidationException;
+use Swoolefy\Library\Exception\ValidationException;
 use RuntimeException;
 
 /**

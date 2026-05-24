@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Encryption\Contracts;
+namespace Swoolefy\Library\Encryption\Contracts;
 
 interface StringEncrypter
 {
@@ -19,7 +19,7 @@ interface StringEncrypter
      * @param  string  $value
      * @return string
      *
-     * @throws \Common\Library\Encryption\Contracts\EncryptException
+     * @throws \Swoolefy\Library\Encryption\Contracts\EncryptException
      */
     public function encryptString($value);
 
@@ -29,7 +29,7 @@ interface StringEncrypter
      * @param  string  $payload
      * @return string
      *
-     * @throws \Common\Library\Encryption\Contracts\DecryptException
+     * @throws \Swoolefy\Library\Encryption\Contracts\DecryptException
      */
     public function decryptString($payload);
 }

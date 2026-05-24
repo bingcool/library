@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Configuration;
+namespace Swoolefy\Library\OpenTelemetry\API\Configuration;
 
 use function class_alias;
-use Common\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Logs\NoopLoggerProvider;
-use Common\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\API\Metrics\Noop\NoopMeterProvider;
-use Common\Library\OpenTelemetry\API\Trace\NoopTracerProvider;
-use Common\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\NoopLoggerProvider;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\Noop\NoopMeterProvider;
+use Swoolefy\Library\OpenTelemetry\API\Trace\NoopTracerProvider;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 

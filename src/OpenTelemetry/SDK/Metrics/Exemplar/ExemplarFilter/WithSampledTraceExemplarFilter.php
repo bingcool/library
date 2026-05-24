@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilter;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilter;
 
-use Common\Library\OpenTelemetry\API\Trace\Span;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\Span;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
 
 /**
  * The exemplar spec is not yet stable, and can change at any time.

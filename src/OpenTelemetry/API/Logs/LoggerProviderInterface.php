@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Logs;
+namespace Swoolefy\Library\OpenTelemetry\API\Logs;
 
 /**
  * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/bridge-api.md#get-a-logger

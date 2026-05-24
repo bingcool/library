@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Context\Propagation;
+namespace Swoolefy\Library\OpenTelemetry\Context\Propagation;
 
 /**
  * Interface for getting values from a carrier.

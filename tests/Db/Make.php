@@ -1,9 +1,9 @@
 <?php
 
-namespace Common\Library\Tests\Db;
+namespace Swoolefy\Library\Tests\Db;
 
-use Common\Library\Db\PDOConnection;
-use Common\Library\Db\Mysql;
+use Swoolefy\Library\Db\PDOConnection;
+use Swoolefy\Library\Db\Mysql;
 use function foo\func;
 
 class Make

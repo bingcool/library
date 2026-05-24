@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
 interface StalenessHandlerFactoryInterface
 {

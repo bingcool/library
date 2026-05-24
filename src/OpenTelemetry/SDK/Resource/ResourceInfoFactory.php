@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Resource;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Resource;
 
 use function in_array;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues as Values;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables as Env;
-use Common\Library\OpenTelemetry\SDK\Registry;
-use Common\Library\OpenTelemetry\SemConv\ResourceAttributes;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues as Values;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables as Env;
+use Swoolefy\Library\OpenTelemetry\SDK\Registry;
+use Swoolefy\Library\OpenTelemetry\SemConv\ResourceAttributes;
 use RuntimeException;
 
 class ResourceInfoFactory

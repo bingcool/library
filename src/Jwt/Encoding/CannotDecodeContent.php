@@ -9,10 +9,10 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt\Encoding;
+namespace Swoolefy\Library\Jwt\Encoding;
 
 use JsonException;
-use Common\Library\Jwt\Exception;
+use Swoolefy\Library\Jwt\Exception;
 use RuntimeException;
 
 final class CannotDecodeContent extends RuntimeException implements Exception

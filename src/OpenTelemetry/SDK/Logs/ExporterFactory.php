@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
 use InvalidArgumentException;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
-use Common\Library\OpenTelemetry\SDK\Logs\Exporter\NoopExporter;
-use Common\Library\OpenTelemetry\SDK\Registry;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\Exporter\NoopExporter;
+use Swoolefy\Library\OpenTelemetry\SDK\Registry;
 
 class ExporterFactory
 {

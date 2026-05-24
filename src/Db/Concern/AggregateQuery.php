@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Swoolefy\Library\Db\Concern;
 
-use Common\Library\Db\Query;
-use Common\Library\Db\Raw;
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Db\Query;
+use Swoolefy\Library\Db\Raw;
+use Swoolefy\Library\Exception\DbException;
 
 /**
  * 聚合查询

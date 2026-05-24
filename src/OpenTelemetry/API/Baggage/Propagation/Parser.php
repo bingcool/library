@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Baggage\Propagation;
+namespace Swoolefy\Library\OpenTelemetry\API\Baggage\Propagation;
 
 use function explode;
-use Common\Library\OpenTelemetry\API\Baggage\BaggageBuilderInterface;
-use Common\Library\OpenTelemetry\API\Baggage\Metadata;
+use Swoolefy\Library\OpenTelemetry\API\Baggage\BaggageBuilderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Baggage\Metadata;
 use function str_replace;
 use function trim;
 use function urldecode;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Http;
+namespace Swoolefy\Library\Nacos\Http;
 
 final class RequestMethod
 {

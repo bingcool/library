@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
 use InvalidArgumentException;
-use Common\Library\OpenTelemetry\API\Signals;
-use Common\Library\OpenTelemetry\SDK\Common\Adapter\HttpDiscovery\MessageFactoryResolver;
-use Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Message\FactoryResolverInterface;
+use Swoolefy\Library\OpenTelemetry\API\Signals;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Adapter\HttpDiscovery\MessageFactoryResolver;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Message\FactoryResolverInterface;
 use Psr\Http\Message\UriInterface;
 
 /**

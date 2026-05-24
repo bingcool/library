@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\Aggregation;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\Aggregation;
 
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\AggregationInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\AggregationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data;
 
 /**
  * @implements AggregationInterface<LastValueSummary>

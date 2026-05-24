@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace;
 
 use InvalidArgumentException;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues as Values;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables as Env;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\ParentBased;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues as Values;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables as Env;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\ParentBased;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
 
 class SamplerFactory
 {

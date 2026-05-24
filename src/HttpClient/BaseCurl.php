@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\HttpClient;
+namespace Swoolefy\Library\HttpClient;
 
 /**
  * Class BaseCurl
- * @package Common\Library\HttpClient
+ * @package Swoolefy\Library\HttpClient
  */
 class BaseCurl
 {

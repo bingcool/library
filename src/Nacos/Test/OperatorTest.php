@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Test;
+namespace Swoolefy\Library\Nacos\Test;
 
-use Common\Library\Nacos\Exception\NacosApiException;
-use Common\Library\Nacos\Provider\Operator\OperatorProvider;
+use Swoolefy\Library\Nacos\Exception\NacosApiException;
+use Swoolefy\Library\Nacos\Provider\Operator\OperatorProvider;
 
 class OperatorTest extends BaseTest
 {

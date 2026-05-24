@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Test;
+namespace Swoolefy\Library\Nacos\Test;
 
-use Common\Library\Nacos\Provider\Service\ServiceProvider;
+use Swoolefy\Library\Nacos\Provider\Service\ServiceProvider;
 
 class ServiceTest extends BaseTest
 {

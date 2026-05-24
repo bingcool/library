@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK;
+namespace Swoolefy\Library\OpenTelemetry\SDK;
 
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\LogRecordExporterFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricExporterFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceDetectorInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporter\SpanExporterFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\LogRecordExporterFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricExporterFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceDetectorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporter\SpanExporterFactoryInterface;
 use RuntimeException;
 use TypeError;
 

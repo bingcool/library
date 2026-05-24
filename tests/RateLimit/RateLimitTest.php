@@ -1,6 +1,6 @@
 <?php
 
-namespace Common\Library\Tests\Test;
+namespace Swoolefy\Library\Tests\Test;
 
 use PHPUnit\Framework\TestCase;
 

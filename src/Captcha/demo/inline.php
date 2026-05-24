@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__.'/../vendor/autoload.php';
 
-use Common\Library\Captcha\CaptchaBuilder;
+use Swoolefy\Library\Captcha\CaptchaBuilder;
 
 $captcha = new CaptchaBuilder();
 $captcha->build();

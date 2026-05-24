@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Operator;
+namespace Swoolefy\Library\Nacos\Provider\Operator;
 
-use Common\Library\Nacos\Provider\BaseProvider;
-use Common\Library\Nacos\Provider\Operator\Model\Leader;
-use Common\Library\Nacos\Provider\Operator\Model\MetricsResponse;
-use Common\Library\Nacos\Provider\Operator\Model\Server;
-use Common\Library\Nacos\Provider\Operator\Model\SwitchesResponse;
-use Common\Library\Nacos\Util\StringUtil;
-use Common\Library\Nacos\Http\RequestMethod;
+use Swoolefy\Library\Nacos\Provider\BaseProvider;
+use Swoolefy\Library\Nacos\Provider\Operator\Model\Leader;
+use Swoolefy\Library\Nacos\Provider\Operator\Model\MetricsResponse;
+use Swoolefy\Library\Nacos\Provider\Operator\Model\Server;
+use Swoolefy\Library\Nacos\Provider\Operator\Model\SwitchesResponse;
+use Swoolefy\Library\Nacos\Util\StringUtil;
+use Swoolefy\Library\Nacos\Http\RequestMethod;
 
 class OperatorProvider extends BaseProvider
 {

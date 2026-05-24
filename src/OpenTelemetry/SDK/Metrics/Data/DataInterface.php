@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\Data;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data;
 
 interface DataInterface
 {

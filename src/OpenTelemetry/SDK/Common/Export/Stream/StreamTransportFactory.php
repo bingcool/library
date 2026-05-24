@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Export\Stream;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Export\Stream;
 
 use ErrorException;
 use function fopen;
 use function implode;
 use function is_resource;
 use LogicException;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
 use function restore_error_handler;
 use function set_error_handler;
 use function sprintf;

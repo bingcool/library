@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\API\Metrics;
 
 interface MeterInterface
 {

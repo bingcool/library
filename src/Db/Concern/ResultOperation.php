@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Swoolefy\Library\Db\Concern;
 
-use Common\Library\Exception\DbNotFoundException;
+use Swoolefy\Library\Exception\DbNotFoundException;
 
 /**
  * 查询数据处理

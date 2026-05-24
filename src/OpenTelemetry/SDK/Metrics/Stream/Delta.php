@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\Stream;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream;
 
 use GMP;
 

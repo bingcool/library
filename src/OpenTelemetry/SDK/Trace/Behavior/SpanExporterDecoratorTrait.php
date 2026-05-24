@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\Behavior;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\Behavior;
 
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanDataInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanDataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
 
 trait SpanExporterDecoratorTrait
 {

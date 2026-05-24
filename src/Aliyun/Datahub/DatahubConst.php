@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Aliyun\Datahub;
+namespace Swoolefy\Library\Aliyun\Datahub;
 
 class DatahubConst
 {

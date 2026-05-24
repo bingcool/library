@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Helper;
+namespace Swoolefy\Library\Db\Helper;
 
 class Str
 {

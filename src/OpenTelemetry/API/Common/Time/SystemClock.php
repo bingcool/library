@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Common\Time;
+namespace Swoolefy\Library\OpenTelemetry\API\Common\Time;
 
 use function hrtime;
 use function microtime;

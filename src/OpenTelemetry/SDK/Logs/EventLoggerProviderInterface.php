@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
-use Common\Library\OpenTelemetry\API\Logs as API;
+use Swoolefy\Library\OpenTelemetry\API\Logs as API;
 
 /**
  * @phan-suppress PhanDeprecatedInterface

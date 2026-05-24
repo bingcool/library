@@ -9,14 +9,14 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\HttpClient;
+namespace Swoolefy\Library\HttpClient;
 
-use Common\Library\Exception\CurlException;
-use Common\Library\Purl\Url;
+use Swoolefy\Library\Exception\CurlException;
+use Swoolefy\Library\Purl\Url;
 
 /**
  * Class CurlHttpClient
- * @package Common\Library\HttpClient
+ * @package Swoolefy\Library\HttpClient
  */
 class CurlHttpClient implements HttpClientInterface
 {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Logs\Map;
+namespace Swoolefy\Library\OpenTelemetry\API\Logs\Map;
 
-use Common\Library\OpenTelemetry\API\Logs\Severity;
+use Swoolefy\Library\OpenTelemetry\API\Logs\Severity;
 
 class Psr3
 {

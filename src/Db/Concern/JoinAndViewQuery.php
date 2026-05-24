@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Swoolefy\Library\Db\Concern;
 
 
-use Common\Library\Db\Raw;
-use Common\Library\Db\SelectorTable;
+use Swoolefy\Library\Db\Raw;
+use Swoolefy\Library\Db\SelectorTable;
 
 /**
  * JOIN和VIEW查询
@@ -88,7 +88,7 @@ trait JoinAndViewQuery
      * @access protected
      * @param array|string|Raw $join  join 表名
      * @param string           $alias 别名
-     * @return string|array|\Common\Library\Db\Raw
+     * @return string|array|\Swoolefy\Library\Db\Raw
      */
     protected function getJoinTable($join, &$alias = null)
     {

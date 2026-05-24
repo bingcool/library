@@ -9,12 +9,12 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Queues;
+namespace Swoolefy\Library\Queues;
 
-use Common\Library\Redis\Redis;
-use Common\Library\Redis\Predis;
-use Common\Library\Redis\RedisConnection;
-use Common\Library\Exception\QueueException;
+use Swoolefy\Library\Redis\Redis;
+use Swoolefy\Library\Redis\Predis;
+use Swoolefy\Library\Redis\RedisConnection;
+use Swoolefy\Library\Exception\QueueException;
 
 class RedisDelayQueue extends BaseDelayQueue
 {
@@ -28,7 +28,7 @@ class RedisDelayQueue extends BaseDelayQueue
     public function __construct(RedisConnection $redis, string $delayKey, ?string $option = null)
     {
         if ($redis instanceof Predis) {
-            throw new QueueException('RedisDelayQueue __construct first argument of redis can not use Common\Library\Redis\Predis');
+            throw new QueueException('RedisDelayQueue __construct first argument of redis can not use Swoolefy\Library\Redis\Predis');
         }
         parent::__construct($redis, $delayKey, $option);
     }

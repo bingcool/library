@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactory;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
-use Common\Library\OpenTelemetry\SDK\Logs\Processor\MultiLogRecordProcessor;
-use Common\Library\OpenTelemetry\SDK\Logs\Processor\NoopLogRecordProcessor;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactory;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\Processor\MultiLogRecordProcessor;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\Processor\NoopLogRecordProcessor;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
 
 class LoggerProviderBuilder
 {

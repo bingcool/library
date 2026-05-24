@@ -1,6 +1,6 @@
 <?php
 
-namespace Common\Library\Tests\Db;
+namespace Swoolefy\Library\Tests\Db;
 
 trait PropertyFormat
 {

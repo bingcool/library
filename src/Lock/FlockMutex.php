@@ -1,6 +1,6 @@
 <?php
 
-namespace Common\Library\Lock;
+namespace Swoolefy\Library\Lock;
 
 /**
  * +----------------------------------------------------------------------

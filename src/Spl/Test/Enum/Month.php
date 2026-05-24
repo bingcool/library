@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Spl\Test\Enum;
+namespace Swoolefy\Library\Spl\Test\Enum;
 
-use Common\Library\Spl\SplEnum;
+use Swoolefy\Library\Spl\SplEnum;
 
 class Month extends SplEnum {
     const JANUARY = 1;

@@ -1,21 +1,21 @@
 <?php
 
-namespace Common\Library\Tests\Uuid;
+namespace Swoolefy\Library\Tests\Uuid;
 
 use PHPUnit\Framework\TestCase;
-use Common\Library\Protobuf\Serializer;
+use Swoolefy\Library\Protobuf\Serializer;
 
 class ClientTest extends TestCase
 {
     public function testRedisIncr()
     {
-        $redis = new \Common\Library\Redis\Predis([
+        $redis = new \Swoolefy\Library\Redis\Predis([
             'scheme' => 'tcp',
             'host' => '127.0.0.1',
             'port' => 6379,
         ]);
 
-        $UUID = new \Common\Library\Uuid\UuidIncrement($redis, 'order_incr_id');
+        $UUID = new \Swoolefy\Library\Uuid\UuidIncrement($redis, 'order_incr_id');
 
         //var_dump($redis->ttl('order_incr_id'));
 
@@ -45,10 +45,10 @@ class ClientTest extends TestCase
     // 批量获取处理
     public function testRedisIncr1()
     {
-//        $redis = new \Common\Library\Redis\Redis();
+//        $redis = new \Swoolefy\Library\Redis\Redis();
 //        $redis->connect('127.0.0.1');
 //
-//        $UUID = new \Common\Library\Uuid\UuidIncrement($redis,'order_incr_id');
+//        $UUID = new \Swoolefy\Library\Uuid\UuidIncrement($redis,'order_incr_id');
 //
 //        // 批量获取，批量处理分配
 //        $list = [

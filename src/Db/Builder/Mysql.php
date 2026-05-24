@@ -9,13 +9,13 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Builder;
+namespace Swoolefy\Library\Db\Builder;
 
 use PDO;
-use Common\Library\Db\AbstractBuilder;
-use Common\Library\Exception\DbException;
-use Common\Library\Db\Query;
-use Common\Library\Db\Raw;
+use Swoolefy\Library\Db\AbstractBuilder;
+use Swoolefy\Library\Exception\DbException;
+use Swoolefy\Library\Db\Query;
+use Swoolefy\Library\Db\Raw;
 
 /**
  * mysql数据库驱动

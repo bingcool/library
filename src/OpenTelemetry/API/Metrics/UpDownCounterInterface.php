@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\API\Metrics;
 
-use Common\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
 
 interface UpDownCounterInterface extends SynchronousInstrument
 {

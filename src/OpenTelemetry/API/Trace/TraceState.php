@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Trace;
+namespace Swoolefy\Library\OpenTelemetry\API\Trace;
 
 use function count;
 use function end;
 use function explode;
 use function key;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
 use function prev;
 use function sprintf;
 use function strlen;

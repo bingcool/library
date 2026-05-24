@@ -10,7 +10,7 @@
  */
 
 
-namespace Common\Library\Jwt\Token;
+namespace Swoolefy\Library\Jwt\Token;
 
 final class DataSet
 {

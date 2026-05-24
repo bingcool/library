@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Auth;
+namespace Swoolefy\Library\Nacos\Provider\Auth;
 
-use Common\Library\Nacos\Client;
-use Common\Library\Nacos\Provider\Auth\Model\LoginResponse;
-use Common\Library\Nacos\Provider\BaseProvider;
-use Common\Library\Nacos\Http\RequestMethod;
+use Swoolefy\Library\Nacos\Client;
+use Swoolefy\Library\Nacos\Provider\Auth\Model\LoginResponse;
+use Swoolefy\Library\Nacos\Provider\BaseProvider;
+use Swoolefy\Library\Nacos\Http\RequestMethod;
 
 class AuthProvider extends BaseProvider
 {

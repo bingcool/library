@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Hashing\Contracts;
+namespace Swoolefy\Library\Hashing\Contracts;
 
 interface Hasher
 {

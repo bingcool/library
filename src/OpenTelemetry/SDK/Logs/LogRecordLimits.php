@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesFactoryInterface;
 
 /**
  * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/sdk.md#logrecord-limits

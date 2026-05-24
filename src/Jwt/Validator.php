@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt;
+namespace Swoolefy\Library\Jwt;
 
-use Common\Library\Jwt\Validation\Constraint;
-use Common\Library\Jwt\Validation\NoConstraintsGiven;
-use Common\Library\Jwt\Validation\RequiredConstraintsViolated;
+use Swoolefy\Library\Jwt\Validation\Constraint;
+use Swoolefy\Library\Jwt\Validation\NoConstraintsGiven;
+use Swoolefy\Library\Jwt\Validation\RequiredConstraintsViolated;
 
 interface Validator
 {

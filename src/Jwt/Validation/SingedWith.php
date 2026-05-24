@@ -10,7 +10,7 @@
  */
 
 
-namespace Common\Library\Jwt\Validation;
+namespace Swoolefy\Library\Jwt\Validation;
 
 interface SignedWith extends Constraint
 {

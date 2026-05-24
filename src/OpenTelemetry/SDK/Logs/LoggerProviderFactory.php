@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactory;
-use Common\Library\OpenTelemetry\SDK\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Sdk;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactory;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Sdk;
 
 class LoggerProviderFactory
 {

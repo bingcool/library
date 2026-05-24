@@ -10,9 +10,9 @@
  */
 
 
-namespace Common\Library\Jwt\Validation;
+namespace Swoolefy\Library\Jwt\Validation;
 
-use Common\Library\Jwt\Token;
+use Swoolefy\Library\Jwt\Token;
 
 interface Constraint
 {

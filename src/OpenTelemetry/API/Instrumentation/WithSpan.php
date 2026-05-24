@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Instrumentation;
+namespace Swoolefy\Library\OpenTelemetry\API\Instrumentation;
 
 use Attribute;
-use Common\Library\OpenTelemetry\API\Trace\SpanKind; //@phan-suppress-current-line PhanUnreferencedUseNormal
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanKind; //@phan-suppress-current-line PhanUnreferencedUseNormal
 
 /**
  * Functions and methods with this attribute will be auto-instrumented

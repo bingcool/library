@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider;
+namespace Swoolefy\Library\Nacos\Provider;
 
-use Common\Library\Nacos\Client;
+use Swoolefy\Library\Nacos\Client;
 
 abstract class BaseProvider
 {

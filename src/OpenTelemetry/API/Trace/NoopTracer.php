@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Trace;
+namespace Swoolefy\Library\OpenTelemetry\API\Trace;
 
-use Common\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
 
 final class NoopTracer implements TracerInterface
 {

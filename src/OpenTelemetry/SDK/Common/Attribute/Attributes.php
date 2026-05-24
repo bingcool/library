@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Attribute;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute;
 
 use function array_key_exists;
 use IteratorAggregate;

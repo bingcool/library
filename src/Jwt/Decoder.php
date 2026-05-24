@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt;
+namespace Swoolefy\Library\Jwt;
 
-use Common\Library\Jwt\Encoding\CannotDecodeContent;
+use Swoolefy\Library\Jwt\Encoding\CannotDecodeContent;
 
 interface Decoder
 {

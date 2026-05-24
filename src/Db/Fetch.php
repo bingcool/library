@@ -9,10 +9,10 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
-use Common\Library\Db\Helper\Str;
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Db\Helper\Str;
+use Swoolefy\Library\Exception\DbException;
 
 /**
  * SQL获取类

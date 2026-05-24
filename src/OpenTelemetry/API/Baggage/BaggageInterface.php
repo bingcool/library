@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Baggage;
+namespace Swoolefy\Library\OpenTelemetry\API\Baggage;
 
-use Common\Library\OpenTelemetry\API\Baggage as API;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\Context\ImplicitContextKeyedInterface;
+use Swoolefy\Library\OpenTelemetry\API\Baggage as API;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ImplicitContextKeyedInterface;
 
 /**
  * @see https://github.com/open-telemetry/opentelemetry-specification/blob/v1.6.1/specification/baggage/api.md#operations

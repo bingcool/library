@@ -10,11 +10,11 @@
  */
 
 
-namespace Common\Library\Jwt\Validation\Constraint;
+namespace Swoolefy\Library\Jwt\Validation\Constraint;
 
-use Common\Library\Jwt\Token;
-use Common\Library\Jwt\Validation\Constraint;
-use Common\Library\Jwt\Validation\ConstraintViolation;
+use Swoolefy\Library\Jwt\Token;
+use Swoolefy\Library\Jwt\Validation\Constraint;
+use Swoolefy\Library\Jwt\Validation\ConstraintViolation;
 
 final class HasClaimWithValue implements Constraint
 {

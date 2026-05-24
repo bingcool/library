@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Message;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Message;
 
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;

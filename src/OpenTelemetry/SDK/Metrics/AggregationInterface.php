@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\DataInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\Exemplar;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\DataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\Exemplar;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
 
 /**
  * @psalm-template T

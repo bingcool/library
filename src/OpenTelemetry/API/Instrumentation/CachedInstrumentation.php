@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Instrumentation;
+namespace Swoolefy\Library\OpenTelemetry\API\Instrumentation;
 
-use Common\Library\OpenTelemetry\API\Globals;
-use Common\Library\OpenTelemetry\API\Logs\EventLoggerInterface;
-use Common\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Logs\LoggerInterface;
-use Common\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Metrics\MeterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\API\Trace\TracerInterface;
-use Common\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Globals;
+use Swoolefy\Library\OpenTelemetry\API\Logs\EventLoggerInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\LoggerInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TracerInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
 use WeakMap;
 
 /**

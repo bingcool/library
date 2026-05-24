@@ -6,7 +6,7 @@ include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 $metaBrokerList = '192.168.99.103:9092';
 $topicName = 'mykafka';
 
-$producer = new \Common\Library\Kafka\Producer($metaBrokerList, $topicName);
+$producer = new \Swoolefy\Library\Kafka\Producer($metaBrokerList, $topicName);
 
 // 可以重新设置注入conf
 //$conf = new \RdKafka\Conf();

@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Pool;
+namespace Swoolefy\Library\Pool;
 
 class BasePool extends \Swoole\ConnectionPool
 {

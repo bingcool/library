@@ -9,8 +9,8 @@
  * +----------------------------------------------------------------------
  */
 
-use Common\Library\Db\Collection;
-use Common\Library\Db\Helper\Arr;
+use Swoolefy\Library\Db\Collection;
+use Swoolefy\Library\Db\Helper\Arr;
 
 if (!function_exists('value')) {
     /**

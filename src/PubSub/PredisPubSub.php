@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\PubSub;
+namespace Swoolefy\Library\PubSub;
 
-use Common\Library\Redis\RedisConnection;
+use Swoolefy\Library\Redis\RedisConnection;
 use Predis\PubSub\Consumer as PubSubConsumer;
 
 class PredisPubSub extends AbstractPubSub

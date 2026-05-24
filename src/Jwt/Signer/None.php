@@ -10,9 +10,9 @@
  */
 
 
-namespace Common\Library\Jwt\Signer;
+namespace Swoolefy\Library\Jwt\Signer;
 
-use Common\Library\Jwt\Signer;
+use Swoolefy\Library\Jwt\Signer;
 
 final class None implements Signer
 {

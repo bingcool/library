@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace;
 
 use InvalidArgumentException;
-use Common\Library\OpenTelemetry\API\Common\Time\Clock;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues as Values;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables as Env;
-use Common\Library\OpenTelemetry\SDK\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\NoopMeterProvider;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor\NoopSpanProcessor;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\Clock;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues as Values;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables as Env;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\NoopMeterProvider;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessor\NoopSpanProcessor;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
 
 class SpanProcessorFactory
 {

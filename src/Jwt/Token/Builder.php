@@ -10,15 +10,15 @@
  */
 
 
-namespace Common\Library\Jwt\Token;
+namespace Swoolefy\Library\Jwt\Token;
 
 use DateTimeImmutable;
-use Common\Library\Jwt\Builder as BuilderInterface;
-use Common\Library\Jwt\ClaimsFormatter;
-use Common\Library\Jwt\Encoder;
-use Common\Library\Jwt\Encoding\CannotEncodeContent;
-use Common\Library\Jwt\Signer;
-use Common\Library\Jwt\Signer\Key;
+use Swoolefy\Library\Jwt\Builder as BuilderInterface;
+use Swoolefy\Library\Jwt\ClaimsFormatter;
+use Swoolefy\Library\Jwt\Encoder;
+use Swoolefy\Library\Jwt\Encoding\CannotEncodeContent;
+use Swoolefy\Library\Jwt\Signer;
+use Swoolefy\Library\Jwt\Signer\Key;
 
 final class Builder implements BuilderInterface
 {

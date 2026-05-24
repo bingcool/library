@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Lock;
+namespace Swoolefy\Library\Lock;
 
 use Throwable;
 use Swool\Coroutine;

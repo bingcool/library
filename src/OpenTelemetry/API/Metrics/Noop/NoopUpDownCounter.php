@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Metrics\Noop;
+namespace Swoolefy\Library\OpenTelemetry\API\Metrics\Noop;
 
-use Common\Library\OpenTelemetry\API\Metrics\UpDownCounterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\UpDownCounterInterface;
 
 /**
  * @internal

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Configuration;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration;
 
 use InvalidArgumentException;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Parser\BooleanParser;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Parser\ListParser;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Parser\MapParser;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Parser\RatioParser;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Resolver\CompositeResolver;
-use Common\Library\OpenTelemetry\SDK\Common\Util\ClassConstantAccessor;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Parser\BooleanParser;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Parser\ListParser;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Parser\MapParser;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Parser\RatioParser;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Resolver\CompositeResolver;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Util\ClassConstantAccessor;
 use UnexpectedValueException;
 
 /**

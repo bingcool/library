@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\SpanExporter;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporter;
 
-use Common\Library\OpenTelemetry\SDK\Trace\Behavior\LoggerAwareTrait;
-use Common\Library\OpenTelemetry\SDK\Trace\Behavior\SpanExporterTrait;
-use Common\Library\OpenTelemetry\SDK\Trace\Behavior\UsesSpanConverterTrait;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Behavior\LoggerAwareTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Behavior\SpanExporterTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Behavior\UsesSpanConverterTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;

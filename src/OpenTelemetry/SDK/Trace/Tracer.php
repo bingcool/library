@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace;
 
 use function ctype_space;
-use Common\Library\OpenTelemetry\API\Trace as API;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Config;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
+use Swoolefy\Library\OpenTelemetry\API\Trace as API;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Config;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
 
 class Tracer implements API\TracerInterface
 {

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
-use Common\Library\OpenTelemetry\API\Logs\LoggerInterface;
-use Common\Library\OpenTelemetry\API\Logs\NoopLogger;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
+use Swoolefy\Library\OpenTelemetry\API\Logs\LoggerInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\NoopLogger;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
 
 class NoopLoggerProvider implements LoggerProviderInterface
 {

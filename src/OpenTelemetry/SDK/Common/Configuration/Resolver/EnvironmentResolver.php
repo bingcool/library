@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Configuration\Resolver;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Resolver;
 
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
 
 /**
  * @internal

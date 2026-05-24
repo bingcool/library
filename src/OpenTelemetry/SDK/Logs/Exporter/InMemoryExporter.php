@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs\Exporter;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs\Exporter;
 
 use ArrayObject;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CompletedFuture;
-use Common\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\LogRecordExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CompletedFuture;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\LogRecordExporterInterface;
 
 class InMemoryExporter implements LogRecordExporterInterface
 {

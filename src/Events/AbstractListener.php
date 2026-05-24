@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Events;
+namespace Swoolefy\Library\Events;
 
 /**
  * class AbstractListener
- * @package Common\Library\Events
+ * @package Swoolefy\Library\Events
  */
 
 abstract class AbstractListener

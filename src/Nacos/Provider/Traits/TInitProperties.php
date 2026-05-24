@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Traits;
+namespace Swoolefy\Library\Nacos\Provider\Traits;
 
 trait TInitProperties
 {

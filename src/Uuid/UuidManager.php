@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Uuid;
+namespace Swoolefy\Library\Uuid;
 
 use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
-use Common\Library\Redis\RedisConnection;
+use Swoolefy\Library\Redis\RedisConnection;
 
 class UuidManager
 {
@@ -305,7 +305,7 @@ class UuidManager
      */
     public function isPredisDriver()
     {
-        if ($this->redis instanceof \Common\Library\Redis\Predis) {
+        if ($this->redis instanceof \Swoolefy\Library\Redis\Predis) {
             $this->isPredisDriver = true;
         }
         return $this->isPredisDriver;

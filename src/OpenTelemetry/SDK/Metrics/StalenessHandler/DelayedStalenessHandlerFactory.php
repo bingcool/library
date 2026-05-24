@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\StalenessHandler;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\StalenessHandler;
 
 use Closure;
-use Common\Library\OpenTelemetry\API\Common\Time\ClockInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\ReferenceCounterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerInterface;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\ClockInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\ReferenceCounterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerInterface;
 use WeakMap;
 
 final class DelayedStalenessHandlerFactory implements StalenessHandlerFactoryInterface

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\Aggregation;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\Aggregation;
 
 final class LastValueSummary
 {

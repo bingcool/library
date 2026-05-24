@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Cache\Driver;
+namespace Swoolefy\Library\Cache\Driver;
 
-use Common\Library\Redis\Predis;
-use Common\Library\Cache\CacheInterface;
-use Common\Library\Redis\RedisConnection;
+use Swoolefy\Library\Redis\Predis;
+use Swoolefy\Library\Cache\CacheInterface;
+use Swoolefy\Library\Redis\RedisConnection;
 
 class RedisCache implements CacheInterface
 {

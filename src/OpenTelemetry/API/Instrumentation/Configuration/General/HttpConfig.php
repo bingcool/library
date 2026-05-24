@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Instrumentation\Configuration\General;
+namespace Swoolefy\Library\OpenTelemetry\API\Instrumentation\Configuration\General;
 
-use Common\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\GeneralInstrumentationConfiguration;
+use Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\GeneralInstrumentationConfiguration;
 
 class HttpConfig implements GeneralInstrumentationConfiguration
 {

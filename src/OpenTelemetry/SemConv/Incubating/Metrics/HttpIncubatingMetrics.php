@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SemConv\Unstable\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SemConv\Unstable\Metrics;
 
 /**
  * Metrics for http.

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\Exemplar;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar;
 
 use function array_fill;
 use function assert;
 use function count;
-use Common\Library\OpenTelemetry\API\Trace\Span;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\Exemplar;
+use Swoolefy\Library\OpenTelemetry\API\Trace\Span;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\Exemplar;
 
 /**
  * @internal

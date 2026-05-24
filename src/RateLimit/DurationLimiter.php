@@ -9,10 +9,10 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\RateLimit;
+namespace Swoolefy\Library\RateLimit;
 
-use Common\Library\Redis\RedisConnection;
-use Common\Library\Exception\RateLimitException;
+use Swoolefy\Library\Redis\RedisConnection;
+use Swoolefy\Library\Exception\RateLimitException;
 
 /**
  * 滑动窗口限流
@@ -198,7 +198,7 @@ LUA;
      */
     public function isPredisDriver()
     {
-        if ($this->redis instanceof \Common\Library\Redis\Predis) {
+        if ($this->redis instanceof \Swoolefy\Library\Redis\Predis) {
             $this->isPredisDriver = true;
         }
         return $this->isPredisDriver;

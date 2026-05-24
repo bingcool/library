@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Events;
+namespace Swoolefy\Library\Events;
 
 /**
  * class EventDispatcher
- * @package Common\Library\Events
+ * @package Swoolefy\Library\Events
  */
 
 class EventDispatcher

@@ -9,18 +9,18 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Facade;
+namespace Swoolefy\Library\Db\Facade;
 
-use Common\Library\Db\BaseQuery;
-use Common\Library\Db\PDOConnection;
-use Common\Library\Db\Query;
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Db\BaseQuery;
+use Swoolefy\Library\Db\PDOConnection;
+use Swoolefy\Library\Db\Query;
+use Swoolefy\Library\Exception\DbException;
 use Swoolefy\Core\Application;
 use Swoolefy\Core\Swfy;
 
 /**
  * Class Db
- * @package Common\Library\Db\Facade
+ * @package Swoolefy\Library\Db\Facade
  * @mixin BaseQuery
  * @mixin Query
  */

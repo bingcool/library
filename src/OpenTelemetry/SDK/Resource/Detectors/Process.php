@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Resource\Detectors;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Resource\Detectors;
 
 use function extension_loaded;
 use function getmypid;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceDetectorInterface;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SemConv\ResourceAttributes;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceDetectorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SemConv\ResourceAttributes;
 use const PHP_BINARY;
 use function php_sapi_name;
 use const PHP_VERSION;

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\StalenessHandler;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\StalenessHandler;
 
 use function assert;
 use Closure;
-use Common\Library\OpenTelemetry\SDK\Metrics\ReferenceCounterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\ReferenceCounterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerInterface;
 
 /**
  * @internal

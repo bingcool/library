@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
-use Common\Library\OpenTelemetry\SDK\Common\Export\Stream\StreamTransportFactory;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricExporterFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\Stream\StreamTransportFactory;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricExporterFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricExporterInterface;
 
 class StdoutMetricExporterFactory implements MetricExporterFactoryInterface
 {

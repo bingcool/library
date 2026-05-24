@@ -10,9 +10,9 @@
  */
 
 
-namespace Common\Library\Jwt\Signer\Key;
+namespace Swoolefy\Library\Jwt\Signer\Key;
 
-use Common\Library\Jwt\Signer\Key;
+use Swoolefy\Library\Jwt\Signer\Key;
 
 final class LocalFileReference implements Key
 {

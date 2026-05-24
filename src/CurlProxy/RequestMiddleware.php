@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\CurlProxy;
+namespace Swoolefy\Library\CurlProxy;
 
 use Closure;
 use Throwable;

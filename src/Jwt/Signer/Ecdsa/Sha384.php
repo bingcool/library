@@ -10,9 +10,9 @@
  */
 
 
-namespace Common\Library\Jwt\Signer\Ecdsa;
+namespace Swoolefy\Library\Jwt\Signer\Ecdsa;
 
-use Common\Library\Jwt\Signer\Ecdsa;
+use Swoolefy\Library\Jwt\Signer\Ecdsa;
 
 final class Sha384 extends Ecdsa
 {

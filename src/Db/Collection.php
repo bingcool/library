@@ -9,12 +9,12 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
 /**
  * 数据集管理类
  */
-class Collection extends \Common\Library\Collection
+class Collection extends \Swoolefy\Library\Collection
 {
 
 }

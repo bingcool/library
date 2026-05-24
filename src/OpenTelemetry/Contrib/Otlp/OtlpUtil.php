@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
 use function explode;
-use Common\Library\OpenTelemetry\API\Signals;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
-use Common\Library\OpenTelemetry\SDK\Resource\Detectors\Sdk;
+use Swoolefy\Library\OpenTelemetry\API\Signals;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\Detectors\Sdk;
 use OpenTelemetry\SemConv\ResourceAttributes;
 use UnexpectedValueException;
 

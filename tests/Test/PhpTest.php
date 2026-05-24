@@ -1,9 +1,9 @@
 <?php
 
-namespace Common\Library\Tests\Test;
+namespace Swoolefy\Library\Tests\Test;
 
 use PHPUnit\Framework\TestCase;
-use Common\Library\Protobuf\Serializer;
+use Swoolefy\Library\Protobuf\Serializer;
 
 class PhpTest extends TestCase
 {

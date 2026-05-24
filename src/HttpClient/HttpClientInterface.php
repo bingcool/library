@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\HttpClient;
+namespace Swoolefy\Library\HttpClient;
 
 /**
  * Interface HttpClientInterface
- * @package Common\Library\HttpClient
+ * @package Swoolefy\Library\HttpClient
  */
 interface HttpClientInterface
 {
@@ -28,7 +28,7 @@ interface HttpClientInterface
      *
      * @return RawResponse Raw response from the server.
      *
-     * @throws \Common\Library\Exception\CurlException
+     * @throws \Swoolefy\Library\Exception\CurlException
      */
     public function send(string $url, string $method, $body, int $connectTimeOut, int $timeOut);
 }

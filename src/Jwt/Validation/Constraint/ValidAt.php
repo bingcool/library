@@ -10,15 +10,15 @@
  */
 
 
-namespace Common\Library\Jwt\Validation\Constraint;
+namespace Swoolefy\Library\Jwt\Validation\Constraint;
 
 use DateInterval;
 use DateTimeInterface;
-use Common\Library\Clock\Clock;
-use Common\Library\Jwt\Token;
-use Common\Library\Jwt\Validation\ConstraintViolation;
+use Swoolefy\Library\Clock\Clock;
+use Swoolefy\Library\Jwt\Token;
+use Swoolefy\Library\Jwt\Validation\ConstraintViolation;
 
-final class ValidAt implements \Common\Library\Jwt\Validation\ValidAt
+final class ValidAt implements \Swoolefy\Library\Jwt\Validation\ValidAt
 {
     /**
      * @var Clock
@@ -35,7 +35,7 @@ final class ValidAt implements \Common\Library\Jwt\Validation\ValidAt
         if($clock) {
             $this->clock  = $clock;
         }else {
-            $this->clock = \Common\Library\Clock\SystemClock::fromSystemTimezone();
+            $this->clock = \Swoolefy\Library\Clock\SystemClock::fromSystemTimezone();
         }
 
         $this->leeway = $this->guardLeeway($leeway);

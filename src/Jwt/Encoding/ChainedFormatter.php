@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt\Encoding;
+namespace Swoolefy\Library\Jwt\Encoding;
 
-use Common\Library\Jwt\ClaimsFormatter;
+use Swoolefy\Library\Jwt\ClaimsFormatter;
 
 final class ChainedFormatter implements ClaimsFormatter
 {

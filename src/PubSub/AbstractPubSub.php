@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\PubSub;
+namespace Swoolefy\Library\PubSub;
 
-use Common\Library\Redis\RedisConnection;
+use Swoolefy\Library\Redis\RedisConnection;
 
 Abstract class AbstractPubSub
 {

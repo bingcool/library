@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Metrics\Noop;
+namespace Swoolefy\Library\OpenTelemetry\API\Metrics\Noop;
 
-use Common\Library\OpenTelemetry\API\Metrics\AsynchronousInstrument;
-use Common\Library\OpenTelemetry\API\Metrics\CounterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\GaugeInterface;
-use Common\Library\OpenTelemetry\API\Metrics\HistogramInterface;
-use Common\Library\OpenTelemetry\API\Metrics\MeterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\ObservableCallbackInterface;
-use Common\Library\OpenTelemetry\API\Metrics\ObservableCounterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\ObservableGaugeInterface;
-use Common\Library\OpenTelemetry\API\Metrics\ObservableUpDownCounterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\UpDownCounterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\AsynchronousInstrument;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\CounterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\GaugeInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\HistogramInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableCallbackInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableCounterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableGaugeInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableUpDownCounterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\UpDownCounterInterface;
 
 final class NoopMeter implements MeterInterface
 {

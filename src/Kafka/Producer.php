@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Kafka;
+namespace Swoolefy\Library\Kafka;
 
 use RdKafka\Conf;
 use RdKafka\TopicConf;
@@ -17,7 +17,7 @@ use RdKafka\ProducerTopic;
 
 /**
  * Class ProducerKafka
- * @package Common\Library\Kafka
+ * @package Swoolefy\Library\Kafka
  */
 class Producer extends AbstractKafka
 {

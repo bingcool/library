@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery;
 
 use Psr\Http\Client\ClientInterface;
 use Symfony\Component\HttpClient\HttpClient;

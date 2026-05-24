@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Propagation;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Propagation;
 
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\Context\Propagation\MultiTextMapPropagator;
-use Common\Library\OpenTelemetry\Context\Propagation\NoopTextMapPropagator;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
-use Common\Library\OpenTelemetry\SDK\Registry;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\MultiTextMapPropagator;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\NoopTextMapPropagator;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
+use Swoolefy\Library\OpenTelemetry\SDK\Registry;
 
 class PropagatorFactory
 {

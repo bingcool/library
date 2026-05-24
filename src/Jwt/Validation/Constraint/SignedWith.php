@@ -10,13 +10,13 @@
  */
 
 
-namespace Common\Library\Jwt\Validation\Constraint;
+namespace Swoolefy\Library\Jwt\Validation\Constraint;
 
-use Common\Library\Jwt\Signer;
-use Common\Library\Jwt\Token;
-use Common\Library\Jwt\Validation\ConstraintViolation;
+use Swoolefy\Library\Jwt\Signer;
+use Swoolefy\Library\Jwt\Token;
+use Swoolefy\Library\Jwt\Validation\ConstraintViolation;
 
-final class SignedWith implements \Common\Library\Jwt\Validation\SignedWith
+final class SignedWith implements \Swoolefy\Library\Jwt\Validation\SignedWith
 {
     /**
      * @var Signer

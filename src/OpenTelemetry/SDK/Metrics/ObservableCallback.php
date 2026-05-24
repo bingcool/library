@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
 use function assert;
-use Common\Library\OpenTelemetry\API\Metrics\ObservableCallbackInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricWriterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableCallbackInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricWriterInterface;
 
 /**
  * @internal

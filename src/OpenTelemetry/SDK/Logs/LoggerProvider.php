@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
-use Common\Library\OpenTelemetry\API\Logs\LoggerInterface;
-use Common\Library\OpenTelemetry\API\Logs\NoopLogger;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfoFactory;
+use Swoolefy\Library\OpenTelemetry\API\Logs\LoggerInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\NoopLogger;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfoFactory;
 use WeakMap;
 
 class LoggerProvider implements LoggerProviderInterface

@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\Sampler;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler;
 
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SamplerInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SamplingResult;
-use Common\Library\OpenTelemetry\SDK\Trace\Span;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SamplerInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SamplingResult;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Span;
 
 /**
  * This implementation of the SamplerInterface always records.
  * Example:
  * ```
- * use Common\Library\OpenTelemetry\SDK\Trace\AlwaysOnSampler;
+ * use Swoolefy\Library\OpenTelemetry\SDK\Trace\AlwaysOnSampler;
  * $sampler = new AlwaysOnSampler();
  * ```
  */

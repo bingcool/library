@@ -9,13 +9,13 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Redis;
+namespace Swoolefy\Library\Redis;
 
 use Predis\Client;
 
 /**
  * Class Predis
- * @package Common\Library\Redis
+ * @package Swoolefy\Library\Redis
  * @see \Predis\Client
  * @mixin \Predis\Client
  * @codeCoverageIgnore

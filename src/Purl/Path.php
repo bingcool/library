@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Common\Library\Purl;
+namespace Swoolefy\Library\Purl;
 
 use function array_map;
 use function explode;

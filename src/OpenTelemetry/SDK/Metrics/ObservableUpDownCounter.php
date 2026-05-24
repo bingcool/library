@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
-use Common\Library\OpenTelemetry\API\Metrics\ObservableUpDownCounterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableUpDownCounterInterface;
 
 /**
  * @internal

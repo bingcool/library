@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
-use Common\Library\OpenTelemetry\API\Trace as API;
-use Common\Library\OpenTelemetry\API\Trace\SpanContextInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace as API;
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanContextInterface;
 use Opentelemetry\Proto\Collector\Trace\V1\ExportTraceServiceRequest;
 use Opentelemetry\Proto\Common\V1\InstrumentationScope;
 use Opentelemetry\Proto\Common\V1\KeyValue;
@@ -19,10 +19,10 @@ use Opentelemetry\Proto\Trace\V1\Span\SpanKind;
 use Opentelemetry\Proto\Trace\V1\SpanFlags;
 use Opentelemetry\Proto\Trace\V1\Status;
 use Opentelemetry\Proto\Trace\V1\Status\StatusCode;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanDataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanDataInterface;
 use function serialize;
 use function spl_object_id;
 

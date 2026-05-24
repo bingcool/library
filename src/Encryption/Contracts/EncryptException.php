@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Encryption\Contracts;
+namespace Swoolefy\Library\Encryption\Contracts;
 
-use Common\Library\Exception\CommonException;
+use Swoolefy\Library\Exception\CommonException;
 
 class EncryptException extends CommonException
 {

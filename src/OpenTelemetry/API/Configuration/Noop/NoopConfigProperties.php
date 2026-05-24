@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Configuration\Noop;
+namespace Swoolefy\Library\OpenTelemetry\API\Configuration\Noop;
 
-use Common\Library\OpenTelemetry\API\Configuration\ConfigProperties;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigProperties;
 
 class NoopConfigProperties implements ConfigProperties
 {

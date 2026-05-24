@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Resource\Detectors;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Resource\Detectors;
 
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceDetectorInterface;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfoFactory;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceDetectorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfoFactory;
 
 final class Composite implements ResourceDetectorInterface
 {

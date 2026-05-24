@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Test;
+namespace Swoolefy\Library\Nacos\Test;
 
-use Common\Library\Nacos\Provider\Ns\NamespaceProvider;
+use Swoolefy\Library\Nacos\Provider\Ns\NamespaceProvider;
 
 class NamespaceTest extends BaseTest
 {

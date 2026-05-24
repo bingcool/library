@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\Stream;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream;
 
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\DataInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\DataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
 
 /**
  * @internal

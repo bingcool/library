@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Exception;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Exception;
 
 use function basename;
 use function count;

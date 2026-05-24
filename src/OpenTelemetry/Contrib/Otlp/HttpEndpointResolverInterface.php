@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
-use Common\Library\OpenTelemetry\API\Signals;
+use Swoolefy\Library\OpenTelemetry\API\Signals;
 use Psr\Http\Message\UriInterface;
 
 interface HttpEndpointResolverInterface

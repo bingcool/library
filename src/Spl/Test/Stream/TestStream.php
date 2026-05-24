@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Spl\Test\Stream;
+namespace Swoolefy\Library\Spl\Test\Stream;
 
 class TestStream {
 

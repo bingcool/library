@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
 use InvalidArgumentException;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
-use Common\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilter\AllExemplarFilter;
-use Common\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilter\NoneExemplarFilter;
-use Common\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilter\WithSampledTraceExemplarFilter;
-use Common\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricExporter\NoopMetricExporter;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricReader\ExportingReader;
-use Common\Library\OpenTelemetry\SDK\Registry;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfoFactory;
-use Common\Library\OpenTelemetry\SDK\Sdk;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilter\AllExemplarFilter;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilter\NoneExemplarFilter;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilter\WithSampledTraceExemplarFilter;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricExporter\NoopMetricExporter;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricReader\ExportingReader;
+use Swoolefy\Library\OpenTelemetry\SDK\Registry;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfoFactory;
+use Swoolefy\Library\OpenTelemetry\SDK\Sdk;
 
 class MeterProviderFactory
 {

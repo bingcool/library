@@ -10,10 +10,10 @@
  */
 
 
-namespace Common\Library\Jwt\Signer\Key;
+namespace Swoolefy\Library\Jwt\Signer\Key;
 
 use InvalidArgumentException;
-use Common\Library\Jwt\Exception;
+use Swoolefy\Library\Jwt\Exception;
 use Throwable;
 
 final class FileCouldNotBeRead extends InvalidArgumentException implements Exception

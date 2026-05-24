@@ -9,10 +9,10 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Component;
+namespace Swoolefy\Library\Component;
 
-use Common\Library\Db\Query;
-use Common\Library\Exception\ListFormatException;
+use Swoolefy\Library\Db\Query;
+use Swoolefy\Library\Exception\ListFormatException;
 
 abstract class ListObject
 {

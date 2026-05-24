@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
 
-use Common\Library\OpenTelemetry\API\Metrics\ObserverInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObserverInterface;
 
 /**
  * @internal

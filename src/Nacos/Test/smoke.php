@@ -8,8 +8,8 @@ declare(strict_types=1);
 
 require dirname(__DIR__, 3) . '/vendor/autoload.php';
 
-use Common\Library\Nacos\Client;
-use Common\Library\Nacos\ClientConfig;
+use Swoolefy\Library\Nacos\Client;
+use Swoolefy\Library\Nacos\ClientConfig;
 
 $host = getenv('NACOS_TEST_HOST') ?: '127.0.0.1';
 $port = (int) (getenv('NACOS_TEST_PORT') ?: 8848);

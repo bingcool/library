@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
 use ArrayAccess;
 use ArrayIterator;
@@ -18,7 +18,7 @@ use Countable;
 use DomainException;
 use IteratorAggregate;
 use JsonSerializable;
-use Common\Library\Db\Paginator\Driver\Bootstrap;
+use Swoolefy\Library\Db\Paginator\Driver\Bootstrap;
 use Traversable;
 
 /**

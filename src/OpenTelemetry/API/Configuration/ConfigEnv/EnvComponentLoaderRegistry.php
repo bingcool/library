@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Configuration\ConfigEnv;
+namespace Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv;
 
-use Common\Library\OpenTelemetry\API\Configuration\Context;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\Context;
 
 interface EnvComponentLoaderRegistry
 {

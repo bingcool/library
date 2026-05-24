@@ -47,7 +47,7 @@
 ### 使用示例
 
 ```php
-use Common\Library\RateLimit\DurationLimiter;
+use Swoolefy\Library\RateLimit\DurationLimiter;
 
 $limiter = new DurationLimiter($redis);
 $limiter->setRateKey('api:order:create');
@@ -90,7 +90,7 @@ $currentCount = $limiter->getCurrentCount();
 ### 使用示例
 
 ```php
-use Common\Library\RateLimit\TokenBucketLimiter;
+use Swoolefy\Library\RateLimit\TokenBucketLimiter;
 
 $limiter = new TokenBucketLimiter($redis);
 $limiter->setRateKey('api:user:123');

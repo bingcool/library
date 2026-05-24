@@ -9,15 +9,15 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt;
+namespace Swoolefy\Library\Jwt;
 
 use Closure;
-use Common\Library\Jwt\Encoding\ChainedFormatter;
-use Common\Library\Jwt\Encoding\JoseEncoder;
-use Common\Library\Jwt\Signer\Key;
-use Common\Library\Jwt\Signer\Key\InMemory;
-use Common\Library\Jwt\Signer\None;
-use Common\Library\Jwt\Validation\Constraint;
+use Swoolefy\Library\Jwt\Encoding\ChainedFormatter;
+use Swoolefy\Library\Jwt\Encoding\JoseEncoder;
+use Swoolefy\Library\Jwt\Signer\Key;
+use Swoolefy\Library\Jwt\Signer\Key\InMemory;
+use Swoolefy\Library\Jwt\Signer\None;
+use Swoolefy\Library\Jwt\Validation\Constraint;
 
 final class Configuration
 {

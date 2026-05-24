@@ -9,16 +9,16 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\CurlProxy;
+namespace Swoolefy\Library\CurlProxy;
 
 use Closure;
-use Common\Library\OpenTelemetry\API\Globals;
-use Common\Library\OpenTelemetry\Context\Context as OpenTelemetryContext;
-use Common\Library\OpenTelemetry\GuzzleAutoInstrumentation\HeadersPropagator;
-use Common\Library\OpenTelemetry\SemConv\TraceAttributes;
-use Common\Library\OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
-use Common\Library\OpenTelemetry\API\Trace\Span;
-use Common\Library\OpenTelemetry\API\Trace\SpanKind;;
+use Swoolefy\Library\OpenTelemetry\API\Globals;
+use Swoolefy\Library\OpenTelemetry\Context\Context as OpenTelemetryContext;
+use Swoolefy\Library\OpenTelemetry\GuzzleAutoInstrumentation\HeadersPropagator;
+use Swoolefy\Library\OpenTelemetry\SemConv\TraceAttributes;
+use Swoolefy\Library\OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
+use Swoolefy\Library\OpenTelemetry\API\Trace\Span;
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanKind;;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Swoolefy\Core\Coroutine\Context as SwooleContext;

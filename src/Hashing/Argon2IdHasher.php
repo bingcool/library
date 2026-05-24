@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Hashing;
+namespace Swoolefy\Library\Hashing;
 
 use RuntimeException;
 

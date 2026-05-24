@@ -2,29 +2,29 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry;
+namespace Swoolefy\Library\OpenTelemetry;
 
-use Common\Library\CurlProxy\OpentelemetryMiddleware;
-use Common\Library\OpenTelemetry\API\Common\Time\Clock;
-use Common\Library\OpenTelemetry\API\Globals;
-use Common\Library\OpenTelemetry\API\Instrumentation\Configurator;
-use Common\Library\OpenTelemetry\Context\Context as OpenTelemetryContext;
-use Common\Library\OpenTelemetry\Context\ContextStorage;
-use Common\Library\OpenTelemetry\Contrib\Context\Swoole\SwooleContextStorage;
-use Common\Library\OpenTelemetry\Contrib\Otlp\SpanExporter;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
-use Common\Library\OpenTelemetry\SDK\Trace\TracerProvider;
-use Common\Library\OpenTelemetry\SemConv\ResourceAttributes;
-use Common\Library\Exception\OpenTelemetryException;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\ParentBased;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
-use Common\Library\OpenTelemetry\SDK\Trace\TracerProviderBuilder;
-use Common\Library\OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory;
+use Swoolefy\Library\CurlProxy\OpentelemetryMiddleware;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\Clock;
+use Swoolefy\Library\OpenTelemetry\API\Globals;
+use Swoolefy\Library\OpenTelemetry\API\Instrumentation\Configurator;
+use Swoolefy\Library\OpenTelemetry\Context\Context as OpenTelemetryContext;
+use Swoolefy\Library\OpenTelemetry\Context\ContextStorage;
+use Swoolefy\Library\OpenTelemetry\Contrib\Context\Swoole\SwooleContextStorage;
+use Swoolefy\Library\OpenTelemetry\Contrib\Otlp\SpanExporter;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\TracerProvider;
+use Swoolefy\Library\OpenTelemetry\SemConv\ResourceAttributes;
+use Swoolefy\Library\Exception\OpenTelemetryException;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\ParentBased;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\TracerProviderBuilder;
+use Swoolefy\Library\OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory;
 use Swoolefy\Core\Coroutine\Context as SwooleContext;
 
 class HttpEntryInstrumentation

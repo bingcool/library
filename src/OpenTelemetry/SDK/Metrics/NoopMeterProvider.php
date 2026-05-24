@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
-use Common\Library\OpenTelemetry\API\Metrics\MeterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\Noop\NoopMeter;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\Noop\NoopMeter;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
 
 class NoopMeterProvider implements MeterProviderInterface
 {

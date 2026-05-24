@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Queues\Interfaces;
+namespace Swoolefy\Library\Queues\Interfaces;
 
 Abstract class AbstractDelayQueueInterface
 {

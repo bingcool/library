@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Http;
+namespace Swoolefy\Library\Nacos\Http;
 
-use Common\Library\Nacos\ClientConfig;
+use Swoolefy\Library\Nacos\ClientConfig;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;

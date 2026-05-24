@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Trace\Propagation;
+namespace Swoolefy\Library\OpenTelemetry\API\Trace\Propagation;
 
 use function strlen;
 

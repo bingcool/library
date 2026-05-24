@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Context\Propagation;
+namespace Swoolefy\Library\OpenTelemetry\Context\Propagation;
 
 use function array_map;
 use function array_merge;
 use function array_unique;
 use function array_values;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
 
 final class MultiTextMapPropagator implements TextMapPropagatorInterface
 {

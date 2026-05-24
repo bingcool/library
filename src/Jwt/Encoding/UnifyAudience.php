@@ -9,10 +9,10 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt\Encoding;
+namespace Swoolefy\Library\Jwt\Encoding;
 
-use Common\Library\Jwt\ClaimsFormatter;
-use Common\Library\Jwt\Token\RegisteredClaims;
+use Swoolefy\Library\Jwt\ClaimsFormatter;
+use Swoolefy\Library\Jwt\Token\RegisteredClaims;
 
 final class UnifyAudience implements ClaimsFormatter
 {

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricFactory;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricFactory;
 
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Instrument;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricCollectorInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricSourceInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricSourceProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Stream\MetricStreamInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\ViewProjection;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Instrument;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricCollectorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricSourceInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricSourceProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream\MetricStreamInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\ViewProjection;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
 
 /**
  * @internal

@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Swoolefy\Library\Db\Concern;
 
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Exception\DbException;
 
 /**
  * 乐观锁条件

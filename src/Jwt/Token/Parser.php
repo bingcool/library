@@ -10,12 +10,12 @@
  */
 
 
-namespace Common\Library\Jwt\Token;
+namespace Swoolefy\Library\Jwt\Token;
 
 use DateTimeImmutable;
-use Common\Library\Jwt\Decoder;
-use Common\Library\Jwt\Parser as ParserInterface;
-use Common\Library\Jwt\Token as TokenInterface;
+use Swoolefy\Library\Jwt\Decoder;
+use Swoolefy\Library\Jwt\Parser as ParserInterface;
+use Swoolefy\Library\Jwt\Token as TokenInterface;
 
 final class Parser implements ParserInterface
 {

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Time;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Time;
 
-use Common\Library\OpenTelemetry\API\Common\Time as API;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time as API;
 
 /**
- * @deprecated use Common\Library\OpenTelemetry\API\Common\Time\ClockInterface
+ * @deprecated use Swoolefy\Library\OpenTelemetry\API\Common\Time\ClockInterface
  */
 interface ClockInterface extends API\ClockInterface
 {

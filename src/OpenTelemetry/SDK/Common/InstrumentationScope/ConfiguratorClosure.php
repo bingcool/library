@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope;
 
 use Closure;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
 
 /**
  * @internal

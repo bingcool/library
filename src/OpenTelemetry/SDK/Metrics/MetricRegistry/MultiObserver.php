@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
 
-use Common\Library\OpenTelemetry\API\Metrics\ObserverInterface;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Stream\WritableMetricStreamInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObserverInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream\WritableMetricStreamInterface;
 
 /**
  * @internal

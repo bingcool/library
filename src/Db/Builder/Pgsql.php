@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Builder;
+namespace Swoolefy\Library\Db\Builder;
 
-use Common\Library\Db\AbstractBuilder;
-use Common\Library\Db\Query;
-use Common\Library\Db\Raw;
+use Swoolefy\Library\Db\AbstractBuilder;
+use Swoolefy\Library\Db\Query;
+use Swoolefy\Library\Db\Raw;
 
 /**
  * Pgsql数据库驱动

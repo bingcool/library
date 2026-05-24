@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Instrumentation\Configuration\General\ConfigEnv;
+namespace Swoolefy\Library\OpenTelemetry\API\Instrumentation\Configuration\General\ConfigEnv;
 
-use Common\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvComponentLoader;
-use Common\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvComponentLoaderRegistry;
-use Common\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvResolver;
-use Common\Library\OpenTelemetry\API\Configuration\Context;
-use Common\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\GeneralInstrumentationConfiguration;
-use Common\Library\OpenTelemetry\API\Instrumentation\Configuration\General\PeerConfig;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvComponentLoader;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvComponentLoaderRegistry;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvResolver;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\Context;
+use Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\GeneralInstrumentationConfiguration;
+use Swoolefy\Library\OpenTelemetry\API\Instrumentation\Configuration\General\PeerConfig;
 
 /**
  * @implements EnvComponentLoader<GeneralInstrumentationConfiguration>

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace;
 
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Config;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\ConfigTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Config;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\ConfigTrait;
 
 class TracerConfig implements Config
 {

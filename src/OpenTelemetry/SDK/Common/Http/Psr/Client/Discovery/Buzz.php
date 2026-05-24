@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Http\Psr\Client\Discovery;
 
 use Buzz\Client\FileGetContents;
 use Http\Discovery\Psr17FactoryDiscovery;

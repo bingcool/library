@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos;
+namespace Swoolefy\Library\Nacos;
 
-use Common\Library\Nacos\Exception\NacosApiException;
-use Common\Library\Nacos\Exception\NacosException;
-use Common\Library\Nacos\Http\GuzzleTransport;
-use Common\Library\Nacos\Http\HttpResponse;
-use Common\Library\Nacos\Http\HttpStatus;
-use Common\Library\Nacos\Http\RequestMethod;
-use Common\Library\Nacos\Provider\Auth\AuthProvider;
-use Common\Library\Nacos\Provider\BaseProvider;
-use Common\Library\Nacos\Provider\Config\ConfigProvider;
-use Common\Library\Nacos\Provider\Instance\InstanceProvider;
-use Common\Library\Nacos\Provider\Ns\NamespaceProvider;
-use Common\Library\Nacos\Provider\Operator\OperatorProvider;
-use Common\Library\Nacos\Provider\Service\ServiceProvider;
+use Swoolefy\Library\Nacos\Exception\NacosApiException;
+use Swoolefy\Library\Nacos\Exception\NacosException;
+use Swoolefy\Library\Nacos\Http\GuzzleTransport;
+use Swoolefy\Library\Nacos\Http\HttpResponse;
+use Swoolefy\Library\Nacos\Http\HttpStatus;
+use Swoolefy\Library\Nacos\Http\RequestMethod;
+use Swoolefy\Library\Nacos\Provider\Auth\AuthProvider;
+use Swoolefy\Library\Nacos\Provider\BaseProvider;
+use Swoolefy\Library\Nacos\Provider\Config\ConfigProvider;
+use Swoolefy\Library\Nacos\Provider\Instance\InstanceProvider;
+use Swoolefy\Library\Nacos\Provider\Ns\NamespaceProvider;
+use Swoolefy\Library\Nacos\Provider\Operator\OperatorProvider;
+use Swoolefy\Library\Nacos\Provider\Service\ServiceProvider;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 use Swoolefy\Util\Log;

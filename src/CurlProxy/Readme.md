@@ -6,7 +6,7 @@
 
 ```
  $client = new \GuzzleHttp\Client([
-            'handler' => \Common\Library\CurlProxy\CurlProxyHandler::getStackHandler(), // 只需把handler注入进来即可
+            'handler' => \Swoolefy\Library\CurlProxy\CurlProxyHandler::getStackHandler(), // 只需把handler注入进来即可
             'base_uri' => "http://bing.uc.com/",
         ]);
 

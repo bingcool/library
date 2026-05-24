@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
 
-use Common\Library\OpenTelemetry\SDK\Metrics\Instrument;
-use Common\Library\OpenTelemetry\SDK\Metrics\Stream\MetricAggregatorFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Stream\MetricAggregatorInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Stream\MetricStreamInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Instrument;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream\MetricAggregatorFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream\MetricAggregatorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream\MetricStreamInterface;
 
 /**
  * @internal

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace;
 
-use Common\Library\OpenTelemetry\API\Trace as API;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace as API;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
 
 /**
  * @see https://github.com/open-telemetry/opentelemetry-specification/blob/v1.6.1/specification/trace/sdk.md#additional-span-interfaces

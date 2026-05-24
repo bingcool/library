@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
 use ArrayAccess;
-use Common\Library\OpenTelemetry\API\Common\Time\ClockInterface;
-use Common\Library\OpenTelemetry\API\Metrics\MeterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\Noop\NoopMeter;
-use Common\Library\OpenTelemetry\Context\ContextStorageInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
-use Common\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricFactory\StreamFactory;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricRegistry;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricRegistryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricWriterInterface;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Sdk;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\ClockInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\Noop\NoopMeter;
+use Swoolefy\Library\OpenTelemetry\Context\ContextStorageInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricFactory\StreamFactory;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricRegistry;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricRegistryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricWriterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Sdk;
 use WeakMap;
 
 final class MeterProvider implements MeterProviderInterface

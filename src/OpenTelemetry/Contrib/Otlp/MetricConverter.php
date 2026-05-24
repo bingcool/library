@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
 use function hex2bin;
 use function is_float;
@@ -22,7 +22,7 @@ use Opentelemetry\Proto\Metrics\V1\ResourceMetrics;
 use Opentelemetry\Proto\Metrics\V1\ScopeMetrics;
 use Opentelemetry\Proto\Metrics\V1\Sum;
 use Opentelemetry\Proto\Resource\V1\Resource as Resource_;
-use Common\Library\OpenTelemetry\SDK;
+use Swoolefy\Library\OpenTelemetry\SDK;
 use function serialize;
 
 final class MetricConverter

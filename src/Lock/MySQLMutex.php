@@ -1,8 +1,8 @@
 <?php
 
-namespace Common\Library\Lock;
+namespace Swoolefy\Library\Lock;
 
-use Common\Library\Db\Mysql;
+use Swoolefy\Library\Db\Mysql;
 
 /**
  * +----------------------------------------------------------------------

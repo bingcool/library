@@ -10,10 +10,10 @@
  */
 
 
-namespace Common\Library\Jwt\Signer;
+namespace Swoolefy\Library\Jwt\Signer;
 
 use InvalidArgumentException;
-use Common\Library\Jwt\Exception;
+use Swoolefy\Library\Jwt\Exception;
 
 final class CannotSignPayload extends InvalidArgumentException implements Exception
 {

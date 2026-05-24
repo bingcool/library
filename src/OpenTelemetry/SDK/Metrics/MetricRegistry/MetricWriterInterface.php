@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
 
 use Closure;
-use Common\Library\OpenTelemetry\SDK\Metrics\Instrument;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Instrument;
 
 /**
  * @internal

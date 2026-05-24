@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricFactory;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricFactory;
 
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\Metric;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricSourceInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\Metric;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricSourceInterface;
 
 /**
  * @internal

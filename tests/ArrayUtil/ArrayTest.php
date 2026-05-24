@@ -1,10 +1,10 @@
 <?php
 
-namespace Common\Library\Tests\ArrayUtil;
+namespace Swoolefy\Library\Tests\ArrayUtil;
 
 use PHPUnit\Framework\TestCase;
-use Common\Library\Protobuf\Serializer;
-use Common\Library\ArrayHelper\ArrayUtil;
+use Swoolefy\Library\Protobuf\Serializer;
+use Swoolefy\Library\ArrayHelper\ArrayUtil;
 
 class ArrayTest extends TestCase
 {
@@ -25,7 +25,7 @@ class ArrayTest extends TestCase
         ];
 
 
-        $diff = \Common\Library\ArrayHelper\ArrayUtil::dirtyArray($arr1, $arr2);
+        $diff = \Swoolefy\Library\ArrayHelper\ArrayUtil::dirtyArray($arr1, $arr2);
 
         var_dump($diff);
     }
@@ -54,7 +54,7 @@ class ArrayTest extends TestCase
         ];
 
         try {
-            $newArr = \Common\Library\ArrayHelper\ArrayUtil::sortDataArr($arr, 'age', 'asc', false);
+            $newArr = \Swoolefy\Library\ArrayHelper\ArrayUtil::sortDataArr($arr, 'age', 'asc', false);
             var_dump($newArr);
 
         } catch (\Exception $e) {

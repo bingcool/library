@@ -10,9 +10,9 @@
  */
 
 
-namespace Common\Library\Jwt\Signer\Rsa;
+namespace Swoolefy\Library\Jwt\Signer\Rsa;
 
-use Common\Library\Jwt\Signer\Rsa;
+use Swoolefy\Library\Jwt\Signer\Rsa;
 
 final class Sha512 extends Rsa
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
 use Opentelemetry\Proto\Collector\Logs\V1\ExportLogsServiceRequest;
 use Opentelemetry\Proto\Common\V1\InstrumentationScope;
@@ -11,10 +11,10 @@ use Opentelemetry\Proto\Logs\V1\LogRecord;
 use Opentelemetry\Proto\Logs\V1\ResourceLogs;
 use Opentelemetry\Proto\Logs\V1\ScopeLogs;
 use Opentelemetry\Proto\Resource\V1\Resource as Resource_;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\ReadableLogRecord;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\ReadableLogRecord;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
 
 class LogsConverter
 {

@@ -16,7 +16,7 @@ You can create a captcha with the `CaptchaBuilder` :
 ```php
 <?php
 
-use Common\Library\Captcha\CaptchaBuilder;
+use Swoolefy\Library\Captcha\CaptchaBuilder;
 
 $builder = new CaptchaBuilder;
 $builder->build();
@@ -91,8 +91,8 @@ If you want to change the number of character, you can call the phrase builder d
 extra parameters:
 
 ```php
-use Common\Library\Captcha\CaptchaBuilder;
-use Common\Library\Captcha\PhraseBuilder;
+use Swoolefy\Library\Captcha\CaptchaBuilder;
+use Swoolefy\Library\Captcha\PhraseBuilder;
 
 // Will build phrases of 3 characters
 $phraseBuilder = new PhraseBuilder(4);

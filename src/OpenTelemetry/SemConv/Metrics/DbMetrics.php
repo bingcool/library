@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SemConv\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SemConv\Metrics;
 
 /**
  * Metrics for db.

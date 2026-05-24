@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Component;
+namespace Swoolefy\Library\Component;
 
-use Common\Library\Collection;
+use Swoolefy\Library\Collection;
 
 abstract class ListItemFormatter
 {

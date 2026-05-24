@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Resource;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Resource;
 
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
 
-use Common\Library\OpenTelemetry\SDK\Common\Dev\Compatibility\Util as BcUtil;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Dev\Compatibility\Util as BcUtil;
 
 /**
  * A Resource is an immutable representation of the entity producing telemetry. For example, a process producing telemetry

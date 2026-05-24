@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Uuid;
+namespace Swoolefy\Library\Uuid;
 
 class LuaScripts
 {

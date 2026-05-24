@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Config;
+namespace Swoolefy\Library\Nacos\Provider\Config;
 
-use Common\Library\Nacos\Provider\BaseProvider;
-use Common\Library\Nacos\Provider\Config\Model\HistoryListResponse;
-use Common\Library\Nacos\Provider\Config\Model\HistoryResponse;
-use Common\Library\Nacos\Provider\Config\Model\ListenerConfig;
-use Common\Library\Nacos\Provider\Config\Model\ListenerRequest;
-use Common\Library\Nacos\Provider\Config\Model\ListenerResponseItem;
-use Common\Library\Nacos\Http\RequestMethod;
+use Swoolefy\Library\Nacos\Provider\BaseProvider;
+use Swoolefy\Library\Nacos\Provider\Config\Model\HistoryListResponse;
+use Swoolefy\Library\Nacos\Provider\Config\Model\HistoryResponse;
+use Swoolefy\Library\Nacos\Provider\Config\Model\ListenerConfig;
+use Swoolefy\Library\Nacos\Provider\Config\Model\ListenerRequest;
+use Swoolefy\Library\Nacos\Provider\Config\Model\ListenerResponseItem;
+use Swoolefy\Library\Nacos\Http\RequestMethod;
 use SimpleXMLElement;
 
 class ConfigProvider extends BaseProvider

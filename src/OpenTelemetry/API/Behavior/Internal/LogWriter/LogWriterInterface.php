@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Behavior\Internal\LogWriter;
+namespace Swoolefy\Library\OpenTelemetry\API\Behavior\Internal\LogWriter;
 
 interface LogWriterInterface
 {

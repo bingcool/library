@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SemConv;
+namespace Swoolefy\Library\OpenTelemetry\SemConv;
 
 enum Version: string
 {

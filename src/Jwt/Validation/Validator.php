@@ -10,11 +10,11 @@
  */
 
 
-namespace Common\Library\Jwt\Validation;
+namespace Swoolefy\Library\Jwt\Validation;
 
-use Common\Library\Jwt\Token;
+use Swoolefy\Library\Jwt\Token;
 
-final class Validator implements \Common\Library\Jwt\Validator
+final class Validator implements \Swoolefy\Library\Jwt\Validator
 {
     /**
      * @var array

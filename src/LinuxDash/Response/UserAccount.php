@@ -1,10 +1,10 @@
 <?php
 
 
-namespace Common\Library\LinuxDash\Response;
+namespace Swoolefy\Library\LinuxDash\Response;
 
 
-use Common\Library\Spl\SplBean;
+use Swoolefy\Library\Spl\SplBean;
 
 class UserAccount extends SplBean
 {

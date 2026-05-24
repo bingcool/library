@@ -21,8 +21,8 @@ Nacos client for PHP 8.2+, based on [Yurunsoft/nacos-php](https://github.com/Yur
 ## Quick start
 
 ```php
-use Common\Library\Nacos\Client;
-use Common\Library\Nacos\ClientConfig;
+use Swoolefy\Library\Nacos\Client;
+use Swoolefy\Library\Nacos\ClientConfig;
 
 $config = new ClientConfig([
     'host' => '127.0.0.1',
@@ -59,7 +59,7 @@ $hosts = $client->instance->list('my-service');
 ## Config listener (long polling)
 
 ```php
-use Common\Library\Nacos\Provider\Config\Model\ListenerConfig;
+use Swoolefy\Library\Nacos\Provider\Config\Model\ListenerConfig;
 
 $listener = $client->config->getConfigListener(new ListenerConfig([
     'timeout' => 30000,

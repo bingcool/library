@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt;
+namespace Swoolefy\Library\Jwt;
 
-use Common\Library\Jwt\Encoding\CannotDecodeContent;
-use Common\Library\Jwt\Token\InvalidTokenStructure;
-use Common\Library\Jwt\Token\UnsupportedHeaderFound;
+use Swoolefy\Library\Jwt\Encoding\CannotDecodeContent;
+use Swoolefy\Library\Jwt\Token\InvalidTokenStructure;
+use Swoolefy\Library\Jwt\Token\UnsupportedHeaderFound;
 
 interface Parser
 {

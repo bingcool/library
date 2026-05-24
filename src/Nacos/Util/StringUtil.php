@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Util;
+namespace Swoolefy\Library\Nacos\Util;
 
 class StringUtil
 {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Context;
+namespace Swoolefy\Library\OpenTelemetry\Context;
 
-use Common\Library\OpenTelemetry\Contrib\Context\Swoole\SwooleContextStorage;
+use Swoolefy\Library\OpenTelemetry\Contrib\Context\Swoole\SwooleContextStorage;
 use function assert;
 use const FILTER_VALIDATE_BOOLEAN;
 use function filter_var;

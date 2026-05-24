@@ -10,10 +10,10 @@
  */
 
 
-namespace Common\Library\Jwt\Validation\Constraint;
+namespace Swoolefy\Library\Jwt\Validation\Constraint;
 
 use InvalidArgumentException;
-use Common\Library\Jwt\Exception;
+use Swoolefy\Library\Jwt\Exception;
 
 final class CannotValidateARegisteredClaim extends InvalidArgumentException implements Exception
 {

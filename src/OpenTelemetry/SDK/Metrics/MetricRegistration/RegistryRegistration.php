@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistration;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistration;
 
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistrationInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricSourceProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricSourceRegistryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistrationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricSourceProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricSourceRegistryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerInterface;
 
 /**
  * @internal

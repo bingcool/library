@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs\Processor;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs\Processor;
 
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\LogRecordProcessorInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\ReadWriteLogRecord;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\LogRecordProcessorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\ReadWriteLogRecord;
 
 class MultiLogRecordProcessor implements LogRecordProcessorInterface
 {

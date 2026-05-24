@@ -10,7 +10,7 @@
  */
 
 
-namespace Common\Library\Jwt\Signer\Ecdsa;
+namespace Swoolefy\Library\Jwt\Signer\Ecdsa;
 
 interface SignatureConverter
 {

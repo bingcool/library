@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs\Exporter;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs\Exporter;
 
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CompletedFuture;
-use Common\Library\OpenTelemetry\SDK\Common\Future\ErrorFuture;
-use Common\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\LogRecordExporterInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\ReadableLogRecord;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CompletedFuture;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\ErrorFuture;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\LogRecordExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\ReadableLogRecord;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
 
 /**
  * A JSON console exporter for LogRecords. This is only useful for testing; the

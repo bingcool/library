@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\Sampler;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler;
 
 use function assert;
 use function bin2hex;
 use InvalidArgumentException;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SamplerInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SamplingResult;
-use Common\Library\OpenTelemetry\SDK\Trace\Span;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SamplerInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SamplingResult;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Span;
 use function pack;
 use function rtrim;
 use function sprintf;
@@ -23,7 +23,7 @@ use function unpack;
  * This implementation of the SamplerInterface records with given probability.
  * Example:
  * ```
- * use Common\Library\OpenTelemetry\API\Trace\TraceIdRatioBasedSampler;
+ * use Swoolefy\Library\OpenTelemetry\API\Trace\TraceIdRatioBasedSampler;
  * $sampler = new TraceIdRatioBasedSampler(0.01);
  * ```
  */

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Configuration\ConfigEnv;
+namespace Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv;
 
 /**
  * Helper class to access environment-based configuration.

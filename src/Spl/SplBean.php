@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Spl;
+namespace Swoolefy\Library\Spl;
 
-use Common\Library\Spl\Exception\SplException;
+use Swoolefy\Library\Spl\Exception\SplException;
 
 class SplBean implements \JsonSerializable
 {

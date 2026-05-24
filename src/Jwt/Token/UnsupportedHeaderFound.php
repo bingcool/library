@@ -10,10 +10,10 @@
  */
 
 
-namespace Common\Library\Jwt\Token;
+namespace Swoolefy\Library\Jwt\Token;
 
 use InvalidArgumentException;
-use Common\Library\Jwt\Exception;
+use Swoolefy\Library\Jwt\Exception;
 
 final class UnsupportedHeaderFound extends InvalidArgumentException implements Exception
 {

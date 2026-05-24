@@ -3,11 +3,11 @@
 include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 
 
-$redis = new \Common\Library\Redis\Redis();
+$redis = new \Swoolefy\Library\Redis\Redis();
 $redis->connect('127.0.0.1');
 
 
-$queue = new \Common\Library\Queues\RedisDelayQueue(
+$queue = new \Swoolefy\Library\Queues\RedisDelayQueue(
     $redis,
     'ali_delay_key'
 );

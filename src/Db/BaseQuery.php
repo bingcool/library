@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
-use Common\Library\Db\Concern;
-use Common\Library\Db\Helper\Str;
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Db\Concern;
+use Swoolefy\Library\Db\Helper\Str;
+use Swoolefy\Library\Exception\DbException;
 
 /**
  * 数据查询基础类
@@ -76,7 +76,7 @@ abstract class BaseQuery
     protected $options = [];
 
     /**
-     * @var \Common\Library\Db\AbstractBuilder
+     * @var \Swoolefy\Library\Db\AbstractBuilder
      */
     protected $builder;
 
@@ -763,7 +763,7 @@ abstract class BaseQuery
     /**
      * table别名函数
      *
-     * @param string|\Common\Library\Db\SelectorTable $table
+     * @param string|\Swoolefy\Library\Db\SelectorTable $table
      * @param array|string $alias
      * @return $this
      */
@@ -775,13 +775,13 @@ abstract class BaseQuery
     /**
      * 指定当前操作的数据表
      * @access public
-     * @param string|array|\Common\Library\Db\SelectorTable $table 表名
+     * @param string|array|\Swoolefy\Library\Db\SelectorTable $table 表名
      * @param array|string $alias
      * @return $this
      */
     public function table($table, $alias = '')
     {
-        if ($table instanceof \Common\Library\Db\SelectorTable) {
+        if ($table instanceof \Swoolefy\Library\Db\SelectorTable) {
             $alias = $table->aliasName;
             $table = $table->tableName;
         }

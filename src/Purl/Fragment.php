@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Purl;
+namespace Swoolefy\Library\Purl;
 
 use function array_merge;
 use function is_array;

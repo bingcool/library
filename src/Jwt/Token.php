@@ -9,10 +9,10 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt;
+namespace Swoolefy\Library\Jwt;
 
 use DateTimeInterface;
-use Common\Library\Jwt\Token\DataSet;
+use Swoolefy\Library\Jwt\Token\DataSet;
 
 interface Token
 {

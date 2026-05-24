@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessor;
 
 use Closure;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\ReadableSpanInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\ReadWriteSpanInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessorInterface;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\ReadableSpanInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\ReadWriteSpanInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use SplQueue;
 use function sprintf;
 use Throwable;

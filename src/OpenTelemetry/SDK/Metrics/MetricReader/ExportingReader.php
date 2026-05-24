@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricReader;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricReader;
 
 use function array_keys;
-use Common\Library\OpenTelemetry\SDK\Metrics\AggregationInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\AggregationTemporalitySelectorInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\DefaultAggregationProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\DefaultAggregationProviderTrait;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricExporterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricFactory\StreamMetricSourceProvider;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricReaderInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricCollectorInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricSourceInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricSourceProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricSourceRegistryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricSourceRegistryUnregisterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\PushMetricExporterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\AggregationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\AggregationTemporalitySelectorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\DefaultAggregationProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\DefaultAggregationProviderTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricFactory\StreamMetricSourceProvider;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricReaderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricCollectorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricSourceInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricSourceProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricSourceRegistryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricSourceRegistryUnregisterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\PushMetricExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\StalenessHandlerInterface;
 use function spl_object_id;
 
 final class ExportingReader implements MetricReaderInterface, MetricSourceRegistryInterface, MetricSourceRegistryUnregisterInterface, DefaultAggregationProviderInterface

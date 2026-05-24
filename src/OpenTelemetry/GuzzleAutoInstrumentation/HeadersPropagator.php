@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\GuzzleAutoInstrumentation;
+namespace Swoolefy\Library\OpenTelemetry\GuzzleAutoInstrumentation;
 
 use function assert;
-use Common\Library\OpenTelemetry\Context\Propagation\PropagationSetterInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\PropagationSetterInterface;
 use Psr\Http\Message\RequestInterface;
 
 /**

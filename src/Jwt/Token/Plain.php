@@ -10,10 +10,10 @@
  */
 
 
-namespace Common\Library\Jwt\Token;
+namespace Swoolefy\Library\Jwt\Token;
 
 use DateTimeInterface;
-use Common\Library\Jwt\Token as TokenInterface;
+use Swoolefy\Library\Jwt\Token as TokenInterface;
 
 final class Plain implements TokenInterface
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Configuration\Config;
+namespace Swoolefy\Library\OpenTelemetry\API\Configuration\Config;
 
 use function class_alias;
-use Common\Library\OpenTelemetry\API\Configuration\Context;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\Context;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 

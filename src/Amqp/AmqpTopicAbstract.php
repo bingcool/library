@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Amqp;
+namespace Swoolefy\Library\Amqp;
 
 use PhpAmqpLib\Message\AMQPMessage;
 

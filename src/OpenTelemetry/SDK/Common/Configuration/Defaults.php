@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Configuration;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration;
 
 /**
  * Default values for environment variables defined by the OpenTelemetry specification and language specific variables for the PHP SDK.

@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Aliyun\Datahub;
+namespace Swoolefy\Library\Aliyun\Datahub;
 
-use Common\Library\Exception\DatahubException;
+use Swoolefy\Library\Exception\DatahubException;
 
 abstract class AbstractBaseDatahub
 {

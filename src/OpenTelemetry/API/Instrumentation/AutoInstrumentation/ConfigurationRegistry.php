@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation;
+namespace Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation;
 
-use Common\Library\OpenTelemetry\API\Configuration\ConfigProperties;
+use Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigProperties;
 
 final class ConfigurationRegistry implements ConfigProperties
 {

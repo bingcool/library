@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Service;
+namespace Swoolefy\Library\Nacos\Provider\Service;
 
-use Common\Library\Nacos\Provider\BaseProvider;
-use Common\Library\Nacos\Provider\Service\Model\ListResponse;
-use Common\Library\Nacos\Provider\Service\Model\ServiceDetailResponse;
-use Common\Library\Nacos\Http\RequestMethod;
+use Swoolefy\Library\Nacos\Provider\BaseProvider;
+use Swoolefy\Library\Nacos\Provider\Service\Model\ListResponse;
+use Swoolefy\Library\Nacos\Provider\Service\Model\ServiceDetailResponse;
+use Swoolefy\Library\Nacos\Http\RequestMethod;
 
 class ServiceProvider extends BaseProvider
 {

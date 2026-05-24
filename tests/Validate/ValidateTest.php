@@ -1,8 +1,8 @@
 <?php
 
-namespace Common\Library\Tests\Validate;
+namespace Swoolefy\Library\Tests\Validate;
 
-use Common\Library\Exception\ValidateException;
+use Swoolefy\Library\Exception\ValidateException;
 use PHPUnit\Framework\TestCase;
 
 class ValidateTest extends TestCase

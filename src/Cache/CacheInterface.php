@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Cache;
+namespace Swoolefy\Library\Cache;
 
 interface CacheInterface
 {

@@ -9,10 +9,10 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Queues;
+namespace Swoolefy\Library\Queues;
 
-use Common\Library\Redis\RedisConnection;
-use Common\Library\Redis\Predis;
+use Swoolefy\Library\Redis\RedisConnection;
+use Swoolefy\Library\Redis\Predis;
 
 class Queue
 {

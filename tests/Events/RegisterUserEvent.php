@@ -1,8 +1,8 @@
 <?php
-namespace Common\Library\Tests\Events;
+namespace Swoolefy\Library\Tests\Events;
 
-use Common\Library\Events\AbstractEventHandle;
-use Common\Library\Events\AbstractListener;
+use Swoolefy\Library\Events\AbstractEventHandle;
+use Swoolefy\Library\Events\AbstractListener;
 
 class RegisterUserEvent extends AbstractEventHandle
 {

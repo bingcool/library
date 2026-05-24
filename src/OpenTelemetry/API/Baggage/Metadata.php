@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Baggage;
+namespace Swoolefy\Library\OpenTelemetry\API\Baggage;
 
 final class Metadata implements MetadataInterface
 {

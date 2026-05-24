@@ -4,12 +4,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Context\Swoole;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Context\Swoole;
 
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\Context\ContextStorageInterface;
-use Common\Library\OpenTelemetry\Context\ContextStorageScopeInterface;
-use Common\Library\OpenTelemetry\Context\ExecutionContextAwareInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ContextStorageInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ContextStorageScopeInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ExecutionContextAwareInterface;
 
 /** @psalm-api */
 final class SwooleContextStorage implements ContextStorageInterface, ExecutionContextAwareInterface

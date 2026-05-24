@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API;
+namespace Swoolefy\Library\OpenTelemetry\API;
 
 use function assert;
 use Closure;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\API\Instrumentation\Configurator;
-use Common\Library\OpenTelemetry\API\Instrumentation\ContextKeys;
-use Common\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\API\Instrumentation\Configurator;
+use Swoolefy\Library\OpenTelemetry\API\Instrumentation\ContextKeys;
+use Swoolefy\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use function sprintf;
 use Throwable;
 

@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Redis;
+namespace Swoolefy\Library\Redis;
 
 /**
  * @see \Redis

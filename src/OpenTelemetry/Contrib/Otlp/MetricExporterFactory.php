@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
-use Common\Library\OpenTelemetry\API\Signals;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Defaults;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricExporterFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricExporterInterface;
-use Common\Library\OpenTelemetry\SDK\Registry;
+use Swoolefy\Library\OpenTelemetry\API\Signals;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Defaults;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricExporterFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Registry;
 
 class MetricExporterFactory implements MetricExporterFactoryInterface
 {

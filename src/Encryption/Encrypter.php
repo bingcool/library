@@ -9,12 +9,12 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Encryption;
+namespace Swoolefy\Library\Encryption;
 
-use Common\Library\Encryption\Contracts\DecryptException;
-use Common\Library\Encryption\Contracts\Encrypter as EncrypterContract;
-use Common\Library\Encryption\Contracts\EncryptException;
-use Common\Library\Encryption\Contracts\StringEncrypter;
+use Swoolefy\Library\Encryption\Contracts\DecryptException;
+use Swoolefy\Library\Encryption\Contracts\Encrypter as EncrypterContract;
+use Swoolefy\Library\Encryption\Contracts\EncryptException;
+use Swoolefy\Library\Encryption\Contracts\StringEncrypter;
 use RuntimeException;
 
 class Encrypter implements EncrypterContract, StringEncrypter

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Behavior;
+namespace Swoolefy\Library\OpenTelemetry\API\Behavior;
 
-use Common\Library\OpenTelemetry\API\Behavior\Internal\Logging;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\Internal\Logging;
 use Psr\Log\LogLevel;
 
 trait LogsMessagesTrait

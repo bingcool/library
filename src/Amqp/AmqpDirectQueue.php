@@ -9,10 +9,10 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Amqp;
+namespace Swoolefy\Library\Amqp;
 
 use PhpAmqpLib\Message\AMQPMessage;
-use Common\Library\Exception\AmqpException;
+use Swoolefy\Library\Exception\AmqpException;
 
 class AmqpDirectQueue extends AmqpAbstract {
 

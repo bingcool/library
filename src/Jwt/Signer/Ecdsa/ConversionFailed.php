@@ -10,10 +10,10 @@
  */
 
 
-namespace Common\Library\Jwt\Signer\Ecdsa;
+namespace Swoolefy\Library\Jwt\Signer\Ecdsa;
 
 use InvalidArgumentException;
-use Common\Library\Jwt\Exception;
+use Swoolefy\Library\Jwt\Exception;
 
 final class ConversionFailed extends InvalidArgumentException implements Exception
 {

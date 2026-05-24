@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Propagation;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Propagation;
 
 use Closure;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\PropagationGetterInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\PropagationSetterInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\PropagationGetterInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\PropagationSetterInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 
 /**
  * @internal

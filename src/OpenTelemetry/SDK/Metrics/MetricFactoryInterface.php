@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricRegistryInterface;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricRegistryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
 
 /**
  * @internal

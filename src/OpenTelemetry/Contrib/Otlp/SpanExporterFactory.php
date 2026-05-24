@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\API\Signals;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Defaults;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
-use Common\Library\OpenTelemetry\SDK\Registry;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporter\SpanExporterFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\API\Signals;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Defaults;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Registry;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporter\SpanExporterFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
 
 class SpanExporterFactory implements SpanExporterFactoryInterface
 {

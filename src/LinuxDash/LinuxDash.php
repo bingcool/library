@@ -1,21 +1,21 @@
 <?php
 
 
-namespace Common\Library\LinuxDash;
+namespace Swoolefy\Library\LinuxDash;
 
 
-use Common\Library\LinuxDash\Response\ArpCache;
-use Common\Library\LinuxDash\Response\Bandwidth;
-use Common\Library\LinuxDash\Response\CpuIntensiveProcesses;
-use Common\Library\LinuxDash\Response\CurrentRam;
-use Common\Library\LinuxDash\Response\DiskPartition;
-use Common\Library\LinuxDash\Response\GeneralInfo;
-use Common\Library\LinuxDash\Response\IoStats;
-use Common\Library\LinuxDash\Response\IpAddresses;
-use Common\Library\LinuxDash\Response\LoadAvg;
-use Common\Library\LinuxDash\Response\RamIntensiveProcesses;
-use Common\Library\LinuxDash\Response\Swap;
-use Common\Library\LinuxDash\Response\UserAccount;
+use Swoolefy\Library\LinuxDash\Response\ArpCache;
+use Swoolefy\Library\LinuxDash\Response\Bandwidth;
+use Swoolefy\Library\LinuxDash\Response\CpuIntensiveProcesses;
+use Swoolefy\Library\LinuxDash\Response\CurrentRam;
+use Swoolefy\Library\LinuxDash\Response\DiskPartition;
+use Swoolefy\Library\LinuxDash\Response\GeneralInfo;
+use Swoolefy\Library\LinuxDash\Response\IoStats;
+use Swoolefy\Library\LinuxDash\Response\IpAddresses;
+use Swoolefy\Library\LinuxDash\Response\LoadAvg;
+use Swoolefy\Library\LinuxDash\Response\RamIntensiveProcesses;
+use Swoolefy\Library\LinuxDash\Response\Swap;
+use Swoolefy\Library\LinuxDash\Response\UserAccount;
 use Swoole\Coroutine;
 
 class LinuxDash

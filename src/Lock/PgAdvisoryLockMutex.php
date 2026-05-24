@@ -1,8 +1,8 @@
 <?php
 
-namespace Common\Library\Lock;
+namespace Swoolefy\Library\Lock;
 
-use Common\Library\Db\Pgsql;
+use Swoolefy\Library\Db\Pgsql;
 
 /**
  * +----------------------------------------------------------------------

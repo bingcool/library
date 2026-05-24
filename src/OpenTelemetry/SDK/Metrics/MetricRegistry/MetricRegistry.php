@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry;
 
 use function array_key_last;
 use Closure;
-use Common\Library\OpenTelemetry\API\Common\Time\ClockInterface;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\Context\ContextStorageInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\AttributesFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Instrument;
-use Common\Library\OpenTelemetry\SDK\Metrics\Stream\MetricAggregatorFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Stream\MetricAggregatorInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Stream\MetricStreamInterface;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\ClockInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\ContextStorageInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\AttributesFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Instrument;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream\MetricAggregatorFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream\MetricAggregatorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Stream\MetricStreamInterface;
 use function spl_object_id;
 
 /**

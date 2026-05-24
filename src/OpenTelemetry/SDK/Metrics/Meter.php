@@ -2,36 +2,36 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Metrics;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
 use function array_unshift;
 use ArrayAccess;
 use function assert;
 use function is_callable;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\API\Common\Time\ClockInterface;
-use Common\Library\OpenTelemetry\API\Metrics\AsynchronousInstrument;
-use Common\Library\OpenTelemetry\API\Metrics\CounterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\GaugeInterface;
-use Common\Library\OpenTelemetry\API\Metrics\HistogramInterface;
-use Common\Library\OpenTelemetry\API\Metrics\MeterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\ObservableCallbackInterface;
-use Common\Library\OpenTelemetry\API\Metrics\ObservableCounterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\ObservableGaugeInterface;
-use Common\Library\OpenTelemetry\API\Metrics\ObservableUpDownCounterInterface;
-use Common\Library\OpenTelemetry\API\Metrics\UpDownCounterInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Config;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurable;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\ClockInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\AsynchronousInstrument;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\CounterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\GaugeInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\HistogramInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableCallbackInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableCounterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableGaugeInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableUpDownCounterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\UpDownCounterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Config;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurable;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
 use function OpenTelemetry\SDK\Common\Util\closure;
-use Common\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistration\MultiRegistryRegistration;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistration\RegistryRegistration;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricRegistryInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricWriterInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\StalenessHandler\MultiReferenceCounter;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistration\MultiRegistryRegistration;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistration\RegistryRegistration;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricRegistryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricWriterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\StalenessHandler\MultiReferenceCounter;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
 use function serialize;
 
 /**

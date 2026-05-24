@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK;
+namespace Swoolefy\Library\OpenTelemetry\SDK;
 
-use Common\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
-use Common\Library\OpenTelemetry\SDK\Logs\LoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\EventLoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\LoggerProviderInterface;
 
 class Sdk
 {

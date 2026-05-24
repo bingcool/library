@@ -10,7 +10,7 @@
  */
 
 
-namespace Common\Library\Jwt\Signer;
+namespace Swoolefy\Library\Jwt\Signer;
 
 interface Key
 {

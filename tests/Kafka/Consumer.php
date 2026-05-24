@@ -6,7 +6,7 @@ include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 $metaBrokerList = '192.168.99.103:9092';
 $topicName = 'mykafka';
 
-$consumer = new \Common\Library\Kafka\Consumer($metaBrokerList, $topicName);
+$consumer = new \Swoolefy\Library\Kafka\Consumer($metaBrokerList, $topicName);
 
 $consumer->setRebalanceCb(function (\RdKafka\KafkaConsumer $kafkaConsumer, $err, $partitions) {
     switch ($err) {

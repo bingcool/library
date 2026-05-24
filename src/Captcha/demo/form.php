@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__.'/../vendor/autoload.php';
-use Common\Library\Captcha\PhraseBuilder;
+use Swoolefy\Library\Captcha\PhraseBuilder;
 
 // We need the session to check the phrase after submitting
 session_start();

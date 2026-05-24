@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Captcha;
+namespace Swoolefy\Library\Captcha;
 
 /**
  * A Captcha builder

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Logs;
+namespace Swoolefy\Library\OpenTelemetry\API\Logs;
 
 use Closure;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
 
 class LateBindingLogger implements LoggerInterface
 {

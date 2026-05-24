@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Pool;
+namespace Swoolefy\Library\Pool;
 
 class MysqlPool extends BasePool
 {

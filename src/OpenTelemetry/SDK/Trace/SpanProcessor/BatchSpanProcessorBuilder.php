@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessor;
 
-use Common\Library\OpenTelemetry\API\Common\Time\Clock;
-use Common\Library\OpenTelemetry\SDK\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\Clock;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
 
 class BatchSpanProcessorBuilder
 {

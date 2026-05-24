@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SemConv\Attributes;
+namespace Swoolefy\Library\OpenTelemetry\SemConv\Attributes;
 
 /**
  * Semantic attributes and corresponding values for http.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Export\Http;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Export\Http;
 
 use function array_filter;
 use function array_map;
@@ -10,7 +10,7 @@ use function count;
 use ErrorException;
 use LogicException;
 use function max;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use function rand;
 use function restore_error_handler;

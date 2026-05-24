@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Context\Propagation;
+namespace Swoolefy\Library\OpenTelemetry\Context\Propagation;
 
 use function array_key_first;
 use ArrayAccess;

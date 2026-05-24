@@ -9,16 +9,16 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Jwt;
+namespace Swoolefy\Library\Jwt;
 
 use DateTimeImmutable;
-use Common\Library\Jwt\Encoding\CannotEncodeContent;
-use Common\Library\Jwt\Signer\CannotSignPayload;
-use Common\Library\Jwt\Signer\Ecdsa\ConversionFailed;
-use Common\Library\Jwt\Signer\InvalidKeyProvided;
-use Common\Library\Jwt\Signer\Key;
-use Common\Library\Jwt\Token\Plain;
-use Common\Library\Jwt\Token\RegisteredClaimGiven;
+use Swoolefy\Library\Jwt\Encoding\CannotEncodeContent;
+use Swoolefy\Library\Jwt\Signer\CannotSignPayload;
+use Swoolefy\Library\Jwt\Signer\Ecdsa\ConversionFailed;
+use Swoolefy\Library\Jwt\Signer\InvalidKeyProvided;
+use Swoolefy\Library\Jwt\Signer\Key;
+use Swoolefy\Library\Jwt\Token\Plain;
+use Swoolefy\Library\Jwt\Token\RegisteredClaimGiven;
 
 interface Builder
 {

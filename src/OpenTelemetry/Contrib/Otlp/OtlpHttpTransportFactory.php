@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
-use Common\Library\OpenTelemetry\SDK\Common\Export\Http\PsrTransportFactory;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\Http\PsrTransportFactory;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
 
 class OtlpHttpTransportFactory implements TransportFactoryInterface
 {

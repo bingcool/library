@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Clock;
+namespace Swoolefy\Library\Clock;
 
 use DateTimeImmutable;
 

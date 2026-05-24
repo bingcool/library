@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Operator\Model;
+namespace Swoolefy\Library\Nacos\Provider\Operator\Model;
 
-use Common\Library\Nacos\Model\BaseModel;
+use Swoolefy\Library\Nacos\Model\BaseModel;
 
 class Server extends BaseModel
 {

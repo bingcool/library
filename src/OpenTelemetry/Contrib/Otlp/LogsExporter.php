@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
 use Opentelemetry\Proto\Collector\Logs\V1\ExportLogsServiceResponse;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\LogRecordExporterInterface;
-use Common\Library\OpenTelemetry\SDK\Logs\ReadableLogRecord;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\LogRecordExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\ReadableLogRecord;
 use RuntimeException;
 use Throwable;
 

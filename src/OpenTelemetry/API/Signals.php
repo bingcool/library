@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API;
+namespace Swoolefy\Library\OpenTelemetry\API;
 
 interface Signals
 {

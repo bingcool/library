@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace;
 
 use function is_array;
-use Common\Library\OpenTelemetry\API\Trace as API;
-use Common\Library\OpenTelemetry\API\Trace\NoopTracer;
-use Common\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactory;
-use Common\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactoryInterface;
-use Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
-use Common\Library\OpenTelemetry\SDK\Resource\ResourceInfoFactory;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
-use Common\Library\OpenTelemetry\SDK\Trace\Sampler\ParentBased;
+use Swoolefy\Library\OpenTelemetry\API\Trace as API;
+use Swoolefy\Library\OpenTelemetry\API\Trace\NoopTracer;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Attribute\Attributes;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactory;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactoryInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfo;
+use Swoolefy\Library\OpenTelemetry\SDK\Resource\ResourceInfoFactory;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Sampler\ParentBased;
 use WeakMap;
 
 final class TracerProvider implements TracerProviderInterface

@@ -9,15 +9,15 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
 use ArrayAccess;
-use Common\Library\Component\ListItemFormatter;
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Component\ListItemFormatter;
+use Swoolefy\Library\Exception\DbException;
 
 /**
  * Class Model
- * @package Common\Library\Db
+ * @package Swoolefy\Library\Db
  * @mixin Query
  */
 abstract class Model implements ArrayAccess
@@ -71,7 +71,7 @@ abstract class Model implements ArrayAccess
 
     /**
      * 类型转换，支持的类型
-     * @see \Common\Library\Db\Casts\TypeCasts
+     * @see \Swoolefy\Library\Db\Casts\TypeCasts
      *
      * @var array
      */

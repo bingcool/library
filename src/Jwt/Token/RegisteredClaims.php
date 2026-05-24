@@ -10,7 +10,7 @@
  */
 
 
-namespace Common\Library\Jwt\Token;
+namespace Swoolefy\Library\Jwt\Token;
 
 /**
  * Defines the list of claims that are registered in the IANA "JSON Web Token Claims" registry

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\InstrumentationScope;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope;
 
 trait ConfigTrait
 {

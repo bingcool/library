@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Baggage\Propagation;
+namespace Swoolefy\Library\OpenTelemetry\API\Baggage\Propagation;
 
-use Common\Library\OpenTelemetry\API\Baggage\Baggage;
-use Common\Library\OpenTelemetry\API\Baggage\BaggageBuilderInterface;
-use Common\Library\OpenTelemetry\API\Baggage\Entry; /** @phan-suppress-current-line PhanUnreferencedUseNormal */
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\ArrayAccessGetterSetter;
-use Common\Library\OpenTelemetry\Context\Propagation\PropagationGetterInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\PropagationSetterInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\API\Baggage\Baggage;
+use Swoolefy\Library\OpenTelemetry\API\Baggage\BaggageBuilderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Baggage\Entry; /** @phan-suppress-current-line PhanUnreferencedUseNormal */
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\ArrayAccessGetterSetter;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\PropagationGetterInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\PropagationSetterInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use function rtrim;
 use function urlencode;
 

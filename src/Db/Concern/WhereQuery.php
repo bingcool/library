@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Swoolefy\Library\Db\Concern;
 
 use Closure;
-use Common\Library\Db\BaseQuery;
-use Common\Library\Db\Raw;
+use Swoolefy\Library\Db\BaseQuery;
+use Swoolefy\Library\Db\Raw;
 
 trait WhereQuery
 {

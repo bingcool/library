@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Service\Model;
+namespace Swoolefy\Library\Nacos\Provider\Service\Model;
 
-use Common\Library\Nacos\Provider\Model\BaseResponse;
-use Common\Library\Nacos\Provider\Traits\TReturnJson;
+use Swoolefy\Library\Nacos\Provider\Model\BaseResponse;
+use Swoolefy\Library\Nacos\Provider\Traits\TReturnJson;
 
 class ListResponse extends BaseResponse
 {

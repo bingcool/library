@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Context;
+namespace Swoolefy\Library\OpenTelemetry\Context;
 
 use function assert;
 

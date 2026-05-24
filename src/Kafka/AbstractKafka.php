@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Kafka;
+namespace Swoolefy\Library\Kafka;
 
 use RdKafka\Conf;
 use RdKafka\TopicConf;

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\SpanExporter;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporter;
 
 use JsonException;
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\Behavior\UsesSpanConverterTrait;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\FutureInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\Behavior\UsesSpanConverterTrait;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
 
 class ConsoleSpanExporter implements SpanExporterInterface
 {

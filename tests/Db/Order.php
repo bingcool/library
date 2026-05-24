@@ -1,9 +1,9 @@
 <?php
 
-namespace Common\Library\Tests\Db;
+namespace Swoolefy\Library\Tests\Db;
 
-use Common\Library\Events\EventDispatcher;
-use Common\Library\Tests\Events\RegisterUserListener;
+use Swoolefy\Library\Events\EventDispatcher;
+use Swoolefy\Library\Tests\Events\RegisterUserListener;
 
 /**
  * @property integer $order_id

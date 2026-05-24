@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Logs;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Logs;
 
 use InvalidArgumentException;
-use Common\Library\OpenTelemetry\API\Common\Time\Clock;
-use Common\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues as Values;
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
-use Common\Library\OpenTelemetry\SDK\Logs\Processor\BatchLogRecordProcessor;
-use Common\Library\OpenTelemetry\SDK\Logs\Processor\MultiLogRecordProcessor;
-use Common\Library\OpenTelemetry\SDK\Logs\Processor\NoopLogRecordProcessor;
-use Common\Library\OpenTelemetry\SDK\Logs\Processor\SimpleLogRecordProcessor;
+use Swoolefy\Library\OpenTelemetry\API\Common\Time\Clock;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues as Values;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\Processor\BatchLogRecordProcessor;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\Processor\MultiLogRecordProcessor;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\Processor\NoopLogRecordProcessor;
+use Swoolefy\Library\OpenTelemetry\SDK\Logs\Processor\SimpleLogRecordProcessor;
 
 class LogRecordProcessorFactory
 {

@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SemConv\Incubating\Attributes;
+namespace Swoolefy\Library\OpenTelemetry\SemConv\Incubating\Attributes;
 
 /**
  * Semantic attributes and corresponding values for os.

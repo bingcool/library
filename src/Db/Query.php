@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Exception\DbException;
 use PDOStatement;
-use Common\Library\Db\Concern;
+use Swoolefy\Library\Db\Concern;
 
 /**
  * PDO数据查询类

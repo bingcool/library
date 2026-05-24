@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\SpanProcessor;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessor;
 
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\ReadableSpanInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\ReadWriteSpanInterface;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanProcessorInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\ReadableSpanInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\ReadWriteSpanInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 
 class NoopSpanProcessor implements SpanProcessorInterface
 {

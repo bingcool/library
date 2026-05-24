@@ -18,7 +18,7 @@
   ],
   "minimum-stability": "dev",
   "require": {
-    "php" : ">=8.2",
+    "php" : ">=8.4",
     "ext-pdo": "*",
     "ext-curl": "*",
     "ext-json": "*",
@@ -53,7 +53,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Common\\Library\\": "src/",
+      "Swoolefy\\Library\\": "src/",
       "Opentelemetry\\Proto\\": "src/OpenTelemetry/gen-otlp-protobuf/Opentelemetry/Proto/",
       "GPBMetadata\\Opentelemetry\\": "src/OpenTelemetry/gen-otlp-protobuf/GPBMetadata/Opentelemetry/"
     },
@@ -73,7 +73,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Common\\Library\\Tests\\": "tests/"
+      "Swoolefy\\Library\\Tests\\": "tests/"
     }
   }
 }

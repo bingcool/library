@@ -5,9 +5,9 @@ namespace Lcobucci\JWT\Validation\Constraint;
 
 use DateInterval;
 use DateTimeInterface;
-use Common\Library\Jwt\Token;
-use Common\Library\Jwt\Validation\ConstraintViolation;
-use Common\Library\Jwt\Validation\ValidAt as ValidAtInterface;
+use Swoolefy\Library\Jwt\Token;
+use Swoolefy\Library\Jwt\Validation\ConstraintViolation;
+use Swoolefy\Library\Jwt\Validation\ValidAt as ValidAtInterface;
 use Psr\Clock\ClockInterface as Clock;
 
 final class LooseValidAt implements ValidAtInterface
@@ -27,7 +27,7 @@ final class LooseValidAt implements ValidAtInterface
         if($clock) {
             $this->clock  = $clock;
         }else {
-            $this->clock = \Common\Library\Clock\SystemClock::fromSystemTimezone();
+            $this->clock = \Swoolefy\Library\Clock\SystemClock::fromSystemTimezone();
         }
 
         $this->leeway = $this->guardLeeway($leeway);

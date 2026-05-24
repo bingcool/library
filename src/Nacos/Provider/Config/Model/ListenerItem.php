@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Config\Model;
+namespace Swoolefy\Library\Nacos\Provider\Config\Model;
 
 class ListenerItem implements \Stringable
 {

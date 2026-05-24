@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Spl\Test\Bean;
+namespace Swoolefy\Library\Spl\Test\Bean;
 
-use Common\Library\Spl\SplBean;
+use Swoolefy\Library\Spl\SplBean;
 
 class Shops extends SplBean
 {

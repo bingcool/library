@@ -1,10 +1,10 @@
 <?php
 
-namespace Common\Library\Tests\ArrayUtil;
+namespace Swoolefy\Library\Tests\ArrayUtil;
 
 use PHPUnit\Framework\TestCase;
-use Common\Library\Protobuf\Serializer;
-use Common\Library\ArrayHelper\ArrayUtil;
+use Swoolefy\Library\Protobuf\Serializer;
+use Swoolefy\Library\ArrayHelper\ArrayUtil;
 
 class MongoDb extends TestCase
 {

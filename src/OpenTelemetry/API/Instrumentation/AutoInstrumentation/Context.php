@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation;
+namespace Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation;
 
-use Common\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
-use Common\Library\OpenTelemetry\API\Logs\NoopLoggerProvider;
-use Common\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
-use Common\Library\OpenTelemetry\API\Metrics\Noop\NoopMeterProvider;
-use Common\Library\OpenTelemetry\API\Trace\NoopTracerProvider;
-use Common\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\NoopTextMapPropagator;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\LoggerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Logs\NoopLoggerProvider;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Swoolefy\Library\OpenTelemetry\API\Metrics\Noop\NoopMeterProvider;
+use Swoolefy\Library\OpenTelemetry\API\Trace\NoopTracerProvider;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\NoopTextMapPropagator;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 
 /**
  * Context used for component creation.

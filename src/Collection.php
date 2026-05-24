@@ -9,16 +9,16 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library;
+namespace Swoolefy\Library;
 
 use ArrayAccess;
 use ArrayIterator;
 use Countable;
 use IteratorAggregate;
 use JsonSerializable;
-use Common\Library\Db\Contract\Arrayable;
-use Common\Library\Db\Contract\Jsonable;
-use Common\Library\Db\Helper\Arr;
+use Swoolefy\Library\Db\Contract\Arrayable;
+use Swoolefy\Library\Db\Contract\Jsonable;
+use Swoolefy\Library\Db\Helper\Arr;
 use Traversable;
 
 /**

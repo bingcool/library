@@ -10,10 +10,10 @@
  */
 
 
-namespace Common\Library\Jwt\Signer;
+namespace Swoolefy\Library\Jwt\Signer;
 
-use Common\Library\Jwt\Signer\Ecdsa\MultibyteStringConverter;
-use Common\Library\Jwt\Signer\Ecdsa\SignatureConverter;
+use Swoolefy\Library\Jwt\Signer\Ecdsa\MultibyteStringConverter;
+use Swoolefy\Library\Jwt\Signer\Ecdsa\SignatureConverter;
 
 abstract class Ecdsa extends OpenSSL
 {

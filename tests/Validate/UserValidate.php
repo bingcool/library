@@ -1,8 +1,8 @@
 <?php
 
-namespace Common\Library\Tests\Validate;
+namespace Swoolefy\Library\Tests\Validate;
 
-use Common\Library\Validate;
+use Swoolefy\Library\Validate;
 
 class UserValidate extends Validate
 {

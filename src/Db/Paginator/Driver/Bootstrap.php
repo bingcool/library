@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Paginator\Driver;
+namespace Swoolefy\Library\Db\Paginator\Driver;
 
-use Common\Library\Db\Paginator;
+use Swoolefy\Library\Db\Paginator;
 
 /**
  * Bootstrap 分页驱动.

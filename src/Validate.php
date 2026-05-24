@@ -11,16 +11,16 @@
 
 declare (strict_types=1);
 
-namespace Common\Library;
+namespace Swoolefy\Library;
 
 use Closure;
-use Common\Library\Exception\ValidateException;
-use Common\Library\Helper\StringUtil;
-use Common\Library\Validate\ValidateRule;
+use Swoolefy\Library\Exception\ValidateException;
+use Swoolefy\Library\Helper\StringUtil;
+use Swoolefy\Library\Validate\ValidateRule;
 
 /**
  * Class Validate
- * @package Common\Library
+ * @package Swoolefy\Library
  */
 class Validate
 {

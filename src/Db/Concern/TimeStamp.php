@@ -9,13 +9,13 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db\Concern;
+namespace Swoolefy\Library\Db\Concern;
 
 use DateTime;
 
 /**
  * Trait TimeStamp
- * @package Common\Library\Db\Concern
+ * @package Swoolefy\Library\Db\Concern
  */
 trait TimeStamp
 {

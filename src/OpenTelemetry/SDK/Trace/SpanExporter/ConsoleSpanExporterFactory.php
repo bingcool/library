@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\SpanExporter;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporter;
 
-use Common\Library\OpenTelemetry\SDK\Registry;
-use Common\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Registry;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporterInterface;
 
 class ConsoleSpanExporterFactory implements SpanExporterFactoryInterface
 {

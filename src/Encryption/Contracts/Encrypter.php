@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Encryption\Contracts;
+namespace Swoolefy\Library\Encryption\Contracts;
 
 interface Encrypter
 {

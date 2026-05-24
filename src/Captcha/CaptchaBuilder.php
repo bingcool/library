@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Captcha;
+namespace Swoolefy\Library\Captcha;
 
-use Common\Library\Exception\CaptchaException;
+use Swoolefy\Library\Exception\CaptchaException;
 
 class CaptchaBuilder extends \stdClass implements CaptchaBuilderInterface
 {

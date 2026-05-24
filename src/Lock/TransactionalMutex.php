@@ -1,8 +1,8 @@
 <?php
 
-namespace Common\Library\Lock;
+namespace Swoolefy\Library\Lock;
 
-use Common\Library\Db\PDOConnection;
+use Swoolefy\Library\Db\PDOConnection;
 use InvalidArgumentException;
 use malkusch\lock\exception\LockAcquireException;
 use malkusch\lock\util\Loop;

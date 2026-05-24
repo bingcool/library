@@ -9,13 +9,13 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
 use PDO;
 
 /**
  * Class Mysql
- * @package Common\Library\Db
+ * @package Swoolefy\Library\Db
  */
 class Mysql extends PDOConnection
 {

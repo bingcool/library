@@ -9,7 +9,7 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Spl;
+namespace Swoolefy\Library\Spl;
 
 
 use Swoole\Coroutine;

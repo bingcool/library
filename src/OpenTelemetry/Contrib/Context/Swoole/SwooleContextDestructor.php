@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Context\Swoole;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Context\Swoole;
 
-use Common\Library\OpenTelemetry\Context\ExecutionContextAwareInterface;
+use Swoolefy\Library\OpenTelemetry\Context\ExecutionContextAwareInterface;
 
 /**
  * @internal

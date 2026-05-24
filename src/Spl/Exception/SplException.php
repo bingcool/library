@@ -9,9 +9,9 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Spl\Exception;
+namespace Swoolefy\Library\Spl\Exception;
 
-use Common\Library\Exception\CommonException;
+use Swoolefy\Library\Exception\CommonException;
 class SplException extends CommonException
 {
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Traits;
+namespace Swoolefy\Library\Nacos\Provider\Traits;
 
-use Common\Library\Nacos\Http\HttpResponse;
+use Swoolefy\Library\Nacos\Http\HttpResponse;
 
 trait TReturnForm
 {

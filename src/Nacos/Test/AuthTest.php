@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Test;
+namespace Swoolefy\Library\Nacos\Test;
 
-use Common\Library\Nacos\Client;
-use Common\Library\Nacos\ClientConfig;
-use Common\Library\Nacos\Provider\Auth\AuthProvider;
+use Swoolefy\Library\Nacos\Client;
+use Swoolefy\Library\Nacos\ClientConfig;
+use Swoolefy\Library\Nacos\Provider\Auth\AuthProvider;
 
 class AuthTest extends BaseTest
 {

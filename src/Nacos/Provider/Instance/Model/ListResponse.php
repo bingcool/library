@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Provider\Instance\Model;
+namespace Swoolefy\Library\Nacos\Provider\Instance\Model;
 
-use Common\Library\Nacos\Provider\Model\BaseResponse;
-use Common\Library\Nacos\Http\HttpResponse;
+use Swoolefy\Library\Nacos\Provider\Model\BaseResponse;
+use Swoolefy\Library\Nacos\Http\HttpResponse;
 
 class ListResponse extends BaseResponse
 {

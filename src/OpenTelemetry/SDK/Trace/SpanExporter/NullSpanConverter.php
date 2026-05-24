@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Trace\SpanExporter;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanExporter;
 
-use Common\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Trace\SpanConverterInterface;
 
 class NullSpanConverter implements SpanConverterInterface
 {

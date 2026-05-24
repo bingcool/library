@@ -1,11 +1,11 @@
 <?php
 
-namespace Common\Library\Tests\Db;
+namespace Swoolefy\Library\Tests\Db;
 
-use Common\Library\Db\SqlBuilder;
+use Swoolefy\Library\Db\SqlBuilder;
 use PHPUnit\Framework\TestCase;
-use Common\Library\Protobuf\Serializer;
-use Common\Library\ArrayHelper\ArrayUtil;
+use Swoolefy\Library\Protobuf\Serializer;
+use Swoolefy\Library\ArrayHelper\ArrayUtil;
 
 class DbTest extends TestCase
 {
@@ -15,7 +15,7 @@ class DbTest extends TestCase
     public function testInsert()
     {
         try {
-            $order = new \Common\Library\Tests\Db\Order($this->userId, 0);
+            $order = new \Swoolefy\Library\Tests\Db\Order($this->userId, 0);
             $order->user_id = $this->userId;
             $order->exp('order_amount','order_amount+5');
             $order->order_product_ids = [1234455, 4567888];
@@ -39,7 +39,7 @@ class DbTest extends TestCase
 
     public function testFindList()
     {
-        $result = \Common\Library\Tests\Db\Order::model($this->userId)->getSlaveConnection()
+        $result = \Swoolefy\Library\Tests\Db\Order::model($this->userId)->getSlaveConnection()
             ->createCommand('select * from tbl_order order by create_time desc LIMIT 4 ')
             ->queryAll();
 
@@ -49,7 +49,7 @@ class DbTest extends TestCase
     public function testGroupFind()
     {
 
-        $db = \Common\Library\Tests\Db\Order::model($this->userId)->getSlaveConnection();
+        $db = \Swoolefy\Library\Tests\Db\Order::model($this->userId)->getSlaveConnection();
 
         $sql = 'select sum(order_amount) as total, a.user_id, a.order_amount, a.order_status from tbl_order as a where 1=1 ';
         $params = [];
@@ -82,7 +82,7 @@ class DbTest extends TestCase
     public function testGroupFind1()
     {
 
-        $db = \Common\Library\Tests\Db\Order::model($this->userId)->getSlaveConnection();
+        $db = \Swoolefy\Library\Tests\Db\Order::model($this->userId)->getSlaveConnection();
 
         $sql = 'select a.user_id, a.order_amount, a.order_status from tbl_order as a where 1=1 ';
         $params = [];
@@ -109,7 +109,7 @@ class DbTest extends TestCase
     public function testFindObject()
     {
         $orderId = 1642787884;
-        $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
+        $order = new \Swoolefy\Library\Tests\Db\Order($this->userId, $orderId);
 
         var_dump($order->toArray());
     }
@@ -117,7 +117,7 @@ class DbTest extends TestCase
     public function testUpdateObject()
     {
         $orderId = 1642787884;
-        $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
+        $order = new \Swoolefy\Library\Tests\Db\Order($this->userId, $orderId);
         $order->order_product_ids = [1, 2, 3, 4, 5, 6, 7, 8];
         $order->remark = '中国小米（mi）' . rand(1, 1000);
         //$order->exp('order_amount','order_amount+5');
@@ -140,7 +140,7 @@ class DbTest extends TestCase
     public function testDeleteObject()
     {
         $orderId = 1623187838;
-        $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
+        $order = new \Swoolefy\Library\Tests\Db\Order($this->userId, $orderId);
         $order->delete();
 
     }
@@ -151,7 +151,7 @@ class DbTest extends TestCase
     public function testTransaction()
     {
         $orderId = '1623132269';
-        $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
+        $order = new \Swoolefy\Library\Tests\Db\Order($this->userId, $orderId);
 
         $connection = $order->getConnection();
 
@@ -222,7 +222,7 @@ class DbTest extends TestCase
     public function testJson()
     {
         $orderId = 1632219150;
-        $order = new \Common\Library\Tests\Db\Order($this->userId, $orderId);
+        $order = new \Swoolefy\Library\Tests\Db\Order($this->userId, $orderId);
 
         $connection = $order->getConnection();
 

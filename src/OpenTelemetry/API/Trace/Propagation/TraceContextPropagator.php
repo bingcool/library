@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\API\Trace\Propagation;
+namespace Swoolefy\Library\OpenTelemetry\API\Trace\Propagation;
 
 use function count;
 use function explode;
 use function hexdec;
-use Common\Library\OpenTelemetry\API\Trace\Span;
-use Common\Library\OpenTelemetry\API\Trace\SpanContext;
-use Common\Library\OpenTelemetry\API\Trace\SpanContextInterface;
-use Common\Library\OpenTelemetry\API\Trace\SpanContextValidator;
-use Common\Library\OpenTelemetry\API\Trace\TraceFlags;
-use Common\Library\OpenTelemetry\API\Trace\TraceState;
-use Common\Library\OpenTelemetry\Context\Context;
-use Common\Library\OpenTelemetry\Context\ContextInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\ArrayAccessGetterSetter;
-use Common\Library\OpenTelemetry\Context\Propagation\PropagationGetterInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\PropagationSetterInterface;
-use Common\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\Span;
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanContext;
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanContextInterface;
+use Swoolefy\Library\OpenTelemetry\API\Trace\SpanContextValidator;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TraceFlags;
+use Swoolefy\Library\OpenTelemetry\API\Trace\TraceState;
+use Swoolefy\Library\OpenTelemetry\Context\Context;
+use Swoolefy\Library\OpenTelemetry\Context\ContextInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\ArrayAccessGetterSetter;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\PropagationGetterInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\PropagationSetterInterface;
+use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 
 /**
  * TraceContext is a propagator that supports the W3C Trace Context format

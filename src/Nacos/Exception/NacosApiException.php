@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Exception;
+namespace Swoolefy\Library\Nacos\Exception;
 
-use Common\Library\Nacos\Http\HttpResponse;
+use Swoolefy\Library\Nacos\Http\HttpResponse;
 
 class NacosApiException extends NacosException
 {

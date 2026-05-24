@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
-use Common\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\KnownValues;
 use UnexpectedValueException;
 
 class Protocols

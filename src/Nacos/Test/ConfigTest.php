@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\Nacos\Test;
+namespace Swoolefy\Library\Nacos\Test;
 
 use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 
 use function Swoole\Coroutine\run;
 
-use Common\Library\Nacos\Exception\NacosApiException;
-use Common\Library\Nacos\Provider\Config\ConfigListener;
-use Common\Library\Nacos\Provider\Config\ConfigProvider;
-use Common\Library\Nacos\Provider\Config\Model\HistoryItem;
-use Common\Library\Nacos\Provider\Config\Model\ListenerConfig;
-use Common\Library\Nacos\Provider\Config\Model\ListenerRequest;
-use Common\Library\Nacos\Http\HttpStatus;
+use Swoolefy\Library\Nacos\Exception\NacosApiException;
+use Swoolefy\Library\Nacos\Provider\Config\ConfigListener;
+use Swoolefy\Library\Nacos\Provider\Config\ConfigProvider;
+use Swoolefy\Library\Nacos\Provider\Config\Model\HistoryItem;
+use Swoolefy\Library\Nacos\Provider\Config\Model\ListenerConfig;
+use Swoolefy\Library\Nacos\Provider\Config\Model\ListenerRequest;
+use Swoolefy\Library\Nacos\Http\HttpStatus;
 
 class ConfigTest extends BaseTest
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\SDK\Common\Configuration\Resolver;
+namespace Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Resolver;
 
 interface ResolverInterface
 {

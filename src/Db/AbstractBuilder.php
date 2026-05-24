@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
 use PDO;
 use Closure;
-use Common\Library\Exception\DbException;
+use Swoolefy\Library\Exception\DbException;
 
 /**
  * Db Builder

@@ -9,11 +9,11 @@
  * +----------------------------------------------------------------------
  */
 
-namespace Common\Library\Db;
+namespace Swoolefy\Library\Db;
 
 /**
  * Class Util
- * @package Common\Library\Db
+ * @package Swoolefy\Library\Db
  */
 class Util
 {

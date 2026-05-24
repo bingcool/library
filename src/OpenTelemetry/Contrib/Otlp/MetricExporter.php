@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Common\Library\OpenTelemetry\Contrib\Otlp;
+namespace Swoolefy\Library\OpenTelemetry\Contrib\Otlp;
 
-use Common\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
+use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
 use Opentelemetry\Proto\Collector\Metrics\V1\ExportMetricsServiceResponse;
-use Common\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\AggregationTemporalitySelectorInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
-use Common\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
-use Common\Library\OpenTelemetry\SDK\Metrics\PushMetricExporterInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Common\Export\TransportInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\AggregationTemporalitySelectorInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Data\Temporality;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricMetadataInterface;
+use Swoolefy\Library\OpenTelemetry\SDK\Metrics\PushMetricExporterInterface;
 use RuntimeException;
 use Throwable;
 

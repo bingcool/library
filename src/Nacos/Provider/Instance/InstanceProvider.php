@@ -100,6 +100,7 @@ class InstanceProvider extends BaseProvider
         ], RequestMethod::GET, [], DetailResponse::class);
     }
 
+    /** 重型心跳：携带 beat JSON，用于首次注册或服务端尚未启用轻量模式时 */
     public function beat(string $serviceName, RsInfo $beat, string $groupName = '', string $namespaceId = '', bool $ephemeral = true): BeatResponse
     {
         return $this->client->request('nacos/v1/ns/instance/beat', [
@@ -108,6 +109,28 @@ class InstanceProvider extends BaseProvider
             'port'        => $beat->getPort(),
             'namespaceId' => $namespaceId,
             'beat'        => json_encode($beat),
+            'groupName'   => $groupName,
+            'ephemeral'   => StringUtil::convertBoolToString($ephemeral),
+        ], RequestMethod::PUT, [], BeatResponse::class);
+    }
+
+    /**
+     * 轻量心跳：响应含 lightBeatEnabled=true 后必须使用此方法续约。
+     * 若仍携带 beat 参数，Nacos 约 15s 后会标记不健康并剔除实例。
+     */
+    public function lightBeat(
+        string $serviceName,
+        string $ip,
+        int $port,
+        string $groupName = '',
+        string $namespaceId = '',
+        bool $ephemeral = true,
+    ): BeatResponse {
+        return $this->client->request('nacos/v1/ns/instance/beat', [
+            'serviceName' => $serviceName,
+            'ip'          => $ip,
+            'port'        => $port,
+            'namespaceId' => $namespaceId,
             'groupName'   => $groupName,
             'ephemeral'   => StringUtil::convertBoolToString($ephemeral),
         ], RequestMethod::PUT, [], BeatResponse::class);

@@ -103,7 +103,7 @@ class Oracle extends PDOConnection
      * @param int|string $pkValue 自定义的主键唯一值
      * @return mixed
      */
-    public function getLastInsID(string $sequence = null, $pkValue = 0)
+    public function getLastInsID(?string $sequence = null, $pkValue = 0)
     {
         if(!is_null($sequence)) {
             $pdo    = $this->PDOStatementHandle("select {$sequence}.currval as id from dual");

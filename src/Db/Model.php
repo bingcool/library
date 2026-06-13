@@ -420,10 +420,10 @@ abstract class Model implements ArrayAccess
     protected function transaction(\Closure $callback)
     {
         $result = null;
-        if($this->getConnection()->isEnableTransaction()) {
+        if ($this->getConnection()->isEnableTransaction()) {
             $result = $callback->call($this);
             return $result;
-        }else {
+        } else {
             try {
                 $this->getConnection()->beginTransaction();
                 $result = $callback->call($this);
@@ -441,7 +441,7 @@ abstract class Model implements ArrayAccess
      */
     public function beginTransaction()
     {
-        if(!$this->getConnection()->isEnableTransaction()) {
+        if (!$this->getConnection()->isEnableTransaction()) {
             $this->getConnection()->beginTransaction();
         }
         return $this;
@@ -560,7 +560,7 @@ abstract class Model implements ArrayAccess
             $hasBeforeInsertTransaction = method_exists(static::class, 'onBeforeInsertTransaction');
             $hasAfterInsertTransaction  = method_exists(static::class, 'onAfterInsertTransaction');
             $enableAfterCommitCallback  = false;
-            if($hasBeforeInsertTransaction || $hasAfterInsertTransaction || $this->getConnection()->isEnableTransaction()) {
+            if ($hasBeforeInsertTransaction || $hasAfterInsertTransaction || $this->getConnection()->isEnableTransaction()) {
                 if(method_exists(static::class, 'onAfterInsertCommitCallBack')) {
                     $enableAfterCommitCallback = true;
                     $this->getConnection()->afterCommitCallback([$this,'onAfterInsertCommitCallBack']);

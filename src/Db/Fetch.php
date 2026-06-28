@@ -211,6 +211,7 @@ class Fetch
             foreach ($array as $item) {
                 $sql  = $this->builder->insertAll($this->query, $item);
                 $bind = $this->query->getBind();
+                [$sql, $bind] = $this->connection->applySqlInterceptors($sql, $bind);
 
                 $fetchSql[] = $this->connection->getRealSql($sql, $bind);
             }
@@ -419,6 +420,7 @@ class Fetch
     public function fetch(string $sql): string
     {
         $bind = $this->query->getBind();
+        [$sql, $bind] = $this->connection->applySqlInterceptors($sql, $bind);
 
         return $this->connection->getRealSql($sql, $bind);
     }

@@ -17,6 +17,7 @@ use Swoolefy\Core\Log\LogManager;
 use Swoolefy\Library\Exception\DbException;
 use Swoolefy\Core\Coroutine\Context as SwooleContext;
 use Swoolefy\Library\CurlProxy\OpentelemetryMiddleware;
+use Swoolefy\Library\Db\Interceptor\SqlInterceptorInterface;
 
 /**
  * Class PDOConnection
@@ -155,6 +156,18 @@ abstract class PDOConnection implements ConnectionInterface
     protected static $slowSqlNoticeCallback = [];
 
     /**
+     * SQL拦截器.
+     * @var SqlInterceptorInterface[]
+     */
+    protected $sqlInterceptors = [];
+
+    /**
+     * 全局SQL拦截器.
+     * @var SqlInterceptorInterface[]
+     */
+    protected static $globalSqlInterceptors = [];
+
+    /**
      * PDO连接参数
      * @var array
      */
@@ -234,6 +247,66 @@ abstract class PDOConnection implements ConnectionInterface
         $this->debug = (int)($this->config['debug'] ?? 1);
         // 路由动态设置debug
         $this->enableDynamicDebug();
+    }
+
+    /**
+     * 注册当前连接的SQL拦截器.
+     *
+     * @param SqlInterceptorInterface $interceptor
+     * @return $this
+     */
+    public function addSqlInterceptor(SqlInterceptorInterface $interceptor)
+    {
+        $this->sqlInterceptors[] = $interceptor;
+        return $this;
+    }
+
+    /**
+     * 清空当前连接的SQL拦截器.
+     *
+     * @return $this
+     */
+    public function clearSqlInterceptors()
+    {
+        $this->sqlInterceptors = [];
+        return $this;
+    }
+
+    /**
+     * 注册全局SQL拦截器.
+     *
+     * @param SqlInterceptorInterface $interceptor
+     * @return void
+     */
+    public static function addGlobalSqlInterceptor(SqlInterceptorInterface $interceptor): void
+    {
+        static::$globalSqlInterceptors[] = $interceptor;
+    }
+
+    /**
+     * 清空全局SQL拦截器.
+     *
+     * @return void
+     */
+    public static function clearGlobalSqlInterceptors(): void
+    {
+        static::$globalSqlInterceptors = [];
+    }
+
+    /**
+     * 应用SQL拦截器.
+     *
+     * @param string $sql
+     * @param array $bindParams
+     * @return array
+     */
+    public function applySqlInterceptors(string $sql, array $bindParams = []): array
+    {
+        foreach (array_merge(static::$globalSqlInterceptors, $this->sqlInterceptors) as $interceptor) {
+            $interceptor->beforeExecute($this, $sql, $bindParams);
+        }
+
+        return [$sql, $bindParams];
     }
 
     /**
@@ -356,8 +429,12 @@ abstract class PDOConnection implements ConnectionInterface
      * @throws \Exception
      * @throws \Throwable
      */
-    public function PDOStatementHandle(string $sql, array $bindParams = []): PDOStatement
+    public function PDOStatementHandle(string $sql, array $bindParams = [], bool $intercept = true): PDOStatement
     {
+        if ($intercept) {
+            [$sql, $bindParams] = $this->applySqlInterceptors($sql, $bindParams);
+        }
+
         $this->initConnect();
         // 记录SQL语句
         $this->queryStr = $sql;
@@ -381,7 +458,7 @@ abstract class PDOConnection implements ConnectionInterface
         } catch (\PDOException $e) {
             if ($this->transTimes <= 0 && $this->reConnectTimes < 4 && ($this->isBreak($e) || ($e->errorInfo[1] ?? null) == 2006 || ($e->errorInfo[1] ?? null) == 2013)) {
                 ++$this->reConnectTimes;
-                return $this->close()->PDOStatementHandle($sql, $bindParams);
+                return $this->close()->PDOStatementHandle($sql, $bindParams, false);
             }
             throw $e;
         } catch (\Exception|\Throwable $exception) {

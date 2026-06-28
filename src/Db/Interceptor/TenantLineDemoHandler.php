@@ -11,14 +11,9 @@
 
 namespace Swoolefy\Library\Db\Interceptor;
 
-/**
- * 租户信息处理器，供TenantLineInterceptor获取当前租户上下文。
- *
- * 典型实现可以从请求上下文、登录Session、Token载荷、协程上下文或应用自己的
- * 租户解析器中读取当前租户ID。拦截器只通过该接口获取租户元信息，SQL解析和
- * 表字段检测由TenantLineInterceptor内部完成。
- */
-interface TenantLineHandlerInterface
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
+
+class TenantLineDemoHandler implements TenantLineHandlerInterface
 {
     /**
      * 获取当前租户ID。
@@ -27,7 +22,10 @@ interface TenantLineHandlerInterface
      *
      * @return mixed
      */
-    public function getTenantId(): ?string;
+    public function getTenantId(): ?string
+    {
+        return SwooleContext::get('tenant_id');
+    }
 
     /**
      * 获取租户字段名。
@@ -37,7 +35,10 @@ interface TenantLineHandlerInterface
      *
      * @return string
      */
-    public function getTenantIdColumn(): string;
+    public function getTenantIdColumn(): string
+    {
+        return 'tenant_id';
+    }
 
     /**
      * 判断数据表是否跳过租户隔离的兜底钩子。
@@ -51,5 +52,8 @@ interface TenantLineHandlerInterface
      * @param string $tableName 去除引号后的标准表名。
      * @return bool true表示跳过租户过滤，false表示强制进行租户过滤。
      */
-    public function ignoreTable(string $tableName): bool;
+    public function ignoreTable(string $tableName): bool
+    {
+        return false;
+    }
 }

@@ -106,7 +106,7 @@ class Client
         $queryParams = RequestMethod::GET === $method ? $params : [];
         $bodyParams = RequestMethod::GET === $method ? [] : $params;
 
-        $requestHeaders = $headers;
+        $requestHeaders = $this->normalizeHeaders($headers);
 
         if ($useAccessToken && '' !== $config->getUsername() && '' !== $config->getPassword()) {
             $accessToken = $this->auth->getAccessToken();
@@ -126,8 +126,13 @@ class Client
         }
 
         if ([] !== $bodyParams) {
+            if (!$this->hasHeader($requestHeaders, 'Content-Length')) {
+                $requestHeaders['Content-Length'] = (string) strlen(http_build_query($bodyParams, '', '&'));
+            }
             $options[RequestOptions::FORM_PARAMS] = $bodyParams;
         }
+
+        $options[RequestOptions::HEADERS] = $requestHeaders;
 
         try {
             $httpResponse = $this->transport->request($method, ltrim($path, '/'), $options);
@@ -163,6 +168,38 @@ class Client
         }
 
         return $httpResponse;
+    }
+
+    /**
+     * @param array<string, mixed> $headers
+     * @return array<string, string|array<int, string>>
+     */
+    private function normalizeHeaders(array $headers): array
+    {
+        $normalized = [];
+        foreach ($headers as $name => $value) {
+            if (is_array($value)) {
+                $normalized[$name] = array_map(static fn ($item): string => (string) $item, $value);
+            } else {
+                $normalized[$name] = (string) $value;
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param array<string, mixed> $headers
+     */
+    private function hasHeader(array $headers, string $name): bool
+    {
+        foreach (array_keys($headers) as $header) {
+            if (strcasecmp((string) $header, $name) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function reopen(): void

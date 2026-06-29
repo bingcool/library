@@ -113,7 +113,7 @@ abstract class BaseQuery
         if (false !== strpos($type, '\\')) {
             $class = $type;
         } else {
-            $class = '\\Common\\Library\\Db\\Builder\\' . ucfirst($type);
+            $class = '\\Swoolefy\\Library\\Db\\Builder\\' . ucfirst($type);
         }
 
         return $class;

@@ -13,6 +13,7 @@ namespace Swoolefy\Library\Db\Interceptor;
 
 use PDO;
 use Swoolefy\Library\Db\PDOConnection;
+use Swoolefy\Core\Coroutine\Context as SwooleContext;
 
 /**
  * 自动注入租户隔离条件的SQL拦截器。
@@ -42,6 +43,11 @@ use Swoolefy\Library\Db\PDOConnection;
 class TenantLineInterceptor implements SqlInterceptorInterface
 {
     /**
+     * 当前协程中缓存表字段元信息的key。
+     */
+    protected const CONTEXT_TABLE_FIELDS_CACHE_KEY = '__tenant_line_table_fields_cache';
+
+    /**
      * 提供租户ID、租户字段名和兜底忽略判断。
      *
      * @var TenantLineHandlerInterface
@@ -57,6 +63,15 @@ class TenantLineInterceptor implements SqlInterceptorInterface
      * @var bool
      */
     protected $insertFill;
+
+    /**
+     * 非协程环境下的表字段元信息缓存。
+     *
+     * 协程环境优先使用SwooleContext，普通CLI或非协程PHP环境使用该属性兜底。
+     *
+     * @var array
+     */
+    protected $tableFieldsCache = [];
 
     /**
      * @param TenantLineHandlerInterface $handler 租户元信息处理器。
@@ -585,8 +600,11 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     /**
      * 从当前连接读取表字段元信息。
      *
+     * 字段元信息会优先缓存在当前协程上下文中。同一协程内，同一连接对象和同一表名
+     * 只会读取一次表结构，避免每条SQL拦截都触发SHOW COLUMNS等元信息查询。
+     *
      * 原生表达式、临时表、数据库权限或不支持的驱动都可能导致元信息读取失败。
-     * 失败时返回空数组，让shouldIgnore()继续使用handler兜底。
+     * 失败时同样缓存空数组，让shouldIgnore()继续使用handler兜底，同时避免重复失败查询。
      *
      * @param PDOConnection $connection 当前数据库连接。
      * @param string $table 标准化后的表名。
@@ -594,11 +612,132 @@ class TenantLineInterceptor implements SqlInterceptorInterface
      */
     protected function getTableFields(PDOConnection $connection, string $table): array
     {
-        try {
-            return $connection->getFields($table);
-        } catch (\Throwable $exception) {
-            return [];
+        $cacheKey = $this->buildTableFieldsCacheKey($connection, $table);
+
+        if ($this->hasCachedTableFields($cacheKey)) {
+            return $this->getCachedTableFields($cacheKey);
         }
+
+        try {
+            $fields = $connection->getFields($table);
+        } catch (\Throwable $exception) {
+            $fields = [];
+        }
+
+        $this->setCachedTableFields($cacheKey, $fields);
+
+        return $fields;
+    }
+
+    /**
+     * 构建表字段缓存key。
+     *
+     * key包含连接对象ID和表名，避免同一协程中不同数据库连接的同名表互相污染。
+     *
+     * @param PDOConnection $connection 当前数据库连接。
+     * @param string $table 标准化后的表名。
+     * @return string
+     */
+    protected function buildTableFieldsCacheKey(PDOConnection $connection, string $table): string
+    {
+        return spl_object_id($connection) . ':' . $table;
+    }
+
+    /**
+     * 判断是否已有表字段缓存。
+     *
+     * 使用array_key_exists而不是isset，是为了让空数组也能作为有效缓存值。
+     *
+     * @param string $cacheKey 表字段缓存key。
+     * @return bool
+     */
+    protected function hasCachedTableFields(string $cacheKey): bool
+    {
+        $cache = $this->getTableFieldsCache();
+
+        return array_key_exists($cacheKey, $cache);
+    }
+
+    /**
+     * 获取已缓存的表字段元信息。
+     *
+     * @param string $cacheKey 表字段缓存key。
+     * @return array
+     */
+    protected function getCachedTableFields(string $cacheKey): array
+    {
+        $cache = $this->getTableFieldsCache();
+
+        return $cache[$cacheKey] ?? [];
+    }
+
+    /**
+     * 写入表字段元信息缓存。
+     *
+     * @param string $cacheKey 表字段缓存key。
+     * @param array $fields 表字段元信息。
+     * @return void
+     */
+    protected function setCachedTableFields(string $cacheKey, array $fields): void
+    {
+        $cache = $this->getTableFieldsCache();
+        $cache[$cacheKey] = $fields;
+        $this->setTableFieldsCache($cache);
+    }
+
+    /**
+     * 获取当前环境中的表字段缓存。
+     *
+     * 协程环境使用SwooleContext，这样缓存生命周期跟随当前协程；非协程环境使用对象属性。
+     *
+     * @return array
+     */
+    protected function getTableFieldsCache(): array
+    {
+        if ($this->isCoroutineContextAvailable()) {
+            if (!SwooleContext::has(static::CONTEXT_TABLE_FIELDS_CACHE_KEY)) {
+                SwooleContext::set(static::CONTEXT_TABLE_FIELDS_CACHE_KEY, []);
+            }
+
+            $cache = SwooleContext::get(static::CONTEXT_TABLE_FIELDS_CACHE_KEY);
+            if (!is_array($cache)) {
+                $cache = [];
+                SwooleContext::set(static::CONTEXT_TABLE_FIELDS_CACHE_KEY, $cache);
+            }
+
+            return $cache;
+        }
+
+        return $this->tableFieldsCache;
+    }
+
+    /**
+     * 保存当前环境中的表字段缓存。
+     *
+     * @param array $cache 表字段缓存。
+     * @return void
+     */
+    protected function setTableFieldsCache(array $cache): void
+    {
+        if ($this->isCoroutineContextAvailable()) {
+            SwooleContext::set(static::CONTEXT_TABLE_FIELDS_CACHE_KEY, $cache);
+            return;
+        }
+
+        $this->tableFieldsCache = $cache;
+    }
+
+    /**
+     * 判断当前是否可使用协程上下文。
+     *
+     * 为了兼容CLI测试或未加载Swoole的运行环境，这里先判断类是否存在。
+     *
+     * @return bool
+     */
+    protected function isCoroutineContextAvailable(): bool
+    {
+        return class_exists(SwooleContext::class)
+            && \Swoole\Coroutine::getCid() >= 0;
     }
 
     /**

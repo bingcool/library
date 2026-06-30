@@ -25,7 +25,7 @@ abstract class Model implements ArrayAccess
     use Concern\Attribute;
     use Concern\ModelEvent;
     use Concern\Expression;
-    use Concern\ParseSql;
+    use Concern\QueryPersistence;
     use Concern\TimeStamp;
     use Concern\LockShare;
     use Concern\Util;
@@ -389,13 +389,7 @@ abstract class Model implements ArrayAccess
      */
     public function getQuery(): Query
     {
-        if (method_exists($this->getConnection(), 'getObject')) {
-            $query = (new Query($this->getConnection()->getObject()))->table($this->getTableName());
-        }else {
-            $query = (new Query($this->getConnection()))->table($this->getTableName());
-        }
-        $query->setModel($this);
-        return $query;
+        return $this->newPersistenceQuery();
     }
 
     /**
@@ -554,8 +548,6 @@ abstract class Model implements ArrayAccess
             $allowFields = array_diff($allowFields, [$pk]);
         }
 
-        list($sql, $bindParams) = $this->parseInsertSql($allowFields);
-
         try {
             $hasBeforeInsertTransaction = method_exists(static::class, 'onBeforeInsertTransaction');
             $hasAfterInsertTransaction  = method_exists(static::class, 'onAfterInsertTransaction');
@@ -567,56 +559,33 @@ abstract class Model implements ArrayAccess
                 }
             }
 
-            if ($hasBeforeInsertTransaction && $hasAfterInsertTransaction) {
-                $this->transaction(function () use ($sql, $bindParams, $pk) {
-                    $this->onBeforeInsertTransaction();
-                    $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
-                    // if increment primary key insert successful set primary key to data array
-                    $this->setAutoIncrementPkValue($pk);
-                    $this->onAfterInsertTransaction();
-                    // set exist
-                    $this->exists(true);
-                    // query buildAttributes
-                    $this->buildAttributes();
-                    $this->trigger(self::AFTER_INSERT);
-                    $this->trigger(self::AFTER_SAVE);
-                });
-            } else if ($hasBeforeInsertTransaction) {
-                $this->transaction(function () use ($sql, $bindParams, $pk) {
-                    $this->onBeforeInsertTransaction();
-                    $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
-                    // if increment primary key insert successful set primary key to data array
-                    $this->setAutoIncrementPkValue($pk);
-                    // set exist
-                    $this->exists(true);
-                    // query buildAttributes
-                    $this->buildAttributes();
-                    $this->trigger(self::AFTER_INSERT);
-                    $this->trigger(self::AFTER_SAVE);
-                });
-            } else if ($hasAfterInsertTransaction) {
-                $this->transaction(function () use ($sql, $bindParams, $pk) {
-                    $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
-                    // if increment primary key insert successful set primary key to data array
-                    $this->setAutoIncrementPkValue($pk);
-                    $this->onAfterInsertTransaction();
-                    // set exist
-                    $this->exists(true);
-                    // query buildAttributes
-                    $this->buildAttributes();
-                    $this->trigger(self::AFTER_INSERT);
-                    $this->trigger(self::AFTER_SAVE);
-                });
-            } else {
-                $this->_numRows = $this->getConnection()->createCommand($sql)->insert($bindParams);
-                // if increment primary key insert successful set primary key to data array
+            $insertCallback = function () use ($allowFields, $pk) {
+                $this->_numRows = $this->executePersistenceInsert($allowFields);
                 $this->setAutoIncrementPkValue($pk);
-                // set exist
                 $this->exists(true);
-                // query buildAttributes
                 $this->buildAttributes();
                 $this->trigger(self::AFTER_INSERT);
                 $this->trigger(self::AFTER_SAVE);
+            };
+
+            if ($hasBeforeInsertTransaction && $hasAfterInsertTransaction) {
+                $this->transaction(function () use ($insertCallback) {
+                    $this->onBeforeInsertTransaction();
+                    $insertCallback();
+                    $this->onAfterInsertTransaction();
+                });
+            } else if ($hasBeforeInsertTransaction) {
+                $this->transaction(function () use ($insertCallback) {
+                    $this->onBeforeInsertTransaction();
+                    $insertCallback();
+                });
+            } else if ($hasAfterInsertTransaction) {
+                $this->transaction(function () use ($insertCallback) {
+                    $insertCallback();
+                    $this->onAfterInsertTransaction();
+                });
+            } else {
+                $insertCallback();
             }
 
         } catch (\Throwable $e) {
@@ -679,8 +648,7 @@ abstract class Model implements ArrayAccess
      */
     protected function buildAttributes()
     {
-        list($sql, $bindParams) = $this->parseFindSqlByPk();
-        $attributes = $this->getConnection()->createCommand($sql)->findOne($bindParams);
+        $attributes = $this->reloadByPrimaryKey();
         if ($attributes) {
             $this->parseOrigin($attributes);
             return $this;
@@ -715,8 +683,6 @@ abstract class Model implements ArrayAccess
         $allowFields = $this->getAllowFields();
 
         if ($diffData || count($this->expressionFields) > 0) {
-            list($sql, $bindParams) = $this->parseUpdateSql($diffData, $allowFields);
-
             $hasBeforeUpdateTransaction = method_exists(static::class, 'onBeforeUpdateTransaction');
             $hasAfterUpdateTransaction  = method_exists(static::class, 'onAfterUpdateTransaction');
 
@@ -728,37 +694,32 @@ abstract class Model implements ArrayAccess
                 }
             }
 
+            $updateCallback = function () use ($diffData, $allowFields) {
+                $this->_numRows = $this->executePersistenceUpdate($diffData, $allowFields);
+                $this->checkResult($this->_data);
+                $this->trigger(self::AFTER_UPDATE);
+                $this->trigger(self::AFTER_SAVE);
+            };
+
             try {
                 if ($hasBeforeUpdateTransaction && $hasAfterUpdateTransaction) {
-                    $this->transaction(function () use ($sql, $bindParams) {
+                    $this->transaction(function () use ($updateCallback) {
                         $this->onBeforeUpdateTransaction();
-                        $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
+                        $updateCallback();
                         $this->onAfterUpdateTransaction();
-                        $this->checkResult($this->_data);
-                        $this->trigger(self::AFTER_UPDATE);
-                        $this->trigger(self::AFTER_SAVE);
                     });
                 } else if ($hasBeforeUpdateTransaction) {
-                    $this->transaction(function () use ($sql, $bindParams) {
+                    $this->transaction(function () use ($updateCallback) {
                         $this->onBeforeUpdateTransaction();
-                        $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
-                        $this->checkResult($this->_data);
-                        $this->trigger(self::AFTER_UPDATE);
-                        $this->trigger(self::AFTER_SAVE);
+                        $updateCallback();
                     });
                 } else if ($hasAfterUpdateTransaction) {
-                    $this->transaction(function () use ($sql, $bindParams) {
-                        $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
+                    $this->transaction(function () use ($updateCallback) {
+                        $updateCallback();
                         $this->onAfterUpdateTransaction();
-                        $this->checkResult($this->_data);
-                        $this->trigger(self::AFTER_UPDATE);
-                        $this->trigger(self::AFTER_SAVE);
                     });
                 } else {
-                    $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
-                    $this->checkResult($this->_data);
-                    $this->trigger(self::AFTER_UPDATE);
-                    $this->trigger(self::AFTER_SAVE);
+                    $updateCallback();
                 }
 
             } catch (\Throwable $e) {
@@ -800,19 +761,13 @@ abstract class Model implements ArrayAccess
         }
 
         if ($force) {
-            list($sql, $bindParams) = $this->parseDeleteSql();
-            if (!empty($sql)) {
-                $this->_numRows = $this->getConnection()->createCommand($sql)->delete($bindParams);
-            }
+            $this->_numRows = $this->executePersistenceDelete();
         } else {
             if ($this->processDelete() === false) {
                 throw new DbException('ProcessDelete Failed');
             }
 
-            list($sql, $bindParams) = $this->parseSoftDeleteSql();
-            if (!empty($sql)) {
-                $this->_numRows = $this->getConnection()->createCommand($sql)->update($bindParams);
-            }
+            $this->_numRows = $this->executePersistenceSoftDelete();
         }
 
         $this->exists(false);

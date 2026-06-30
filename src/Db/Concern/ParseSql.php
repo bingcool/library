@@ -80,7 +80,7 @@ trait ParseSql
                 $bindParams[$column] = $diffData[$field];
             }
 
-            if(!empty($this->expressionFields)) {
+            if (!empty($this->expressionFields)) {
                 // expression
                 if(array_key_exists('*@'.$field, $this->expressionFields)) {
                     $setValues[] = $field . '=' . $this->expressionFields['*@'.$field];

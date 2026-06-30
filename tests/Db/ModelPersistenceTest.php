@@ -98,4 +98,20 @@ class ModelPersistenceTest extends TestCase
         $this->assertStringContainsString('SELECT', strtoupper($selectSql));
         $this->assertStringContainsString('articles', $selectSql);
     }
+
+    public function testInstanceModelProxiesQueryMethods(): void
+    {
+        $this->db->execute("INSERT INTO articles (title, view_count) VALUES ('proxy-me', 0)");
+
+        $rows = Article::model($this->db)
+            ->where('title', '=', 'proxy-me')
+            ->select();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame('proxy-me', $rows[0]['title']);
+
+        $selectSql = $this->db->getLastSql();
+        $this->assertStringContainsString('SELECT', strtoupper($selectSql));
+        $this->assertStringContainsString('articles', $selectSql);
+    }
 }

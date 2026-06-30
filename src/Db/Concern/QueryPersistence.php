@@ -42,6 +42,16 @@ trait QueryPersistence
     }
 
     /**
+     * 将未知方法调用代理到当前模型的 Query 实例。
+     */
+    protected function invokeQueryMethod(string $method, array $arguments)
+    {
+        $query = $this->getQuery();
+
+        return $query->{$method}(...$arguments);
+    }
+
+    /**
      * 从模型数据中提取允许写入的字段。
      */
     protected function collectInsertData(array $allowFields): array

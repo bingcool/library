@@ -372,14 +372,7 @@ abstract class Model implements ArrayAccess
      */
     public static function query(): Query
     {
-        $model = new static();
-        if (method_exists($model->getConnection(), 'getObject')) {
-            $query = (new Query($model->getConnection()->getObject()))->table($model->getTableName());
-        }else {
-            $query = (new Query($model->getConnection()))->table($model->getTableName());
-        }
-        $query->setModel($model);
-        return $query;
+        return (new static())->getQuery();
     }
 
     /**
@@ -1068,26 +1061,21 @@ abstract class Model implements ArrayAccess
             }
         }
 
-        if(in_array($method,['onAfterInsertCommitCallBack', 'onAfterUpdateCommitCallBack','onAfterDeleteCommitCallBack'])) {
+        if (in_array($method, ['onAfterInsertCommitCallBack', 'onAfterUpdateCommitCallBack', 'onAfterDeleteCommitCallBack'], true)) {
             return $this->$method(...$arguments);
         }
+
+        return $this->invokeQueryMethod($method, $arguments);
     }
 
     /**
      * @param $method
      * @param $arguments
-     * @return Query
+     * @return mixed
      */
-    public static function __callStatic($method, $arguments): Query
+    public static function __callStatic($method, $arguments)
     {
-        $entity = new static();
-        if (method_exists($entity->getConnection(), 'getObject')) {
-            $query = (new Query($entity->getConnection()->getObject()))->table($entity->getTableName())->{$method}(...$arguments);
-        }else {
-            $query = (new Query($entity->getConnection()))->table($entity->getTableName())->{$method}(...$arguments);
-        }
-        $query->setModel($entity);
-        return $query;
+        return (new static())->invokeQueryMethod($method, $arguments);
     }
 
     /**

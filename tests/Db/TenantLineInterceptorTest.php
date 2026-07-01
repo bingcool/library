@@ -6,6 +6,7 @@ use PHPUnit\Framework\TestCase;
 use Swoolefy\Core\Coroutine\Context as SwooleContext;
 use Swoolefy\Library\Db\Concern\TenantScopeContext;
 use Swoolefy\Library\Db\Concern\TenantTableMetadata;
+use Swoolefy\Library\Db\Interceptor\TenantBootstrap;
 use Swoolefy\Library\Db\Interceptor\TenantLineDemoHandler;
 use Swoolefy\Library\Db\Interceptor\TenantLineInterceptor;
 use Swoolefy\Library\Db\PDOConnection;
@@ -40,7 +41,7 @@ class TenantLineInterceptorTest extends TestCase
             )'
         );
 
-        new TenantLineInterceptor(new FixedTenantHandler('10001'));
+        TenantScopeContext::bindHandler(new FixedTenantHandler('10001'));
     }
 
     protected function tearDown(): void
@@ -273,7 +274,7 @@ class TenantLineInterceptorTest extends TestCase
             )'
         );
 
-        new TenantLineInterceptor(new FixedTenantHandler('10001'));
+        TenantScopeContext::bindHandler(new FixedTenantHandler('10001'));
 
         $article = new Article($countingDb);
         $article->setSuffix('_2024');
@@ -291,5 +292,33 @@ class TenantLineInterceptorTest extends TestCase
         $handler = new TenantLineDemoHandler();
 
         $this->assertSame('10001', $handler->getTenantId());
+    }
+
+    public function testTenantLineInterceptorConstructorDoesNotBindHandler(): void
+    {
+        TenantScopeContext::clearHandler();
+
+        new TenantLineInterceptor(new FixedTenantHandler('30003'));
+
+        $this->assertNull(TenantScopeContext::getHandler());
+    }
+
+    public function testAddGlobalSqlInterceptorBindsTenantScopeHandler(): void
+    {
+        TenantScopeContext::clearHandler();
+
+        PDOConnection::addGlobalSqlInterceptor(new TenantLineInterceptor(new FixedTenantHandler('20002')));
+
+        $this->assertSame('20002', TenantScopeContext::getHandler()?->getTenantId());
+    }
+
+    public function testTenantBootstrapRegisterBindsTenantScopeHandler(): void
+    {
+        TenantScopeContext::clearHandler();
+        PDOConnection::clearGlobalSqlInterceptors();
+
+        TenantBootstrap::register(new FixedTenantHandler('40004'));
+
+        $this->assertSame('40004', TenantScopeContext::getHandler()?->getTenantId());
     }
 }

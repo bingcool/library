@@ -18,6 +18,8 @@ use Swoolefy\Library\Exception\DbException;
 use Swoolefy\Core\Coroutine\Context as SwooleContext;
 use Swoolefy\Library\CurlProxy\OpentelemetryMiddleware;
 use Swoolefy\Library\Db\Interceptor\SqlInterceptorInterface;
+use Swoolefy\Library\Db\Interceptor\TenantLineInterceptor;
+use Swoolefy\Library\Db\Concern\TenantScopeContext;
 
 /**
  * Class PDOConnection
@@ -258,6 +260,8 @@ abstract class PDOConnection implements ConnectionInterface
     public function addSqlInterceptor(SqlInterceptorInterface $interceptor)
     {
         $this->sqlInterceptors[] = $interceptor;
+        static::bindTenantScopeHandlerIfNeeded($interceptor);
+
         return $this;
     }
 
@@ -281,6 +285,7 @@ abstract class PDOConnection implements ConnectionInterface
     public static function addGlobalSqlInterceptor(SqlInterceptorInterface $interceptor): void
     {
         static::$globalSqlInterceptors[] = $interceptor;
+        static::bindTenantScopeHandlerIfNeeded($interceptor);
     }
 
     /**
@@ -307,6 +312,16 @@ abstract class PDOConnection implements ConnectionInterface
         }
 
         return [$sql, $bindParams];
+    }
+
+    /**
+     * 注册 TenantLineInterceptor 时同步绑定 Model 租户 Scope 使用的 Handler。
+     */
+    protected static function bindTenantScopeHandlerIfNeeded(SqlInterceptorInterface $interceptor): void
+    {
+        if ($interceptor instanceof TenantLineInterceptor) {
+            TenantScopeContext::bindHandler($interceptor->getHandler());
+        }
     }
 
     /**

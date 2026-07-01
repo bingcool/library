@@ -12,7 +12,6 @@
 namespace Swoolefy\Library\Db\Interceptor;
 
 use PDO;
-use Swoolefy\Library\Db\Concern\TenantScopeContext;
 use Swoolefy\Library\Db\Concern\TenantTableMetadata;
 use Swoolefy\Library\Db\PDOConnection;
 
@@ -68,7 +67,11 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     {
         $this->handler = $handler;
         $this->insertFill = $insertFill;
-        TenantScopeContext::bindHandler($handler);
+    }
+
+    public function getHandler(): TenantLineHandlerInterface
+    {
+        return $this->handler;
     }
 
     /**

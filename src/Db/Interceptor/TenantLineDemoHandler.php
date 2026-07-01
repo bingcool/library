@@ -18,13 +18,19 @@ class TenantLineDemoHandler implements TenantLineHandlerInterface
     /**
      * 获取当前租户ID。
      *
-     * 当返回null或空字符串时，TenantLineInterceptor会认为当前SQL不启用租户过滤。
+     * 当返回 null 或空字符串时，TenantLineInterceptor 会认为当前 SQL 不启用租户过滤。
+     * 协程 Context 中可能是 int，此处统一转为 string。
      *
-     * @return mixed
+     * @return string|null
      */
     public function getTenantId(): ?string
     {
-        return SwooleContext::get('tenant_id');
+        $tenantId = SwooleContext::get('tenant_id');
+        if ($tenantId === null || $tenantId === '') {
+            return null;
+        }
+
+        return (string) $tenantId;
     }
 
     /**

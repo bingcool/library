@@ -31,9 +31,9 @@ trait QueryPersistence
         }
 
         if (method_exists($connection, 'getObject')) {
-            $query = (new Query($connection->getObject()))->table($this->getTableName());
+            $query = (new Query($connection->getObject()))->table($this->getTable());
         } else {
-            $query = (new Query($connection))->table($this->getTableName());
+            $query = (new Query($connection))->table($this->getTable());
         }
 
         $query->setModel($this);
@@ -191,6 +191,7 @@ trait QueryPersistence
     protected function reloadByPrimaryKey(): ?array
     {
         $query = $this->newPersistenceQuery(true);
+        $this->applyTenantScope($query);
         $query->where($this->getPk(), '=', $this->getPkValue() ?? 0);
         if ($this->isSoftDelete()) {
             $query->whereNull($this->getSoftDeleteField());
@@ -211,6 +212,7 @@ trait QueryPersistence
     public function findOne(string $where, array $bindParams = [])
     {
         $query = $this->newPersistenceQuery(true);
+        $this->applyTenantScope($query);
         $query->whereRaw($where, $bindParams);
 
         return $this->findOneByQuery($query);
@@ -222,6 +224,7 @@ trait QueryPersistence
     public function loadOne(array $whereMap)
     {
         $query = $this->newPersistenceQuery(true);
+        $this->applyTenantScope($query);
         foreach ($whereMap as $field => $value) {
             $query->where($field, '=', $value);
         }

@@ -12,8 +12,9 @@
 namespace Swoolefy\Library\Db\Interceptor;
 
 use PDO;
+use Swoolefy\Library\Db\Concern\TenantScopeContext;
+use Swoolefy\Library\Db\Concern\TenantTableMetadata;
 use Swoolefy\Library\Db\PDOConnection;
-use Swoolefy\Core\Coroutine\Context as SwooleContext;
 
 /**
  * 自动注入租户隔离条件的SQL拦截器。
@@ -43,11 +44,6 @@ use Swoolefy\Core\Coroutine\Context as SwooleContext;
 class TenantLineInterceptor implements SqlInterceptorInterface
 {
     /**
-     * 当前协程中缓存表字段元信息的key。
-     */
-    protected const CONTEXT_TABLE_FIELDS_CACHE_KEY = '__tenant_line_table_fields_cache';
-
-    /**
      * 提供租户ID、租户字段名和兜底忽略判断。
      *
      * @var TenantLineHandlerInterface
@@ -65,15 +61,6 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     protected $insertFill;
 
     /**
-     * 非协程环境下的表字段元信息缓存。
-     *
-     * 协程环境优先使用SwooleContext，普通CLI或非协程PHP环境使用该属性兜底。
-     *
-     * @var array
-     */
-    protected $tableFieldsCache = [];
-
-    /**
      * @param TenantLineHandlerInterface $handler 租户元信息处理器。
      * @param bool $insertFill INSERT / REPLACE时是否自动填充租户字段。
      */
@@ -81,6 +68,7 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     {
         $this->handler = $handler;
         $this->insertFill = $insertFill;
+        TenantScopeContext::bindHandler($handler);
     }
 
     /**
@@ -160,8 +148,12 @@ class TenantLineInterceptor implements SqlInterceptorInterface
      */
     protected function rewriteSelect(PDOConnection $connection, string &$sql, array &$bindParams, $tenantId): void
     {
-        $tableInfo = $this->matchTableAfterKeyword($sql, 'FROM');
+        $tableInfo = $this->matchOutermostTableAfterKeyword($sql, 'FROM');
         if (!$tableInfo || $this->shouldIgnore($connection, $tableInfo['table'])) {
+            return;
+        }
+
+        if ($this->hasTenantCondition($sql, $tableInfo['alias'], $tableInfo['table'])) {
             return;
         }
 
@@ -193,6 +185,10 @@ class TenantLineInterceptor implements SqlInterceptorInterface
         }
 
         $alias = $this->normalizeAlias($matches[2] ?? '');
+        if ($this->hasTenantCondition($sql, $alias, $table)) {
+            return;
+        }
+
         $condition = $this->buildTenantCondition($alias, $bindParams, $tenantId);
         $this->appendWhereCondition($sql, $condition, ['ORDER BY', 'LIMIT']);
     }
@@ -210,8 +206,12 @@ class TenantLineInterceptor implements SqlInterceptorInterface
      */
     protected function rewriteDelete(PDOConnection $connection, string &$sql, array &$bindParams, $tenantId): void
     {
-        $tableInfo = $this->matchTableAfterKeyword($sql, 'FROM');
+        $tableInfo = $this->matchOutermostTableAfterKeyword($sql, 'FROM');
         if (!$tableInfo || $this->shouldIgnore($connection, $tableInfo['table'])) {
+            return;
+        }
+
+        if ($this->hasTenantCondition($sql, $tableInfo['alias'], $tableInfo['table'])) {
             return;
         }
 
@@ -223,7 +223,8 @@ class TenantLineInterceptor implements SqlInterceptorInterface
      * 改写INSERT / REPLACE语句，自动填充租户字段。
      *
      * 如果字段列表或SET列表中已经包含租户字段，则保持SQL不变。否则VALUES语法会给
-     * 每一行追加租户占位符，SET语法会在SET列表末尾追加租户字段赋值。
+     * 每一行追加租户占位符，SET语法会在SET列表末尾追加租户字段赋值，SELECT语法会在
+     * 字段列表与SELECT投影末尾追加租户字段和占位符。
      *
      * @param PDOConnection $connection
      * @param string $sql 需要改写的SQL。
@@ -247,7 +248,11 @@ class TenantLineInterceptor implements SqlInterceptorInterface
             return;
         }
 
-        $this->rewriteInsertValues($sql, $bindParams, $tenantId);
+        if ($this->rewriteInsertValues($sql, $bindParams, $tenantId)) {
+            return;
+        }
+
+        $this->rewriteInsertSelect($sql, $bindParams, $tenantId);
     }
 
     /**
@@ -283,6 +288,148 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     }
 
     /**
+     * 仅匹配最外层 SELECT 的 FROM 真实表名；FROM 子查询 `( SELECT ... ) alias` 时返回空。
+     *
+     * @param string $sql
+     * @param string $keyword
+     * @return array{table:string,alias:string}|array
+     */
+    protected function matchOutermostTableAfterKeyword(string $sql, string $keyword): array
+    {
+        $keywordLength = strlen($keyword);
+        $sqlLength = strlen($sql);
+        $depth = 0;
+        $quote = '';
+        $escaped = false;
+
+        for ($i = 0; $i < $sqlLength; $i++) {
+            $char = $sql[$i];
+
+            if ($quote !== '') {
+                if ($escaped) {
+                    $escaped = false;
+                    continue;
+                }
+                if ($char === '\\') {
+                    $escaped = true;
+                    continue;
+                }
+                if ($char === $quote) {
+                    $quote = '';
+                }
+                continue;
+            }
+
+            if ($char === '\'' || $char === '"') {
+                $quote = $char;
+                continue;
+            }
+
+            if ($char === '`') {
+                for ($j = $i + 1; $j < $sqlLength; $j++) {
+                    if ($sql[$j] === '`') {
+                        $i = $j;
+                        break;
+                    }
+                }
+                continue;
+            }
+
+            if ($char === '(') {
+                $depth++;
+                continue;
+            }
+
+            if ($char === ')') {
+                $depth--;
+                continue;
+            }
+
+            if ($depth !== 0 || $i + $keywordLength > $sqlLength) {
+                continue;
+            }
+
+            if (strcasecmp(substr($sql, $i, $keywordLength), $keyword) !== 0) {
+                continue;
+            }
+
+            $before = $i > 0 ? $sql[$i - 1] : ' ';
+            $after = $i + $keywordLength < $sqlLength ? $sql[$i + $keywordLength] : ' ';
+            if (preg_match('/[\w]/', $before) || !preg_match('/\s/u', $after)) {
+                continue;
+            }
+
+            $remainder = ltrim(substr($sql, $i + $keywordLength));
+            if ($remainder === '' || $remainder[0] === '(') {
+                return [];
+            }
+
+            $pattern = '/^(`[^`]+`|"[^"]+"|\[[^\]]+\]|[\w.]+)(?:\s+(?:AS\s+)?(`?[a-zA-Z_][\w]*`?|"[a-zA-Z_][\w]*"|\[[a-zA-Z_][\w]*\]))?/i';
+            if (!preg_match($pattern, $remainder, $matches)) {
+                return [];
+            }
+
+            $alias = $this->normalizeAlias($matches[2] ?? '');
+            if ($this->isKeyword($alias)) {
+                $alias = '';
+            }
+
+            return [
+                'table' => $this->cleanIdentifier($matches[1]),
+                'alias' => $alias,
+            ];
+        }
+
+        return [];
+    }
+
+    /**
+     * 判断 SQL 中是否已存在租户字段过滤，避免 buildSql + 拦截器或 Model Scope 重复追加。
+     *
+     * 支持占位符（:name、?）与字面量（数字、单/双引号字符串）。
+     */
+    protected function hasTenantCondition(string $sql, string $alias, string $table = ''): bool
+    {
+        $column = preg_quote(trim($this->handler->getTenantIdColumn(), '`"[] '), '/');
+        $value = $this->tenantConditionRhsPattern();
+        $patterns = [];
+
+        if ($alias !== '') {
+            $aliasPattern = preg_quote(trim($alias, '`"[] '), '/');
+            $patterns[] = '/(?:`?' . $aliasPattern . '`?\.)`?' . $column . '`?\s*=\s*' . $value . '/i';
+        }
+
+        if ($table !== '') {
+            $tablePattern = preg_quote(trim($table, '`"[] '), '/');
+            $patterns[] = '/(?:`?' . $tablePattern . '`?\.)`?' . $column . '`?\s*=\s*' . $value . '/i';
+        }
+
+        $patterns[] = '/(?:^|[\s\(,])`?' . $column . '`?\s*=\s*' . $value . '/i';
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $sql)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 租户条件右侧取值：PDO 占位符或 SQL 字面量。
+     */
+    protected function tenantConditionRhsPattern(): string
+    {
+        return '(?:' . implode('|', [
+            ':\w+',
+            '\?',
+            '-?\d+(?:\.\d+)?',
+            '\'[^\']*\'',
+            '"[^"]*"',
+        ]) . ')';
+    }
+
+    /**
      * 向WHERE子句追加租户条件。
      *
      * 如果SQL已有WHERE，会将原条件包裹为：
@@ -314,26 +461,145 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     }
 
     /**
-     * 查找WHERE子句应该插入到尾部子句之前的位置。
+     * 查找 WHERE 子句应该插入到尾部子句之前的位置。
      *
-     * 返回第一个命中的关键字偏移量。调用方据此把SQL拆成头部和尾部，再把租户条件
-     * 插入两者之间。
+     * 仅在括号 depth=0 且不在字符串/标识符引号内匹配，避免误命中字面量或子查询中的关键字。
      *
-     * @param string $sql 待检查的SQL。
+     * @param string $sql 待检查的 SQL。
      * @param array $keywords 候选尾部子句。
-     * @return int|false
+     * @return int|false 命中关键字前空白起始偏移，未命中返回 false。
      */
     protected function findTailOffset(string $sql, array $keywords)
     {
-        $pattern = '/\s+(' . implode('|', array_map(function ($keyword) {
-            return preg_replace('/\s+/', '\\s+', preg_quote($keyword, '/'));
-        }, $keywords)) . ')\b/i';
+        if ($keywords === []) {
+            return false;
+        }
 
-        if (preg_match($pattern, $sql, $matches, PREG_OFFSET_CAPTURE)) {
-            return $matches[0][1];
+        return $this->findAnyKeywordOffset($sql, $keywords, 0);
+    }
+
+    /**
+     * 在 depth=0 且不在引号内查找单个 SQL 关键字（可指定最小偏移）。
+     *
+     * @return int|false 关键字前空白起始偏移，未命中返回 false。
+     */
+    protected function findKeywordOffset(string $sql, string $keyword, int $minOffset = 0)
+    {
+        return $this->findAnyKeywordOffset($sql, [$keyword], $minOffset);
+    }
+
+    /**
+     * 在 depth=0 且不在引号内查找 SQL 关键字（按长度降序、从左到右首个命中）。
+     *
+     * @param string $sql
+     * @param array $keywords
+     * @param int $minOffset 忽略该偏移之前的关键字。
+     * @return int|false
+     */
+    protected function findAnyKeywordOffset(string $sql, array $keywords, int $minOffset = 0)
+    {
+        if ($keywords === []) {
+            return false;
+        }
+
+        $keywords = array_values(array_unique($keywords));
+        usort($keywords, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+
+        $sqlLength = strlen($sql);
+        $depth = 0;
+        $quote = '';
+        $escaped = false;
+
+        for ($i = 0; $i < $sqlLength; $i++) {
+            $char = $sql[$i];
+
+            if ($quote !== '') {
+                if ($escaped) {
+                    $escaped = false;
+                    continue;
+                }
+                if ($char === '\\') {
+                    $escaped = true;
+                    continue;
+                }
+                if ($char === $quote) {
+                    $quote = '';
+                }
+                continue;
+            }
+
+            if ($char === '\'' || $char === '"') {
+                $quote = $char;
+                continue;
+            }
+
+            if ($char === '`') {
+                for ($j = $i + 1; $j < $sqlLength; $j++) {
+                    if ($sql[$j] === '`') {
+                        $i = $j;
+                        break;
+                    }
+                }
+                continue;
+            }
+
+            if ($char === '(') {
+                $depth++;
+                continue;
+            }
+
+            if ($char === ')') {
+                if ($depth > 0) {
+                    $depth--;
+                }
+                continue;
+            }
+
+            if ($depth !== 0 || !preg_match('/\s/u', $char)) {
+                continue;
+            }
+
+            $wsStart = $i;
+            while ($i + 1 < $sqlLength && preg_match('/\s/u', $sql[$i + 1])) {
+                $i++;
+            }
+
+            if ($wsStart < $minOffset) {
+                continue;
+            }
+
+            $remainder = substr($sql, $i + 1);
+            foreach ($keywords as $keyword) {
+                if ($this->startsWithSqlKeyword($remainder, $keyword)) {
+                    return $wsStart;
+                }
+            }
         }
 
         return false;
+    }
+
+    /**
+     * 判断文本是否以指定 SQL 关键字开头（大小写不敏感，并要求关键字后有词边界）。
+     */
+    protected function startsWithSqlKeyword(string $text, string $keyword): bool
+    {
+        $keywordLength = strlen($keyword);
+        if ($text === '' || strlen($text) < $keywordLength) {
+            return false;
+        }
+
+        if (strcasecmp(substr($text, 0, $keywordLength), $keyword) !== 0) {
+            return false;
+        }
+
+        if (strlen($text) === $keywordLength) {
+            return true;
+        }
+
+        $after = $text[$keywordLength];
+
+        return preg_match('/\s/u', $after) || !preg_match('/[\w]/', $after);
     }
 
     /**
@@ -362,6 +628,78 @@ class TenantLineInterceptor implements SqlInterceptorInterface
         $sql = rtrim($head) . ' , ' . $this->parseColumn() . ' = ' . $placeholder . $tail;
 
         return true;
+    }
+
+    /**
+     * 为 INSERT ... SELECT 语法填充租户 ID。
+     *
+     * 示例：
+     * INSERT INTO orders (user_id) SELECT user_id FROM src
+     * 改写为：
+     * INSERT INTO orders (user_id, `tenant_id`) SELECT user_id , :__tenant_id_x FROM src
+     *
+     * @param string $sql
+     * @param array $bindParams
+     * @param mixed $tenantId
+     * @return bool
+     */
+    protected function rewriteInsertSelect(string &$sql, array &$bindParams, $tenantId): bool
+    {
+        $selectOffset = $this->findKeywordOffset($sql, 'SELECT');
+        if ($selectOffset === false) {
+            return false;
+        }
+
+        $valuesOffset = $this->findKeywordOffset($sql, 'VALUES');
+        if ($valuesOffset !== false && $valuesOffset < $selectOffset) {
+            return false;
+        }
+
+        $head = substr($sql, 0, $selectOffset);
+        $selectAndTail = ltrim(substr($sql, $selectOffset));
+        if (!preg_match('/^SELECT\s+/is', $selectAndTail)) {
+            return false;
+        }
+
+        $dupOffset = $this->findTailOffset($selectAndTail, ['ON DUPLICATE KEY UPDATE']);
+        $selectSql = false === $dupOffset ? $selectAndTail : substr($selectAndTail, 0, $dupOffset);
+        $dupTail = false === $dupOffset ? '' : substr($selectAndTail, $dupOffset);
+
+        $minFromOffset = 0;
+        if (preg_match('/^SELECT\s+/is', $selectSql, $selectMatch, PREG_OFFSET_CAPTURE)) {
+            $minFromOffset = $selectMatch[0][1] + strlen($selectMatch[0][0]);
+        }
+
+        $fromOffset = $this->findKeywordOffset($selectSql, 'FROM', $minFromOffset);
+        if ($fromOffset === false) {
+            return false;
+        }
+
+        $selectListPart = rtrim(substr($selectSql, 0, $fromOffset));
+        $fromAndRest = substr($selectSql, $fromOffset);
+        $placeholder = $this->bindTenantId($bindParams, $tenantId);
+        $newSelectSql = $selectListPart . ' , ' . $placeholder . ' ' . ltrim($fromAndRest);
+        $newHead = $this->appendInsertHeadColumn($head);
+
+        $sql = rtrim($newHead) . ' ' . $newSelectSql . $dupTail;
+
+        return true;
+    }
+
+    /**
+     * 在 INSERT 头部字段列表末尾追加租户字段；无显式字段列表时保持 head 不变。
+     */
+    protected function appendInsertHeadColumn(string $head): string
+    {
+        $trimmedHead = rtrim($head);
+        if (!preg_match('/\(([^()]*)\)\s*$/s', $trimmedHead, $matches)) {
+            return $head;
+        }
+
+        $fields = rtrim($matches[1]);
+        $headPrefix = substr($trimmedHead, 0, -strlen($matches[0]));
+
+        return rtrim($headPrefix) . ' (' . $fields . ', ' . $this->parseColumn() . ')';
     }
 
     /**
@@ -501,11 +839,15 @@ class TenantLineInterceptor implements SqlInterceptorInterface
         $column = preg_quote($this->cleanIdentifier($column), '/');
 
         if (preg_match('/\((.*?)\)\s*VALUES\s*/is', $sql, $matches)) {
-            return (bool)preg_match('/(^|,)\s*`?' . $column . '`?\s*(,|$)/i', $matches[1]);
+            return (bool) preg_match('/(^|,)\s*`?' . $column . '`?\s*(,|$)/i', $matches[1]);
+        }
+
+        if (preg_match('/\((.*?)\)\s*SELECT\s/is', $sql, $matches)) {
+            return (bool) preg_match('/(^|,)\s*`?' . $column . '`?\s*(,|$)/i', $matches[1]);
         }
 
         if (preg_match('/\bSET\b(.*?)(?:\s+ON\s+DUPLICATE\s+KEY\s+UPDATE\s+|$)/is', $sql, $matches)) {
-            return (bool)preg_match('/(^|,)\s*`?' . $column . '`?\s*=/i', $matches[1]);
+            return (bool) preg_match('/(^|,)\s*`?' . $column . '`?\s*=/i', $matches[1]);
         }
 
         return false;
@@ -546,7 +888,7 @@ class TenantLineInterceptor implements SqlInterceptorInterface
         $name = '__tenant_id_' . count($bindParams) . '_' . mt_rand() . '_';
         $bindParams[$name] = [
             $tenantId,
-            is_int($tenantId) ? PDO::PARAM_INT : PDO::PARAM_STR,
+            PDO::PARAM_STR,
         ];
 
         return ':' . $name;
@@ -582,192 +924,7 @@ class TenantLineInterceptor implements SqlInterceptorInterface
      */
     protected function shouldIgnore(PDOConnection $connection, string $table): bool
     {
-        $table = $this->cleanIdentifier($table);
-        $table = str_contains($table, '.') ? substr($table, strrpos($table, '.') + 1) : $table;
-
-        if ($table === '') {
-            return true;
-        }
-
-        $fields = $this->getTableFields($connection, $table);
-        if (!empty($fields)) {
-            return !$this->hasTenantColumn($fields);
-        }
-
-        return $this->handler->ignoreTable($table);
-    }
-
-    /**
-     * 从当前连接读取表字段元信息。
-     *
-     * 字段元信息会优先缓存在当前协程上下文中。同一协程内，同一连接对象和同一表名
-     * 只会读取一次表结构，避免每条SQL拦截都触发SHOW COLUMNS等元信息查询。
-     *
-     * 原生表达式、临时表、数据库权限或不支持的驱动都可能导致元信息读取失败。
-     * 失败时同样缓存空数组，让shouldIgnore()继续使用handler兜底，同时避免重复失败查询。
-     *
-     * @param PDOConnection $connection 当前数据库连接。
-     * @param string $table 标准化后的表名。
-     * @return array 可读取时返回以字段名为key的字段元信息。
-     */
-    protected function getTableFields(PDOConnection $connection, string $table): array
-    {
-        $cacheKey = $this->buildTableFieldsCacheKey($connection, $table);
-
-        if ($this->hasCachedTableFields($cacheKey)) {
-            return $this->getCachedTableFields($cacheKey);
-        }
-
-        try {
-            $fields = $connection->getFields($table);
-        } catch (\Throwable $exception) {
-            $fields = [];
-        }
-
-        $this->setCachedTableFields($cacheKey, $fields);
-
-        return $fields;
-    }
-
-    /**
-     * 构建表字段缓存key。
-     *
-     * key包含连接对象ID和表名，避免同一协程中不同数据库连接的同名表互相污染。
-     *
-     * @param PDOConnection $connection 当前数据库连接。
-     * @param string $table 标准化后的表名。
-     * @return string
-     */
-    protected function buildTableFieldsCacheKey(PDOConnection $connection, string $table): string
-    {
-        return spl_object_id($connection) . ':' . $table;
-    }
-
-    /**
-     * 判断是否已有表字段缓存。
-     *
-     * 使用array_key_exists而不是isset，是为了让空数组也能作为有效缓存值。
-     *
-     * @param string $cacheKey 表字段缓存key。
-     * @return bool
-     */
-    protected function hasCachedTableFields(string $cacheKey): bool
-    {
-        $cache = $this->getTableFieldsCache();
-
-        return array_key_exists($cacheKey, $cache);
-    }
-
-    /**
-     * 获取已缓存的表字段元信息。
-     *
-     * @param string $cacheKey 表字段缓存key。
-     * @return array
-     */
-    protected function getCachedTableFields(string $cacheKey): array
-    {
-        $cache = $this->getTableFieldsCache();
-
-        return $cache[$cacheKey] ?? [];
-    }
-
-    /**
-     * 写入表字段元信息缓存。
-     *
-     * @param string $cacheKey 表字段缓存key。
-     * @param array $fields 表字段元信息。
-     * @return void
-     */
-    protected function setCachedTableFields(string $cacheKey, array $fields): void
-    {
-        $cache = $this->getTableFieldsCache();
-        $cache[$cacheKey] = $fields;
-        $this->setTableFieldsCache($cache);
-    }
-
-    /**
-     * 获取当前环境中的表字段缓存。
-     *
-     * 协程环境使用SwooleContext，这样缓存生命周期跟随当前协程；非协程环境使用对象属性。
-     *
-     * @return array
-     */
-    protected function getTableFieldsCache(): array
-    {
-        if ($this->isCoroutineContextAvailable()) {
-            if (!SwooleContext::has(static::CONTEXT_TABLE_FIELDS_CACHE_KEY)) {
-                SwooleContext::set(static::CONTEXT_TABLE_FIELDS_CACHE_KEY, []);
-            }
-
-            $cache = SwooleContext::get(static::CONTEXT_TABLE_FIELDS_CACHE_KEY);
-            if (!is_array($cache)) {
-                $cache = [];
-                SwooleContext::set(static::CONTEXT_TABLE_FIELDS_CACHE_KEY, $cache);
-            }
-
-            return $cache;
-        }
-
-        return $this->tableFieldsCache;
-    }
-
-    /**
-     * 保存当前环境中的表字段缓存。
-     *
-     * @param array $cache 表字段缓存。
-     * @return void
-     */
-    protected function setTableFieldsCache(array $cache): void
-    {
-        if ($this->isCoroutineContextAvailable()) {
-            SwooleContext::set(static::CONTEXT_TABLE_FIELDS_CACHE_KEY, $cache);
-            return;
-        }
-
-        $this->tableFieldsCache = $cache;
-    }
-
-    /**
-     * 判断当前是否可使用协程上下文。
-     *
-     * 为了兼容CLI测试或未加载Swoole的运行环境，这里先判断类是否存在。
-     *
-     * @return bool
-     */
-    protected function isCoroutineContextAvailable(): bool
-    {
-        return class_exists(SwooleContext::class)
-            && \Swoole\Coroutine::getCid() >= 0;
-    }
-
-    /**
-     * 检查表字段元信息中是否包含配置的租户字段。
-     *
-     * 当前项目驱动通常会返回以字段名为key的元信息；该方法也会检查内部['name']值，
-     * 以兼容其他字段元信息结构。
-     *
-     * @param array $fields PDOConnection::getFields()返回的字段元信息。
-     * @return bool 表中存在租户字段时返回true。
-     */
-    protected function hasTenantColumn(array $fields): bool
-    {
-        $tenantColumn = $this->cleanIdentifier($this->handler->getTenantIdColumn());
-
-        if (array_key_exists($tenantColumn, $fields)) {
-            return true;
-        }
-
-        foreach ($fields as $field => $info) {
-            if ($this->cleanIdentifier((string)$field) === $tenantColumn) {
-                return true;
-            }
-
-            if (is_array($info) && isset($info['name']) && $this->cleanIdentifier((string)$info['name']) === $tenantColumn) {
-                return true;
-            }
-        }
-
-        return false;
+        return TenantTableMetadata::shouldIgnore($connection, $table, $this->handler);
     }
 
     /**
@@ -780,10 +937,7 @@ class TenantLineInterceptor implements SqlInterceptorInterface
      */
     protected function cleanIdentifier(string $identifier): string
     {
-        $identifier = trim($identifier);
-        $identifier = trim($identifier, '`"[]');
-
-        return str_replace(['`', '"', '[', ']'], '', $identifier);
+        return TenantTableMetadata::cleanIdentifier($identifier);
     }
 
     /**

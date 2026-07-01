@@ -29,6 +29,7 @@ abstract class Model implements ArrayAccess
     use Concern\TimeStamp;
     use Concern\LockShare;
     use Concern\Util;
+    use Concern\TenantScope;
 
     // BeforeSave将在BeforeInsert | BeforeUpdate之前执行。可以处理一些新增前和更新前的都需要执行的公共逻辑
     const BEFORE_SAVE = 'BeforeSave';
@@ -342,6 +343,19 @@ abstract class Model implements ArrayAccess
     }
 
     /**
+     * 获取当前模型实例对应的数据表名（含分表 suffix）。
+     */
+    public function getTable(): string
+    {
+        $table = static::getTableName();
+        if ($table === '') {
+            return '';
+        }
+
+        return $table . $this->getSuffix();
+    }
+
+    /**
      * @return array
      */
     public function getTypeCasts(): array
@@ -362,6 +376,8 @@ abstract class Model implements ArrayAccess
             $query = new Query($this->getConnection());
         }
         $query->setModel($this);
+        $this->applyTenantScope($query);
+
         return $query;
     }
 
@@ -382,7 +398,10 @@ abstract class Model implements ArrayAccess
      */
     public function getQuery(): Query
     {
-        return $this->newPersistenceQuery();
+        $query = $this->newPersistenceQuery(true);
+        $this->applyTenantScope($query);
+
+        return $query;
     }
 
     /**
@@ -391,7 +410,7 @@ abstract class Model implements ArrayAccess
     protected function getSchemaInfo(): array
     {
         if (empty($this->_schemaInfo)) {
-            $table = $this->getTableName() ? $this->getTableName() . $this->_suffix : $this->getTableName();
+            $table = $this->getTable();
             $schemaInfo = $this->getConnection()->getSchemaInfo($table);
             $this->_schemaInfo = $schemaInfo;
         }

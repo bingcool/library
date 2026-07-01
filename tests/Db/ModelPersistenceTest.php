@@ -3,6 +3,8 @@
 namespace Swoolefy\Library\Tests\Db;
 
 use PHPUnit\Framework\TestCase;
+use Swoolefy\Library\Db\Concern\TenantScopeContext;
+use Swoolefy\Library\Db\Concern\TenantTableMetadata;
 use Swoolefy\Library\Db\Interceptor\TenantLineInterceptor;
 use Swoolefy\Library\Db\PDOConnection;
 use Swoolefy\Library\Db\Sqlite;
@@ -32,6 +34,8 @@ class ModelPersistenceTest extends TestCase
     protected function tearDown(): void
     {
         PDOConnection::clearGlobalSqlInterceptors();
+        TenantScopeContext::clearHandler();
+        TenantTableMetadata::clearCache();
     }
 
     public function testInsertUpdateDeleteThroughQueryBuilder(): void

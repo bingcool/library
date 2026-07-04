@@ -82,12 +82,26 @@ class CurlProxyHandler
     }
 
     /**
+     * 替换默认 prepare_body，避免 Content-Length(int) 触发 guzzlehttp/psr7 2.11+ 弃用警告。
+     */
+    public static function applyPsr7CompatiblePrepareBody(HandlerStack $stack): HandlerStack
+    {
+        $stack->remove('prepare_body');
+        $stack->push(static function (callable $handler): PrepareBodyMiddleware {
+            return new PrepareBodyMiddleware($handler);
+        }, 'prepare_body');
+
+        return $stack;
+    }
+
+    /**
      * @return HandlerStack
      */
     public static function getStackHandler()
     {
         $handler = new static();
         $stack   = HandlerStack::create($handler);
+        self::applyPsr7CompatiblePrepareBody($stack);
 
         if (SwooleContext::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
             $traceId = SwooleContext::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);

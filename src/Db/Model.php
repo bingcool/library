@@ -551,13 +551,13 @@ abstract class Model implements ArrayAccess
 
         $allowFields = $this->getAllowFields();
         $pk = $this->getPk();
-        // define increment primary key
+        // 未显式设置主键时，走 createPkValue；已设置则必须写入 INSERT（非自增主键表如 tbl_order.order_id）
+        // 注意：不可在「已设置 pk」时从 allowFields 剔除主键，否则会触发 Field doesn't have a default value
         if (!isset($this->_data[$pk])) {
             $pkValue = $this->createPkValue();
-            $pkValue && $this->_data[$pk] = $pkValue;
-        } else {
-            // 数据表设置自增pk的，则不需要设置允许字段
-            $allowFields = array_diff($allowFields, [$pk]);
+            if ($pkValue) {
+                $this->_data[$pk] = $pkValue;
+            }
         }
 
         try {

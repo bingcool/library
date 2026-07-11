@@ -279,15 +279,151 @@ abstract class AbstractBuilder
             if ($table instanceof Raw) {
                 $item[] = $this->parseRaw($query, $table);
             } elseif (!is_numeric($key)) {
-                $item[] = $this->parseKey($query, $key) . ' ' . $this->parseKey($query, $table);
+                $item[] = $this->parseTableName($query, $key) . ' ' . $this->parseKey($query, $table);
             } elseif (isset($options['alias'][$table])) {
-                $item[] = $this->parseKey($query, $table) . ' ' . $this->parseKey($query, $options['alias'][$table]);
+                $item[] = $this->parseTableName($query, $table) . ' ' . $this->parseKey($query, $options['alias'][$table]);
             } else {
-                $item[] = $this->parseKey($query, $table);
+                $item[] = $this->parseTableName($query, $table);
             }
         }
 
         return implode(',', $item);
+    }
+
+    /**
+     * 规范化 UNION 派生表括号，避免 MySQL 1248（内层 SELECT 被识别为未命名派生表）。
+     *
+     * 例如: ( (SELECT ...) UNION ALL (SELECT ...) ) => ( SELECT ... UNION ALL SELECT ... )
+     */
+    protected function normalizeUnionDerivedTable(string $table): string
+    {
+        $table = trim($table);
+        if ($table === '' || !preg_match('/\bUNION\b/i', $table)) {
+            return $table;
+        }
+
+        while ($this->canUnwrapOuterParentheses($table)) {
+            $table = $this->unwrapOuterParentheses($table);
+        }
+
+        if (!preg_match('/\bUNION\b/i', $table)) {
+            return $table;
+        }
+
+        $parts = preg_split('/(\bUNION\s+(?:ALL\s+)?)/i', $table, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+        if ($parts === false || count($parts) < 3) {
+            return $table;
+        }
+
+        $normalized = '';
+        foreach ($parts as $part) {
+            if (preg_match('/^\s*UNION\s+(?:ALL\s+)?$/i', $part)) {
+                $normalized .= trim($part) . ' ';
+                continue;
+            }
+
+            $branch = trim($part);
+            while ($this->canUnwrapOuterParentheses($branch) && preg_match('/^SELECT\b/is', trim($this->unwrapOuterParentheses($branch)))) {
+                $branch = $this->unwrapOuterParentheses($branch);
+            }
+            $normalized .= $branch . ' ';
+        }
+
+        return '( ' . trim($normalized) . ' )';
+    }
+
+    /**
+     * 去掉最外层一对括号（仅当整段 SQL 被该括号完整包裹时）。
+     */
+    protected function unwrapOuterParentheses(string $sql): string
+    {
+        $sql = trim($sql);
+        if (!str_starts_with($sql, '(') || !str_ends_with($sql, ')')) {
+            return $sql;
+        }
+
+        $depth = 0;
+        $length = strlen($sql);
+
+        for ($i = 0; $i < $length; $i++) {
+            if ($sql[$i] === '(') {
+                $depth++;
+            } elseif ($sql[$i] === ')') {
+                $depth--;
+                if ($depth === 0) {
+                    if ($i === $length - 1) {
+                        return trim(substr($sql, 1, -1));
+                    }
+
+                    return $sql;
+                }
+            }
+        }
+
+        return $sql;
+    }
+
+    /**
+     * 判断最外层括号是否可安全去掉（整段 SQL 被最外层括号完整包裹）。
+     */
+    protected function canUnwrapOuterParentheses(string $sql): bool
+    {
+        $sql = trim($sql);
+        if (!str_starts_with($sql, '(') || !str_ends_with($sql, ')')) {
+            return false;
+        }
+
+        if (!$this->hasBalancedParentheses($sql)) {
+            return false;
+        }
+
+        return $this->unwrapOuterParentheses($sql) !== $sql;
+    }
+
+    /**
+     * 检查括号是否成对闭合。
+     */
+    protected function hasBalancedParentheses(string $sql): bool
+    {
+        $depth = 0;
+        $length = strlen($sql);
+
+        for ($i = 0; $i < $length; $i++) {
+            if ($sql[$i] === '(') {
+                $depth++;
+            } elseif ($sql[$i] === ')') {
+                $depth--;
+                if ($depth < 0) {
+                    return false;
+                }
+            }
+        }
+
+        return $depth === 0;
+    }
+
+    /**
+     * 表名解析，兼容 FROM 子查询及 UNION 派生表。
+     *
+     * MySQL 在 FROM ((SELECT ...) UNION ALL (SELECT ...)) AS t 这类写法下，
+     * 会把内层括号 SELECT 识别为未命名派生表，因此这里统一去掉 UNION 分支的
+     * 冗余外层括号，生成 FROM (SELECT ... UNION ALL SELECT ...) AS t。
+     *
+     * @param Query $query
+     * @param mixed $table
+     * @return string
+     */
+    protected function parseTableName(Query $query, $table): string
+    {
+        if ($table instanceof Raw) {
+            return $this->parseRaw($query, $table);
+        }
+
+        if (is_string($table)) {
+            $table = $this->normalizeUnionDerivedTable($table);
+        }
+
+        return $this->parseKey($query, $table);
     }
 
     /**

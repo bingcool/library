@@ -833,7 +833,8 @@ abstract class BaseQuery
 
         if (is_string($table)) {
             if (strpos($table, ')')) {
-                // 子查询
+                // 子查询：从尾部解析 AS alias，避免空格 explode 误拆 SQL
+                [$table, $alias] = $this->parseSubqueryTableAlias($table, $alias);
             } elseif (false === strpos($table, ',')) {
                 if (stripos($table, ' as ') || strpos($table, ' ')) {
                     $items = explode(' ', $table);
@@ -881,6 +882,31 @@ abstract class BaseQuery
         }
 
         return $this;
+    }
+
+    /**
+     * 从子查询字符串尾部解析 AS alias / 空格 alias。
+     *
+     * @return array{0:string,1:string}
+     */
+    protected function parseSubqueryTableAlias(string $table, string $alias = ''): array
+    {
+        if ($alias !== '' || !str_contains($table, ')')) {
+            return [$table, $alias];
+        }
+
+        if (preg_match('/\s+(?:AS\s+)?([a-zA-Z_][\w]*)\s*$/', $table, $matches)) {
+            $suffix = $matches[0];
+            $aliasPos = strrpos($table, $suffix);
+            if ($aliasPos !== false) {
+                $subSql = rtrim(substr($table, 0, $aliasPos));
+                if (str_starts_with(trim($subSql), '(') && str_ends_with(trim($subSql), ')')) {
+                    return [trim($subSql), $matches[1]];
+                }
+            }
+        }
+
+        return [$table, $alias];
     }
 
     /**

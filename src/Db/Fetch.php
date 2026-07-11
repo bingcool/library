@@ -208,12 +208,22 @@ class Fetch
         if ($limit) {
             $array    = array_chunk($dataSet, $limit, true);
             $fetchSql = [];
-            foreach ($array as $item) {
-                $sql  = $this->builder->insertAll($this->query, $item);
-                $bind = $this->query->getBind();
-                [$sql, $bind] = $this->connection->applySqlInterceptors($sql, $bind);
+            $skip = $this->query->shouldSkipTenantInterceptor();
+            if ($skip) {
+                $this->connection->beginIgnoreTenantInterceptor();
+            }
+            try {
+                foreach ($array as $item) {
+                    $sql  = $this->builder->insertAll($this->query, $item);
+                    $bind = $this->query->getBind();
+                    [$sql, $bind] = $this->connection->applySqlInterceptors($sql, $bind);
 
-                $fetchSql[] = $this->connection->getRealSql($sql, $bind);
+                    $fetchSql[] = $this->connection->getRealSql($sql, $bind);
+                }
+            } finally {
+                if ($skip) {
+                    $this->connection->endIgnoreTenantInterceptor();
+                }
             }
 
             return implode(';', $fetchSql);
@@ -308,8 +318,8 @@ class Fetch
             if ($condition) {
                 $this->query->setOption('soft_delete', null);
                 $this->query->setOption('data', [$field => $condition]);
-                // 生成删除SQL语句
-                $sql = $this->builder->delete($this->query);
+                // 生成软删除 SQL（UPDATE），与 BaseQuery::delete() 保持一致
+                $sql = $this->builder->update($this->query);
                 return $this->fetch($sql);
             }
         }
@@ -420,9 +430,19 @@ class Fetch
     public function fetch(string $sql): string
     {
         $bind = $this->query->getBind();
-        [$sql, $bind] = $this->connection->applySqlInterceptors($sql, $bind);
+        $skip = $this->query->shouldSkipTenantInterceptor();
 
-        return $this->connection->getRealSql($sql, $bind);
+        if ($skip) {
+            $this->connection->beginIgnoreTenantInterceptor();
+        }
+        try {
+            [$sql, $bind] = $this->connection->applySqlInterceptors($sql, $bind);
+            return $this->connection->getRealSql($sql, $bind);
+        } finally {
+            if ($skip) {
+                $this->connection->endIgnoreTenantInterceptor();
+            }
+        }
     }
 
     /**

@@ -89,12 +89,24 @@ abstract class PDOConnection implements ConnectionInterface
     /**
      * @var int
      */
-    private $transTimes;
+    private $transTimes = 0;
+
+    /**
+     * 嵌套事务在不支持 savepoint 时请求过回滚（外层 commit 时改为真正 rollBack）
+     * @var bool
+     */
+    private $transRollback = false;
+
+    /**
+     * 临时跳过 TenantLineInterceptor 的嵌套深度（如 withoutTenantScope）
+     * @var int
+     */
+    private $tenantInterceptorIgnoreDepth = 0;
 
     /**
      * @var int
      */
-    private $reConnectTimes;
+    private $reConnectTimes = 0;
 
     /**
      * @var array
@@ -308,10 +320,37 @@ abstract class PDOConnection implements ConnectionInterface
     public function applySqlInterceptors(string $sql, array $bindParams = []): array
     {
         foreach (array_merge(static::$globalSqlInterceptors, $this->sqlInterceptors) as $interceptor) {
+            if ($interceptor instanceof TenantLineInterceptor && $this->shouldIgnoreTenantInterceptor()) {
+                continue;
+            }
             $interceptor->beforeExecute($this, $sql, $bindParams);
         }
 
         return [$sql, $bindParams];
+    }
+
+    /**
+     * 开始临时跳过 TenantLineInterceptor（需与 endIgnoreTenantInterceptor 成对调用）
+     */
+    public function beginIgnoreTenantInterceptor(): void
+    {
+        ++$this->tenantInterceptorIgnoreDepth;
+    }
+
+    /**
+     * 结束一次 beginIgnoreTenantInterceptor 调用
+     */
+    public function endIgnoreTenantInterceptor(): void
+    {
+        $this->tenantInterceptorIgnoreDepth = max(0, $this->tenantInterceptorIgnoreDepth - 1);
+    }
+
+    /**
+     * 当前执行是否应跳过 TenantLineInterceptor
+     */
+    public function shouldIgnoreTenantInterceptor(): bool
+    {
+        return $this->tenantInterceptorIgnoreDepth > 0;
     }
 
     /**
@@ -1088,25 +1127,26 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function beginTransaction()
     {
-        $this->initConnect(true);
-        ++$this->transTimes;
+        // 复用已有 PDO；force=true 会丢弃旧连接导致泄漏
+        $this->initConnect();
 
         try {
-            if ($this->transTimes == 1) {
+            if ($this->transTimes == 0) {
                 $this->PDOInstance->beginTransaction();
-            } elseif ($this->transTimes > 1 && $this->supportSavepoint()) {
+            } elseif ($this->supportSavepoint()) {
                 $this->PDOInstance->exec(
-                    $this->parseSavepoint('trans' . $this->transTimes)
+                    $this->parseSavepoint('trans' . ($this->transTimes + 1))
                 );
             }
+            ++$this->transTimes;
             $this->reConnectTimes = 0;
             $this->log('Start transaction', 'reConnectTimes=' . $this->reConnectTimes);
         } catch (\PDOException|\Exception|\Throwable $exception) {
-            if ($this->reConnectTimes < 4 && $this->isBreak($exception)) {
-                --$this->transTimes;
+            if ($this->transTimes == 0 && $this->reConnectTimes < 4 && $this->isBreak($exception)) {
                 ++$this->reConnectTimes;
                 $this->close()->beginTransaction();
                 $this->log('Start transaction failed, try to start again', 'reConnectTimes=' . $this->reConnectTimes);
+                return;
             }
             throw $exception;
         }
@@ -1147,19 +1187,37 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function commit()
     {
+        if ($this->transTimes <= 0) {
+            return;
+        }
+
         $this->initConnect();
         $this->log('Transaction commit start', 'transaction commit start');
         // 不管多少层内嵌事务，最外层一次commit时候才真正一次性提交commit
         if ($this->transTimes == 1) {
-            $this->PDOInstance->commit();
-            if(!empty($this->afterCommitCallbacks)) {
-                foreach($this->afterCommitCallbacks as $k=>$afterCommitCallback) {
-                    try {
-                        call_user_func($afterCommitCallback);
-                    }catch (\Throwable $throwable)
-                    {
-                    } finally {
-                        unset($this->afterCommitCallbacks[$k]);
+            if ($this->transRollback) {
+                $this->PDOInstance->rollBack();
+                $this->transRollback = false;
+                if (!empty($this->afterRollBackCallbacks)) {
+                    foreach ($this->afterRollBackCallbacks as $k => $afterRollBackCallback) {
+                        try {
+                            call_user_func($afterRollBackCallback);
+                        } catch (\Throwable $throwable) {
+                        } finally {
+                            unset($this->afterRollBackCallbacks[$k]);
+                        }
+                    }
+                }
+            } else {
+                $this->PDOInstance->commit();
+                if (!empty($this->afterCommitCallbacks)) {
+                    foreach ($this->afterCommitCallbacks as $k => $afterCommitCallback) {
+                        try {
+                            call_user_func($afterCommitCallback);
+                        } catch (\Throwable $throwable) {
+                        } finally {
+                            unset($this->afterCommitCallbacks[$k]);
+                        }
                     }
                 }
             }
@@ -1188,17 +1246,20 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function rollback()
     {
+        if ($this->transTimes <= 0) {
+            return;
+        }
+
         $this->initConnect();
         $this->log('Transaction commit', 'transaction commit failed');
         $this->log('Transaction rollback start', 'transaction rollback start');
 
         $callback = function () {
-            if(!empty($this->afterRollBackCallbacks)) {
-                foreach($this->afterRollBackCallbacks as $k=>$afterRollBackCallback) {
+            if (!empty($this->afterRollBackCallbacks)) {
+                foreach ($this->afterRollBackCallbacks as $k => $afterRollBackCallback) {
                     try {
                         call_user_func($afterRollBackCallback);
-                    }catch (\Throwable $throwable)
-                    {
+                    } catch (\Throwable $throwable) {
                     } finally {
                         unset($this->afterRollBackCallbacks[$k]);
                     }
@@ -1208,17 +1269,20 @@ abstract class PDOConnection implements ConnectionInterface
 
         if ($this->transTimes == 1) {
             $this->PDOInstance->rollBack();
+            $this->transRollback = false;
             $callback();
         } elseif ($this->transTimes > 1 && $this->supportSavepoint()) {
+            // 仅回滚到内层 savepoint；回调在外层 rollback/commit 时再执行
             $this->PDOInstance->exec(
                 $this->parseSavepointRollBack('trans' . $this->transTimes)
             );
-            $callback();
+        } elseif ($this->transTimes > 1) {
+            // 不支持 savepoint：标记整笔事务，待外层 commit 时改为真正回滚
+            $this->transRollback = true;
         }
 
         $this->transTimes = max(0, $this->transTimes - 1);
         $this->log('Transaction rollback finish', 'transaction rollback ok');
-
     }
 
     /**
@@ -1251,8 +1315,7 @@ abstract class PDOConnection implements ConnectionInterface
         }
 
         foreach ($dbs as $key => $connection) {
-
-            $connection->startTransXa($connection->getUniqueXid('_' . $xid) );
+            $connection->startTransXa($connection->getUniqueXid('_' . $xid));
         }
 
         try {
@@ -1266,16 +1329,27 @@ abstract class PDOConnection implements ConnectionInterface
             }
 
             foreach ($dbs as $connection) {
-                $connection->commitXa($connection->getUniqueXid('_' . $xid) );
+                $connection->commitXa($connection->getUniqueXid('_' . $xid));
             }
 
             return $result;
         } catch (\Exception | \Throwable $e) {
             foreach ($dbs as $connection) {
-                $connection->rollbackXa($connection->getUniqueXid('_' . $xid) );
+                $connection->rollbackXa($connection->getUniqueXid('_' . $xid));
             }
             throw $e;
         }
+    }
+
+    /**
+     * 生成唯一的 XA 事务 ID
+     *
+     * @param string $suffix 可选后缀
+     * @return string
+     */
+    public function getUniqueXid(string $suffix = ''): string
+    {
+        return uniqid('xa', true) . $suffix;
     }
 
     /**
@@ -1333,6 +1407,10 @@ abstract class PDOConnection implements ConnectionInterface
     {
         $this->PDOInstance = null;
         $this->PDOStatement = null;
+        $this->transTimes = 0;
+        $this->transRollback = false;
+        $this->afterCommitCallbacks = [];
+        $this->afterRollBackCallbacks = [];
     }
 
     /**

@@ -51,7 +51,7 @@ trait ResultOperation
         }
 
         // 获取器
-        if (!empty($this->options['with_attr'])) {
+        if (!empty($this->options['with_attr']) && method_exists($this, 'getResultAttr')) {
             $this->getResultAttr($result, $this->options['with_attr']);
         }
     }

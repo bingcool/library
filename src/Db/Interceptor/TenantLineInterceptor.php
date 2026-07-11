@@ -14,6 +14,7 @@ namespace Swoolefy\Library\Db\Interceptor;
 use PDO;
 use Swoolefy\Library\Db\Concern\TenantTableMetadata;
 use Swoolefy\Library\Db\PDOConnection;
+use Swoolefy\Library\Exception\DbException;
 
 /**
  * 自动注入租户隔离条件的SQL拦截器。
@@ -77,8 +78,8 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     /**
      * PDOConnection预处理SQL前调用的入口方法。
      *
-     * 如果当前租户ID为空，则SQL保持不变。否则先识别SQL类型，再分发到对应的
-     * SQL改写方法。
+     * 若调用方通过 withoutTenantScope 显式跳过拦截器，则保持 SQL 不变。
+     * 否则识别 SQL 类型并分发改写；目标表需要租户隔离但租户 ID 为空时抛出异常（失败关闭）。
      *
      * SQL和绑定参数都会通过引用修改，确保每一个新增占位符都有对应的PDO绑定值。
      *
@@ -89,10 +90,11 @@ class TenantLineInterceptor implements SqlInterceptorInterface
      */
     public function beforeExecute(PDOConnection $connection, string &$sql, array &$bindParams): void
     {
-        $tenantId = $this->handler->getTenantId();
-        if (is_null($tenantId) || $tenantId === '') {
+        if ($connection->shouldIgnoreTenantInterceptor()) {
             return;
         }
+
+        $tenantId = $this->handler->getTenantId();
 
         $statement = $this->getStatementType($sql);
         if (!$statement) {
@@ -115,6 +117,21 @@ class TenantLineInterceptor implements SqlInterceptorInterface
                     $this->rewriteInsert($connection, $sql, $bindParams, $tenantId);
                 }
                 break;
+        }
+    }
+
+    /**
+     * 确认目标表需要租户隔离时，租户 ID 非空
+     *
+     * @param mixed $tenantId
+     * @param string $table
+     * @return void
+     * @throws DbException
+     */
+    protected function assertTenantId($tenantId, string $table): void
+    {
+        if ($tenantId === null || $tenantId === '') {
+            throw new DbException('Tenant id is required for tenant-aware table: ' . $table);
         }
     }
 
@@ -156,6 +173,8 @@ class TenantLineInterceptor implements SqlInterceptorInterface
             return;
         }
 
+        $this->assertTenantId($tenantId, $tableInfo['table']);
+
         if ($this->hasTenantCondition($sql, $tableInfo['alias'], $tableInfo['table'])) {
             return;
         }
@@ -187,6 +206,8 @@ class TenantLineInterceptor implements SqlInterceptorInterface
             return;
         }
 
+        $this->assertTenantId($tenantId, $table);
+
         $alias = $this->normalizeAlias($matches[2] ?? '');
         if ($this->hasTenantCondition($sql, $alias, $table)) {
             return;
@@ -213,6 +234,8 @@ class TenantLineInterceptor implements SqlInterceptorInterface
         if (!$tableInfo || $this->shouldIgnore($connection, $tableInfo['table'])) {
             return;
         }
+
+        $this->assertTenantId($tenantId, $tableInfo['table']);
 
         if ($this->hasTenantCondition($sql, $tableInfo['alias'], $tableInfo['table'])) {
             return;
@@ -241,6 +264,8 @@ class TenantLineInterceptor implements SqlInterceptorInterface
         if (!$tableInfo || $this->shouldIgnore($connection, $tableInfo['table'])) {
             return;
         }
+
+        $this->assertTenantId($tenantId, $tableInfo['table']);
 
         $column = $this->handler->getTenantIdColumn();
         if ($this->hasInsertColumn($sql, $column)) {

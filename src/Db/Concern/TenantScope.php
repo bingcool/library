@@ -13,6 +13,7 @@ namespace Swoolefy\Library\Db\Concern;
 
 use Swoolefy\Library\Db\PDOConnection;
 use Swoolefy\Library\Db\Query;
+use Swoolefy\Library\Exception\DbException;
 
 /**
  * Model 查询构建阶段自动追加 tenant_id 条件，供子查询与常规 Query 使用。
@@ -41,11 +42,6 @@ trait TenantScope
             return;
         }
 
-        $tenantId = $handler->getTenantId();
-        if ($tenantId === null || $tenantId === '') {
-            return;
-        }
-
         $table = $this->getTable();
         if ($table === '') {
             return;
@@ -60,12 +56,18 @@ trait TenantScope
             return;
         }
 
+        $tenantId = $handler->getTenantId();
+        if ($tenantId === null || $tenantId === '') {
+            throw new DbException('Tenant id is required for tenant-aware table: ' . $tableName);
+        }
+
         $column = trim($handler->getTenantIdColumn(), '`"[] ');
         $query->where($table . '.' . $column, '=', $tenantId);
     }
 
     /**
      * 构建不带租户 Scope 的 Query（管理端跨租户查询等场景）。
+     * 同时跳过 TenantLineInterceptor，避免 SQL 仍被改写。
      */
     public static function withoutTenantScope(?PDOConnection $connection = null): Query
     {
@@ -83,6 +85,7 @@ trait TenantScope
         }
 
         $query->setModel($model);
+        $query->setOption('without_tenant_scope', true);
 
         return $query;
     }

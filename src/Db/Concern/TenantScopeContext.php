@@ -56,6 +56,9 @@ class TenantScopeContext
     {
         if (self::isCoroutineContextAvailable() && SwooleContext::has(self::CONTEXT_HANDLER_KEY)) {
             SwooleContext::delete(self::CONTEXT_HANDLER_KEY);
+
+            // 保留 Worker 级 fallback，避免影响同进程其他协程
+            return;
         }
 
         self::$fallbackHandler = null;

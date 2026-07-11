@@ -23,7 +23,7 @@ interface TenantLineHandlerInterface
     /**
      * 获取当前租户ID。
      *
-     * 当返回 null 或空字符串时，TenantLineInterceptor 会认为当前 SQL 不启用租户过滤。
+     * 当返回 null 或空字符串时，若目标表需要租户隔离，TenantLineInterceptor 会抛出异常（失败关闭）。
      * 实现类应将上下文中的 int 等类型统一转为 string 后返回。
      *
      * @return string|null

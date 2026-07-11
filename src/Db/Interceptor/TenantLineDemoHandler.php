@@ -18,7 +18,7 @@ class TenantLineDemoHandler implements TenantLineHandlerInterface
     /**
      * 获取当前租户ID。
      *
-     * 当返回空字符串时，TenantLineInterceptor 会认为当前 SQL 不启用租户过滤。
+     * 当返回空字符串且目标表需要租户隔离时，TenantLineInterceptor 会抛出异常（失败关闭）。
      * 协程 Context 中可能是 int，此处统一转为 string。
      */
     public function getTenantId(): string

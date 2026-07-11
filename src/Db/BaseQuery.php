@@ -14,6 +14,7 @@ namespace Swoolefy\Library\Db;
 use Swoolefy\Library\Db\Concern;
 use Swoolefy\Library\Db\Helper\Str;
 use Swoolefy\Library\Exception\DbException;
+use Swoolefy\Library\Exception\DbNotFoundException;
 
 /**
  * 数据查询基础类
@@ -151,6 +152,47 @@ abstract class BaseQuery
     }
 
     /**
+     * 当前查询是否应跳过 TenantLineInterceptor
+     */
+    public function shouldSkipTenantInterceptor(): bool
+    {
+        if (!empty($this->options['without_tenant_scope'])) {
+            return true;
+        }
+
+        if (method_exists($this, 'getModel')) {
+            $model = $this->getModel();
+            if (is_object($model) && method_exists($model, 'isTenantScope') && !$model->isTenantScope()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 在 withoutTenantScope 场景下执行连接操作时跳过 TenantLineInterceptor
+     *
+     * @template T
+     * @param callable():T $callback
+     * @return T
+     */
+    protected function withTenantInterceptorPolicy(callable $callback)
+    {
+        $skip = $this->shouldSkipTenantInterceptor();
+        if ($skip) {
+            $this->connection->beginIgnoreTenantInterceptor();
+        }
+        try {
+            return $callback();
+        } finally {
+            if ($skip) {
+                $this->connection->endIgnoreTenantInterceptor();
+            }
+        }
+    }
+
+    /**
      * 创建一个新的查询对象
      * @access public
      * @return BaseQuery
@@ -171,6 +213,10 @@ abstract class BaseQuery
 
         if (isset($this->options['field_type'])) {
             $query->setFieldType($this->options['field_type']);
+        }
+
+        if (!empty($this->options['without_tenant_scope'])) {
+            $query->setOption('without_tenant_scope', true);
         }
 
         return $query;
@@ -317,7 +363,9 @@ abstract class BaseQuery
             $this->setOption('group', $options['group']);
         }
 
-        $result = $this->connection->PDOStatementHandle($sql, $this->getBind())->fetchColumn();
+        $result = $this->withTenantInterceptorPolicy(function () use ($sql) {
+            return $this->connection->PDOStatementHandle($sql, $this->getBind())->fetchColumn();
+        });
 
        return (false !== $result) ? $result : $default;
     }
@@ -371,7 +419,9 @@ abstract class BaseQuery
         }
 
         // 执行查询操作
-        $resultSet = $this->connection->query($sql, $this->getBind(), \PDO::FETCH_ASSOC);
+        $resultSet = $this->withTenantInterceptorPolicy(function () use ($sql) {
+            return $this->connection->query($sql, $this->getBind(), \PDO::FETCH_ASSOC);
+        });
 
         if (is_string($key) && strpos($key, '.')) {
             [$alias, $key] = explode('.', $key);
@@ -655,6 +705,7 @@ abstract class BaseQuery
             if ($total > 0) {
                 $results = $this->options($options)->bind($bind)->page($page, $pageSize)->select();
             } else {
+                $this->options($options)->bind($bind);
                 $results = new Collection([]);
             }
         } elseif ($simple) {
@@ -741,14 +792,8 @@ abstract class BaseQuery
             $newLastId = $lastId;
         }
 
-        $results = $this->when($lastId, function ($query) use ($key, $sort, $lastId, $newLastId) {
-            // 首次查询
-            if (empty($lastId)) {
-                $query->where($key, 'asc' == $sort ? '<=' : '>=', $lastId);
-            }else {
-                // 后续多次查询
-                $query->where($key, 'asc' == $sort ? '>' : '<', $newLastId);
-            }
+        $results = $this->when($newLastId, function ($query) use ($key, $sort, $newLastId) {
+            $query->where($key, 'asc' == $sort ? '>' : '<', $newLastId);
         })->limit($pageSize)->select();
 
         $this->options($options);
@@ -1053,7 +1098,9 @@ abstract class BaseQuery
         $this->parseOptions();
         $sql = $this->builder->insert($this);
         $bindParams = $this->getBind();
-        $this->connection->createCommand($sql)->insert($bindParams);
+        $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+            $this->connection->createCommand($sql)->insert($bindParams);
+        });
 
         if ($getLastInsID) {
             $pkValue = 0;
@@ -1169,7 +1216,9 @@ abstract class BaseQuery
                 foreach ($array as $item) {
                     $sql = $this->builder->insertAll($this, $item);
                     $bindParams = $this->getBind();
-                    $count += $this->connection->createCommand($sql)->execute($sql, $bindParams);
+                    $count += $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+                        return $this->connection->createCommand($sql)->execute($sql, $bindParams);
+                    });
                 }
 
                 // 提交事务
@@ -1184,7 +1233,9 @@ abstract class BaseQuery
 
         $sql = $this->builder->insertAll($this, $dataSet);
         $bindParams = $this->getBind();
-        return $this->connection->createCommand($sql)->execute($sql, $bindParams);
+        return $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+            return $this->connection->createCommand($sql)->execute($sql, $bindParams);
+        });
     }
 
     /**
@@ -1199,7 +1250,9 @@ abstract class BaseQuery
         $this->parseOptions();
         $sql = $this->builder->selectInsert($this, $fields, $table);
         $bindParams = $this->getBind();
-        return $this->connection->createCommand($sql)->execute($sql, $bindParams);
+        return $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+            return $this->connection->createCommand($sql)->execute($sql, $bindParams);
+        });
     }
 
     /**
@@ -1229,7 +1282,9 @@ abstract class BaseQuery
         $this->parseOptions();
         $sql = $this->builder->update($this);
         $bindParams = $this->getBind();
-        return $this->connection->createCommand($sql)->update($bindParams);
+        return $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+            return $this->connection->createCommand($sql)->update($bindParams);
+        });
     }
 
     /**
@@ -1290,7 +1345,9 @@ abstract class BaseQuery
                 $this->parseOptions();
                 $sql = $this->builder->update($this);
                 $bindParams = $this->getBind();
-                return $this->connection->createCommand($sql)->update($bindParams);
+                return $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+                    return $this->connection->createCommand($sql)->update($bindParams);
+                });
             }
         }
 
@@ -1298,7 +1355,9 @@ abstract class BaseQuery
         $this->parseOptions();
         $sql = $this->builder->delete($this);
         $bindParams = $this->getBind();
-        return $this->connection->createCommand($sql)->delete($bindParams);
+        return $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+            return $this->connection->createCommand($sql)->delete($bindParams);
+        });
     }
 
     /**
@@ -1313,7 +1372,9 @@ abstract class BaseQuery
         $sql = $this->builder->select($this);
         $bindParams = $this->getBind();
 
-        $resultSet = $this->connection->query($sql, $bindParams);
+        $resultSet = $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+            return $this->connection->query($sql, $bindParams);
+        });
 
         // 返回结果处理
         if (!empty($this->options['fail']) && count($resultSet) == 0) {
@@ -1338,7 +1399,9 @@ abstract class BaseQuery
             $this->parseOptions();
             $sql = $this->builder->select($this);
             $bindParams = $this->getBind();
-            $result = $this->connection->query($sql, $bindParams);
+            $result = $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+                return $this->connection->query($sql, $bindParams);
+            });
             if (!$this->firstCall) {
                 $this->result($result);
             }else {
@@ -1413,7 +1476,9 @@ abstract class BaseQuery
         $this->parseOptions();
         $sql = $this->builder->select($this);
         $bindParams = $this->getBind();
-        $resultSet = $this->connection->query($sql, $bindParams);
+        $resultSet = $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+            return $this->connection->query($sql, $bindParams);
+        });
 
         if (empty($resultSet)) {
             return [];
@@ -1452,8 +1517,9 @@ abstract class BaseQuery
      */
     public function query(string $sql, array $bindParams = []): array
     {
-        $result = $this->connection->query($sql, $bindParams, \Pdo::FETCH_ASSOC);
-        return $result;
+        return $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+            return $this->connection->query($sql, $bindParams, \Pdo::FETCH_ASSOC);
+        });
     }
 
     /**
@@ -1464,7 +1530,9 @@ abstract class BaseQuery
      */
     public function execute(string $sql, array $bindParams = []): int
     {
-        return $this->connection->execute($sql, $bindParams);
+        return $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
+            return $this->connection->execute($sql, $bindParams);
+        });
     }
 
     /**

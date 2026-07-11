@@ -13,6 +13,11 @@ namespace Swoolefy\Library\Aliyun\Datahub;
 
 use Swoolefy\Library\Exception\DatahubException;
 
+/**
+ * DataHub 管理类工具：创建/删除 Topic、创建订阅。
+ *
+ * 消费相关能力继承自 {@see AbstractBaseDatahub}。
+ */
 class DatahubTool extends AbstractBaseDatahub
 {
     /**
@@ -20,55 +25,66 @@ class DatahubTool extends AbstractBaseDatahub
      */
     public function __construct(DatahubConfigDto $config)
     {
-        parent::__construct($config->accessId, $config->accessKey, $config->endpoint, $config->projectId, $config->topicName);
+        parent::__construct(
+            $config->accessId,
+            $config->accessKey,
+            $config->endpoint,
+            $config->projectId,
+            $config->topicName
+        );
     }
 
     /**
-     * 创建topic
+     * 创建 Topic。
      *
+     * 示例：
+     * ```php
      * $recordSchema = [
-        "fields" => [
-            [
-                'name' => "username",
-                'type' => "STRING",
-                'comment' => "用户名"
-            ],
-            [
-                'name' => "sex",
-                'type' => "TINYINT",
-                'comment' => "性别"
-            ],
-        ]
-    ];
-
-        // 调用创建topic
-        $result = $datahub->createTopic("bing_test",1,1,DatahubConst::RecordTypeTuple,$recordSchema,"测试topic",);
-     
+     *     'fields' => [
+     *         ['name' => 'username', 'type' => 'STRING', 'comment' => '用户名'],
+     *         ['name' => 'sex', 'type' => 'TINYINT', 'comment' => '性别'],
+     *     ],
+     * ];
+     * $datahub->createTopic(
+     *     'bing_test',
+     *     1,
+     *     1,
+     *     DatahubConst::RecordTypeTuple,
+     *     $recordSchema,
+     *     '测试 topic'
+     * );
+     * ```
      *
-     * @param string $topicName topic名称
-     * @param int $ShardCount 初始shard数目
-     * @param int $Lifecycle 数据存储生命周期
-     * @param string $recordType 记录类型 tuple blob
-     * @param array $recordSchema 记录结构
+     * @param string $topicName Topic 名称
+     * @param int $shardCount 初始 Shard 数目
+     * @param int $lifecycle 生命周期（天）
+     * @param string $recordType {@see DatahubConst::RecordTypeTuple} / {@see DatahubConst::RecordTypeBlob}
+     * @param array $recordSchema Tuple 时的字段结构
      * @param string $comment 描述
-     * @return array
-     * @throws \Exception
+     * @return void
+     * @throws DatahubException
      */
-    public function createTopic(string $topicName, int $shardCount, int $lifecycle, string $recordType, array $recordSchema, string $comment)
-    {
+    public function createTopic(
+        string $topicName,
+        int $shardCount,
+        int $lifecycle,
+        string $recordType,
+        array $recordSchema,
+        string $comment
+    ) {
         $uri = "/projects/{$this->projectId}/topics/{$topicName}";
 
         $params = [
             'Action' => 'create',
             'ShardCount' => $shardCount,
             'Lifecycle' => $lifecycle,
-            'Comment' => $comment
+            'Comment' => $comment,
         ];
-        
+
         if ($recordType == DatahubConst::RecordTypeTuple) {
             $params['RecordType'] = $recordType;
             $params['RecordSchema'] = json_encode($recordSchema, JSON_UNESCAPED_UNICODE);
-        }else if ($recordType == DatahubConst::RecordTypeBlob) {
+        } elseif ($recordType == DatahubConst::RecordTypeBlob) {
             $params['RecordType'] = $recordType;
         } else {
             throw new DatahubException('[createTopic] argument of `recordType` is error');
@@ -81,10 +97,10 @@ class DatahubTool extends AbstractBaseDatahub
     }
 
     /**
-     * 删除topic(慎用)
-     * @param string $topicName 初始shard数目
-     * @return array
-     * @throws \Exception
+     * 删除 Topic（不可恢复，请谨慎调用）。
+     *
+     * @param string $topicName Topic 名称
+     * @return void
      */
     public function deleteTopic(string $topicName)
     {
@@ -93,10 +109,11 @@ class DatahubTool extends AbstractBaseDatahub
     }
 
     /**
-     * 创建订阅subId
+     * 为当前配置的 Topic 创建订阅，返回含 SubId 等信息的响应。
      *
-     * @param string $description
+     * @param string $description 订阅备注
      * @return mixed
+     * @throws DatahubException
      */
     public function createSubscription(string $description)
     {
@@ -104,13 +121,12 @@ class DatahubTool extends AbstractBaseDatahub
 
         $params = [
             'Action' => 'create',
-            'Comment' => $description
+            'Comment' => $description,
         ];
 
         $result = $this->post($uri, $params);
         $this->errorHandle($uri, $result, $params);
+
         return $result;
     }
-
-
 }

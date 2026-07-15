@@ -221,7 +221,7 @@ trait QueryPersistence
     /**
      * 按字段等值 map 查询单条记录。
      */
-    public function loadOne(array $whereMap)
+    public function loadOne(array $whereMap): ?static
     {
         $query = $this->newPersistenceQuery(true);
         $this->applyTenantScope($query);
@@ -237,7 +237,7 @@ trait QueryPersistence
      *
      * @internal
      */
-    protected function findOneByQuery(Query $query)
+    protected function findOneByQuery(Query $query): ?static
     {
         if ($this->isSoftDelete()) {
             $query->whereNull($this->getSoftDeleteField());

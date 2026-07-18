@@ -12,7 +12,7 @@
 namespace Swoolefy\Library\Lock;
 
 use Throwable;
-use Swool\Coroutine;
+use Swoole\Coroutine;
 use malkusch\lock\exception\LockReleaseException;
 
 trait SynchronizeTrait

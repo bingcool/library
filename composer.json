@@ -1,79 +1,83 @@
 {
-  "name": "bingcool/library",
-  "description": "library is a common library attach to swoole extension, for everyone use it easily!",
-  "keywords": [
-    "workerfy",
-    "swoole",
-    "php",
-    "library"
-  ],
-  "license": "MIT",
-  "type": "library",
-  "authors": [
-    {
-      "name": "bingcool",
-      "email": "2437667702@qq.com",
-      "role": "library of swoole"
-    }
-  ],
-  "minimum-stability": "dev",
-  "require": {
-    "php" : ">=8.4",
-    "ext-pdo": "*",
-    "ext-curl": "*",
-    "ext-json": "*",
-    "ext-redis": "*",
-    "ext-openssl": "*",
-    "psr/clock": "*",
-    "predis/predis": "~3.4",
-    "malkusch/lock": "^2.2.0",
-    "php-amqplib/php-amqplib": "~3.7.0",
-    "php-http/discovery": "^1.14",
-    "psr/http-client-implementation": "^1.0",
-    "psr/http-factory-implementation": "^1.0",
-    "psr/http-client": "^1.0",
-    "psr/http-message": "^1.0|^2.0",
-    "psr/log": "^3.0",
-    "ramsey/uuid": "^4.0",
-    "symfony/polyfill-mbstring": "^1.23",
-    "symfony/polyfill-php82": "^1.26",
-    "symfony/polyfill-php83": "^1.26",
-    "symfony/polyfill-php84": "^1.26",
-    "symfony/polyfill-php85": "^1.26",
-    "tbachert/spi": "^1.0.0",
-    "google/protobuf": "^4.0",
-    "symfony/http-client": "~7.3",
-    "nyholm/psr7": "^1.1",
-    "guzzlehttp/guzzle": "~7.9.0"
-  },
-  "require-dev": {
-    "kwn/php-rdkafka-stubs": "@dev",
-    "swoole/ide-helper": "@dev",
-    "phpunit/phpunit": "^11.5.39"
-  },
-  "autoload": {
-    "psr-4": {
-      "Swoolefy\\Library\\": "src/",
-      "Opentelemetry\\Proto\\": "src/OpenTelemetry/gen-otlp-protobuf/Opentelemetry/Proto/",
-      "GPBMetadata\\Opentelemetry\\": "src/OpenTelemetry/gen-otlp-protobuf/GPBMetadata/Opentelemetry/"
+    "name": "bingcool/library",
+    "description": "library is a common library attach to swoole extension, for everyone use it easily!",
+    "keywords": [
+        "workerfy",
+        "swoole",
+        "php",
+        "library"
+    ],
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "bingcool",
+            "email": "2437667702@qq.com",
+            "role": "library of swoole"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=8.4",
+        "ext-pdo": "*",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-redis": "*",
+        "ext-openssl": "*",
+        "psr/clock": "*",
+        "predis/predis": "~3.4",
+        "malkusch/lock": "^2.2.0",
+        "php-amqplib/php-amqplib": "~3.7.0",
+        "php-http/discovery": "^1.14",
+        "psr/http-client-implementation": "^1.0",
+        "psr/http-factory-implementation": "^1.0",
+        "psr/http-client": "^1.0",
+        "psr/http-message": "^1.0|^2.0",
+        "psr/log": "^3.0",
+        "ramsey/uuid": "^4.0",
+        "symfony/polyfill-mbstring": "^1.23",
+        "symfony/polyfill-php82": "^1.26",
+        "symfony/polyfill-php83": "^1.26",
+        "symfony/polyfill-php84": "^1.26",
+        "symfony/polyfill-php85": "^1.26",
+        "tbachert/spi": "^1.0.0",
+        "google/protobuf": "^4.0",
+        "symfony/http-client": "~7.3",
+        "nyholm/psr7": "^1.1",
+        "guzzlehttp/guzzle": "~7.9.0",
+        "league/flysystem": "^3.0",
+        "aws/aws-sdk-php": "^3.0",
+        "alibabacloud/oss-v2": "*",
+        "qcloud/cos-sdk-v5": "^2.0"
     },
-    "files": [
-      "src/Helper.php",
-      "src/OpenTelemetry/Context/fiber/initialize_fiber_handler.php",
-      "src/OpenTelemetry/Contrib/Otlp/_register.php",
-      "src/OpenTelemetry/SDK/Common/Util/functions.php",
-      "src/OpenTelemetry/SDK/Logs/Exporter/_register.php",
-      "src/OpenTelemetry/SDK/Metrics/MetricExporter/_register.php",
-      "src/OpenTelemetry/SDK/Propagation/_register.php",
-      "src/OpenTelemetry/SDK/Trace/SpanExporter/_register.php",
-      "src/OpenTelemetry/SDK/Common/Dev/Compatibility/_load.php",
-      "src/OpenTelemetry/SDK/_autoload.php",
-      "src/OpenTelemetry/API/Trace/functions.php"
-    ]
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "Swoolefy\\Library\\Tests\\": "tests/"
+    "require-dev": {
+        "kwn/php-rdkafka-stubs": "@dev",
+        "swoole/ide-helper": "@dev",
+        "phpunit/phpunit": "^11.5.39"
+    },
+    "autoload": {
+        "psr-4": {
+            "Swoolefy\\Library\\": "src/",
+            "Opentelemetry\\Proto\\": "src/OpenTelemetry/gen-otlp-protobuf/Opentelemetry/Proto/",
+            "GPBMetadata\\Opentelemetry\\": "src/OpenTelemetry/gen-otlp-protobuf/GPBMetadata/Opentelemetry/"
+        },
+        "files": [
+            "src/Helper.php",
+            "src/OpenTelemetry/Context/fiber/initialize_fiber_handler.php",
+            "src/OpenTelemetry/Contrib/Otlp/_register.php",
+            "src/OpenTelemetry/SDK/Common/Util/functions.php",
+            "src/OpenTelemetry/SDK/Logs/Exporter/_register.php",
+            "src/OpenTelemetry/SDK/Metrics/MetricExporter/_register.php",
+            "src/OpenTelemetry/SDK/Propagation/_register.php",
+            "src/OpenTelemetry/SDK/Trace/SpanExporter/_register.php",
+            "src/OpenTelemetry/SDK/Common/Dev/Compatibility/_load.php",
+            "src/OpenTelemetry/SDK/_autoload.php",
+            "src/OpenTelemetry/API/Trace/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Swoolefy\\Library\\Tests\\": "tests/"
+        }
     }
-  }
 }

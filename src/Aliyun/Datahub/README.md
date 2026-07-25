@@ -10,13 +10,13 @@
 
 ```
 Aliyun/
-├── README.md
 └── Datahub/
     ├── DatahubConst.php           # TUPLE / BLOB 常量
     ├── DatahubConfigDto.php       # AccessKey / Endpoint / Project / Topic
     ├── HttpMethodTrait.php        # HTTP 方法、签名、记录解析、DTS 操作判断
     ├── AbstractBaseDatahub.php    # 查询 Topic、Cursor、订阅、消费、提交位点
     └── DatahubTool.php            # 创建/删除 Topic、创建订阅
+    └── EADME.md
 ```
 
 ---

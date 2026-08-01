@@ -46,9 +46,9 @@
         "nyholm/psr7": "^1.1",
         "guzzlehttp/guzzle": "~7.9.0",
         "league/flysystem": "^3.0",
-        "aws/aws-sdk-php": "^3.0",
+        "aws/aws-sdk-php": "^3.390.1",
         "alibabacloud/oss-v2": "*",
-        "qcloud/cos-sdk-v5": "^2.0",
+        "qcloud/cos-sdk-v5": "^2.6",
         "yurunsoft/yurun-oauth-login": "^3.1.0"
     },
     "require-dev": {

@@ -1415,12 +1415,12 @@ abstract class BaseQuery
     /**
      * 查找单条记录
      * @access public
-     * @return array|mixed
+     * @return array|null
      */
-    public function find()
+    public function find(): ?array
     {
         if (empty($this->options['where']) && empty($this->options['order'])) {
-            $result = [];
+            $result = null;
         } else {
             $this->parseOptions();
             $sql = $this->builder->select($this);
@@ -1428,11 +1428,16 @@ abstract class BaseQuery
             $result = $this->withTenantInterceptorPolicy(function () use ($sql, $bindParams) {
                 return $this->connection->query($sql, $bindParams);
             });
+
+            if (empty($result)) {
+                return null;
+            }
+
             if (!$this->firstCall) {
                 $this->result($result);
-            }else {
-                $result = $result[0] ?? [];
             }
+
+            $result = $result[0] ?? null;
         }
         return $result;
     }

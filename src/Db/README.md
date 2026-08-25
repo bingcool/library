@@ -184,8 +184,8 @@ $rows = Db::table('tbl_order')
     ->limit(10)
     ->select();
 
-// 指定组件名
-$rows = Db::connect('pg')->table('users')->where('id', 1)->find();
+// 指定组件名,查询单条记录
+$row = Db::connect('pg')->table('users')->where('id', 1)->find();
 ```
 
 ### 常用条件

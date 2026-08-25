@@ -197,13 +197,9 @@ trait QueryPersistence
             $query->whereNull($this->getSoftDeleteField());
         }
 
-        $rows = $query->limit(1)->find();
+        $row = $query->limit(1)->find();
 
-        if (!is_array($rows) || $rows === []) {
-            return null;
-        }
-
-        return $rows[0] ?? null;
+        return $row;
     }
 
     /**
@@ -243,8 +239,7 @@ trait QueryPersistence
             $query->whereNull($this->getSoftDeleteField());
         }
 
-        $rows = $query->limit(1)->find();
-        $attributes = (is_array($rows) && isset($rows[0])) ? $rows[0] : null;
+        $attributes = $query->limit(1)->find();
 
         if ($attributes) {
             $pk = $this->getPk();

@@ -377,7 +377,7 @@ abstract class Model implements ArrayAccess
         }
         $query->setModel($this);
         $this->applyTenantScope($query);
-
+        $this->applyDeletedFieldNull($query);
         return $query;
     }
 
@@ -400,8 +400,18 @@ abstract class Model implements ArrayAccess
     {
         $query = $this->newPersistenceQuery(true);
         $this->applyTenantScope($query);
-
+        $this->applyDeletedFieldNull($query);
         return $query;
+    }
+
+    /**
+     * @return void
+     */
+    protected function applyDeletedFieldNull(Query $query)
+    {
+        if ($this->isSoftDelete()) {
+            $query->whereNull($this->getSoftDeleteField());
+        }
     }
 
     /**

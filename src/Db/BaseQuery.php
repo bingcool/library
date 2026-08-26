@@ -1468,8 +1468,9 @@ abstract class BaseQuery
         }
 
         if ($this->model->isSoftDelete()) {
-            $this->whereNull($this->model->getSoftDeleteField());
+            $this->whereNull($this->model->getTable().'.'.$this->model->getSoftDeleteField());
         }
+
         $this->firstCall = true;
         $result = $this->find();
         $this->firstCall = false;

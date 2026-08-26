@@ -410,7 +410,7 @@ abstract class Model implements ArrayAccess
     protected function applyDeletedFieldNull(Query $query)
     {
         if ($this->isSoftDelete()) {
-            $query->whereNull($this->getSoftDeleteField());
+            $query->whereNull($this->getTable().'.'.$this->getSoftDeleteField());
         }
     }
 

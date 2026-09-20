@@ -6,175 +6,140 @@
 |---|---|
 | 项目 | `bingcool/library` |
 | 分支 | `library-6.x` |
-| 方案范围 | Redis / Predis / PDO 自动重连与 Retry |
+| 方案范围 | PHPRedis、Predis、RedisCluster、PDO（Mysql / Pgsql / Oracle / Sqlite） |
 | 优先级 | P0 |
-| 目标 | 消除连接异常后的危险重复执行，同时保留安全操作的自动恢复能力 |
+| 目标 | 消除连接异常后的危险重复执行，同时保留明确安全操作的自动恢复能力 |
 | 核心原则 | Reconnect 与 Retry 解耦 |
-| 设计目标 | 不引入复杂幂等系统，不增加业务层功能 |
+| 设计目标 | 不引入复杂幂等系统，不增加业务层功能，不引入 SQL AST Parser |
+
+对照文件：
+
+| 组件 | 文件 | 当前问题 |
+|---|---|---|
+| PHPRedis | `src/Redis/Redis.php` | `__call` 捕获任意异常后 reconnect 并盲 replay 1 次 |
+| Predis | `src/Redis/Predis.php` | 同上，且会把 Redis 业务错误（如 WRONGTYPE）当成断线 |
+| RedisCluster | `src/Redis/RedisCluster.php` | 与 PHPRedis 相同盲 replay，原方案未覆盖 |
+| PDO | `src/Db/PDOConnection.php` | 非事务下断线最多盲 replay 4 次，不区分 SQL 类型 |
 
 ---
 
-# 2. 背景
+# 2. 现状代码分析
 
-当前 `library-6.x` 中 Redis、Predis、PDO 均存在类似的处理模式：
+原方案对问题的判断方向正确，但对当前实现的描述不完整。真实风险比「只在连接异常后 replay」更大。
 
-```text
-执行操作
-   ↓
-发生连接异常
-   ↓
-关闭旧连接
-   ↓
-重新建立连接
-   ↓
-再次执行原操作
-```
+## 2.1 Redis / Predis / RedisCluster：任意异常都会 replay
 
-这种处理方式存在一个核心问题：
-
-> 连接异常并不等于服务端没有执行成功。
-
-在分布式网络环境中，可能出现：
+`Redis::__call` 当前逻辑：
 
 ```text
-Client
-   │
-   │ command
-   ▼
-Redis / MySQL
-   │
-   │ 执行成功
-   ▼
-Server
-   │
-   X
-   │ response 在返回过程中丢失
-   ▼
-Client
+try
+    native command
+catch RedisException|Exception
+    sleep(0.5)
+    close + reConnect()
+    再次执行原 command        ← 无命令白名单
 ```
 
-客户端最终看到：
+对应代码：
+
+- `src/Redis/Redis.php` `__call`
+- `src/Redis/Predis.php` `__call`
+- `src/Redis/RedisCluster.php` `__call`
+
+三个问题：
+
+1. **不是只处理连接异常。** PHPRedis 的 `WRONGTYPE`、`NOSCRIPT`、错误参数等也是 `RedisException`，当前都会 reconnect + replay。
+2. **Predis 捕获了全部 `\Exception`。** `\Predis\Response\ServerException`（Redis 返回的业务错误）也会走重连重放。只有 `\Predis\Connection\ConnectionException` 才应视为断线。
+3. **reconnect 后无条件再执行原命令。** `INCR` / `LPUSH` / `EVAL` 都会被自动执行第二次。
+
+此外：
+
+- `reConnect()` 只恢复 `auth`，**不恢复 `SELECT db`**。用户切过 DB 后，断线重连会落到 DB 0 再 replay，读命令也会读错库。
+- 每次异常固定 `sleep(0.5)`，即使是业务错误也会被拖慢。
+- `RedisCluster` 与单机 Redis 是同一类 bug，必须纳入本方案，不能只改 PHPRedis / Predis。
+
+## 2.2 PDO：非事务 SQL 最多盲 replay 4 次
+
+`PDOConnection::PDOStatementHandle()` 当前逻辑：
 
 ```text
-Connection Exception
+prepare + bind + execute
+catch PDOException
+    if transTimes <= 0
+       and reConnectTimes < 4
+       and (isBreak(e) or SQLSTATE 2006/2013)
+        close()
+        再次执行同一条 SQL          ← 不区分 SELECT / INSERT / UPDATE
 ```
 
-但真实情况可能是：
+已有保护：
 
-```text
-操作已经成功执行
-```
+- **事务中不 replay**（`transTimes <= 0` 才重试）。这条必须保留为硬规则。
+- `beginTransaction()` 失败时只重试「开启事务」，没有业务 SQL replay，可保留。
+- `connect()` 失败时只重试建连，没有业务 SQL replay，可保留。
 
-如果 Library 此时自动重新执行一次：
+现存问题：
 
-```text
-第一次：成功
-第二次：retry
-```
+1. 非事务下 `INSERT` / `UPDATE` / `DELETE` 都会被 replay，最多 4 次。
+2. `isBreak()` 的匹配串包含 `Resource deadlock avoided`。死锁不是「结果不确定的断线」：autocommit 下语句已被回滚，语义与 connection lost 不同，不应走同一条 reconnect + 盲 replay 路径。
+3. 事务中断线时直接 `throw`，**不会 `close()`**。连接已死但 `transTimes` 仍大于 0，后续请求可能继续打在坏连接上。
 
-就会产生重复副作用。
+## 2.3 原方案需要修正的点
+
+| 原方案 | 结论 |
+|---|---|
+| Reconnect ≠ Retry，白名单才 replay | 正确，作为总原则保留 |
+| 只覆盖 PHPRedis / Predis | **不完整**，必须含 RedisCluster |
+| Redis 配置示例只有 5 个命令 | **与默认白名单矛盾**，需区分内置默认值与用户增量配置 |
+| `GEORADIUS` 默认可 Retry | **不正确**，带 `STORE` / `STOREDIST` 会写数据 |
+| 未列 `SMEMBERS` | **遗漏**，这是常见只读命令 |
+| 未定义如何识别「连接异常」 | 必须补齐，否则现状「任意 Exception 都重试」不会被修掉 |
+| 未定义 MULTI / PIPELINE / `rawCommand` | 必须禁止或按真实 Redis 命令名判断 |
+| PDO Retry 次数 = 1 | 合理，但需写明相对现状从 4 次收紧 |
+| 未把「事务中永不 replay」写成硬规则 | 代码已有，方案必须升格为硬规则 |
+| 未说明 reconnect 后仍 throw 的原因 | 连接池 / 长连接需要先愈合连接，再把错误交给业务 |
 
 ---
 
 # 3. 核心问题
 
-## 3.1 Redis
-
-例如：
-
-```redis
-INCR order:sequence
-```
-
-第一次执行成功：
+连接异常不等于服务端没有执行成功。
 
 ```text
-sequence = 100
+Client  --command-->  Redis / MySQL
+                         │ 执行成功
+                         │ response 丢失
+Client  <-- Connection Exception
 ```
 
-但是返回结果之前连接断开。
+如果 Library 此时自动再执行一次，就会产生重复副作用。
 
-客户端收到：
+典型事故：
 
 ```text
-RedisException
+INCR order:sequence          → 序号跳号
+INSERT INTO user ...         → 重复行
+UPDATE account SET balance = balance - 100  → 扣两次
 ```
 
-当前实现 reconnect 后再次执行：
-
-```redis
-INCR order:sequence
-```
-
-结果：
+完全禁止 Retry 又会损失 `GET` / 普通 `SELECT` 在短暂断线后的自动恢复。因此：
 
 ```text
-sequence = 101
+所有允许处理的连接异常都可以 reconnect
+reconnect 后是否 replay，必须由 Retry Policy 决定
 ```
-
-客户端虽然只调用了一次 `INCR`，Redis 实际执行了两次。
-
----
-
-## 3.2 PDO
-
-例如：
-
-```sql
-UPDATE account
-SET balance = balance - 100
-WHERE id = 1;
-```
-
-第一次 SQL 已经成功执行：
-
-```text
-balance = 900
-```
-
-但 MySQL 响应返回之前连接断开。
-
-PDO 抛出：
-
-```text
-PDOException
-```
-
-Library 自动 reconnect 后再次执行：
-
-```sql
-UPDATE account
-SET balance = balance - 100
-WHERE id = 1;
-```
-
-最终：
-
-```text
-balance = 800
-```
-
-一次业务操作被执行两次。
 
 ---
 
 # 4. 核心设计原则
 
-## 4.1 Reconnect 与 Retry 必须解耦
-
-这是本方案最核心的原则：
-
-```text
-Reconnect ≠ Retry
-```
-
-连接异常发生以后：
+## 4.1 Reconnect ≠ Retry
 
 ```text
 Connection Exception
         │
         ▼
-    reconnect()
+    reconnect()          ← 愈合连接，服务连接池 / 长连接复用
         │
         ▼
     Retry Policy
@@ -183,1240 +148,398 @@ Connection Exception
     │        │
  retry    no retry
     │        │
- replay    throw
+ replay    throw 原异常
+ once
 ```
 
-即：
+> 所有确认的连接异常都可以 reconnect；只有能够明确证明重复执行风险可接受的操作，才允许自动 Retry。
 
-> 所有允许处理的连接异常都可以进行 reconnect，但 reconnect 后是否重新执行原操作，必须由 Retry Policy 决定。
+## 4.2 只处理连接异常，不处理业务异常
 
----
-
-# 5. 为什么不能“所有异常都不 Retry”
-
-完全禁止 Retry 虽然安全，但会损失一部分自动恢复能力。
-
-例如：
-
-```redis
-GET user:100
-```
-
-如果只是网络连接短暂断开：
+以下错误 **禁止** reconnect，也 **禁止** replay：
 
 ```text
-GET
- ↓
-Connection Exception
- ↓
-reconnect
- ↓
-retry GET
+WRONGTYPE / wrong type
+syntax error
+NOSCRIPT
+permission denied / NOAUTH
+constraint violation / duplicate key
+invalid argument
+MOVED / ASK（Cluster 重定向，由客户端自己处理，不是断线）
 ```
 
-因为 `GET` 不修改数据，所以重复读取不会产生业务副作用。
+死锁（`1213` / `Resource deadlock avoided`）从本方案的「断线重连」路径中拆出：不 reconnect、不按 connection-lost 语义 replay。是否单独做死锁重试不在本次 P0 范围。
 
-因此本方案不是：
-
-```text
-所有异常 → 不 retry
-```
-
-而是：
-
-```text
-所有异常
-   ↓
-reconnect
-   ↓
-只有明确安全的操作才 retry
-```
-
----
-
-# 6. Redis Retry 设计
-
-## 6.1 基本原则
-
-Redis Retry 采用：
-
-> **白名单策略。**
-
-即：
+## 4.3 白名单，而不是黑名单
 
 ```text
 明确允许 retry → retry
-
-未配置 → 不 retry
-
-未知命令 → 不 retry
+未配置 / 未知   → 不 retry
 ```
 
-而不是：
+Redis 命令和 SQL 方言都会增加。默认允许会把「Library 不认识的新写命令」自动 replay。
 
-```text
-不是危险命令 → retry
-```
+## 4.4 事务与 MULTI 中永不 replay
 
-原因是 Redis 命令持续增加，如果采用默认允许：
+| 场景 | 行为 |
+|---|---|
+| PDO `transTimes > 0` | reconnect（丢掉死连接）+ 标记事务失败 + throw，**不 replay SQL** |
+| Redis `MULTI` / `PIPELINE` / `WATCH` 进行中 | reconnect + throw，**不 replay** |
 
-```text
-新命令
- ↓
-Library 没有识别
- ↓
-自动 retry
-```
-
-可能引入新的重复执行风险。
-
-因此：
-
-> **未知 Redis 命令默认禁止 Retry。**
+断线后原事务 / MULTI 上下文已经不存在。在新连接上重放其中任何一条命令，都是另一笔操作。
 
 ---
 
-# 7. Redis Retry 配置
+# 5. Redis Retry 设计
 
-建议增加 Redis Retry 配置，例如：
+## 5.1 适用范围
+
+三套 Driver 共用同一套 Retry Policy：
+
+```text
+            RedisRetryPolicy
+                   │
+     ┌─────────────┼─────────────┐
+     │             │             │
+ PHPRedis       Predis      RedisCluster
+```
+
+不能出现同一命令在不同 Driver 上 Retry 行为不一致。
+
+入口一律是 `__call($method, $arguments)`。Policy 看到的是 **PHP 方法名**，必须先规范化成 Redis 命令名：
+
+```text
+hGet / hget / HGET     → HGET
+rawCommand('INCR', k)  → 取第一个参数 INCR
+executeRaw(...)        → 同上
+```
+
+`rawCommand` / `executeRaw` 按真实命令名走白名单；无法解析时视为未知命令，不 Retry。
+
+## 5.2 连接异常判定
+
+**PHPRedis / RedisCluster**（按异常类 + message 子串，大小写不敏感）：
+
+```text
+read error on connection
+Connection lost
+Redis server went away
+socket error
+Connection closed
+No connection to persistent
+Connection refused
+Connection timed out
+Broken pipe
+reset by peer
+php_network_getaddresses
+EOF
+```
+
+只处理 `RedisException` / `RedisClusterException`。`Error` 与非连接类 message 直接抛出。
+
+**Predis** 只把以下视为连接异常：
+
+```text
+Predis\Connection\ConnectionException
+Predis\Connection\TimeoutException（若当前 Predis 版本存在）
+```
+
+`Predis\Response\ServerException` 禁止 reconnect。
+
+## 5.3 Reconnect 必须恢复的会话状态
+
+| 状态 | 现状 | 本方案 |
+|---|---|---|
+| `AUTH` password | PHPRedis 已恢复 | 保持 |
+| `SELECT` db | **未恢复** | 必须记录并在 reconnect 后重新 `SELECT` |
+| Predis `parameters.database` | `new Client(parameters)` 通常会带上 | 保持用原 parameters / options 重建 |
+| `setOption`（prefix / serializer） | 丢失 | P0 不做成通用恢复；文档视为已知限制，业务应避免依赖断线后自动恢复这些 option |
+| Cluster seeds / auth / persistent | `buildRedisCluster()` 已用原构造参数 | 保持 |
+
+`SELECT` 本身：
+
+- 记录当前 db index
+- `SELECT` 命令不放入 replay 白名单（未知即不 replay 也可以）
+- 但 **任意命令** reconnect 后都要先恢复 db，再决定是否 replay 那条命令
+
+否则白名单里的 `GET` 也会读错库。
+
+## 5.4 默认允许 Retry 的命令（内置白名单）
+
+只纳入「确定只读、无写选项、无会话游标副作用」的命令。
+
+```text
+# String / Bit 读
+GET MGET
+STRLEN GETRANGE GETBIT BITCOUNT BITPOS
+LCS
+
+# Key / TTL 查询
+EXISTS TYPE TTL PTTL EXPIRETIME PEXPIRETIME
+RANDOMKEY DBSIZE KEYS DUMP OBJECT
+
+# Hash 读
+HGET HMGET HGETALL HEXISTS HLEN HKEYS HVALS HSTRLEN HRANDFIELD
+
+# Set 读
+SMEMBERS SCARD SISMEMBER SMISMEMBER
+SINTER SINTERCARD SUNION SDIFF SRANDMEMBER
+
+# List 读
+LLEN LINDEX LRANGE
+
+# ZSet 读
+ZCARD ZCOUNT ZRANGE ZRANGEBYSCORE ZREVRANGE ZREVRANGEBYSCORE
+ZRANGEBYLEX ZREVRANGEBYLEX ZLEXCOUNT
+ZRANK ZREVRANK ZSCORE ZMSCORE ZRANDMEMBER
+
+# HyperLogLog 读
+PFCOUNT
+
+# GEO 只读变体（不含可 STORE 的 GEORADIUS）
+GEODIST GEOHASH GEOPOS
+GEORADIUS_RO GEORADIUSBYMEMBER_RO
+GEOSEARCH
+
+# Stream 只读
+XLEN XRANGE XREVRANGE XINFO
+
+# 连接探活
+PING ECHO TIME LASTSAVE MEMORY
+```
+
+说明：
+
+- `SMEMBERS` 必须包含。这是高频只读命令，原方案遗漏。
+- `GEORADIUS` / `GEORADIUSBYMEMBER` **默认不 Retry**。它们支持 `STORE` / `STOREDIST`，重复执行会写 key。只放 `_RO` 与 `GEOSEARCH`。
+- `SRANDMEMBER` / `HRANDFIELD` / `ZRANDMEMBER` 不修改数据，允许 Retry；两次结果可能不同，可接受。
+- `SCAN` / `HSCAN` / `SSCAN` / `ZSCAN` **不 Retry**。cursor 在重连后重放可能漏扫或重复扫描。
+- `XREAD` / `XREADGROUP` **不 Retry**。可能阻塞，且 `XREADGROUP` 会改变消费状态。
+
+## 5.5 默认禁止 Retry 的命令（显式列出，避免误加白名单）
+
+```text
+# String 写
+SET SETEX PSETEX SETNX MSET MSETNX GETSET GETEX GETDEL
+APPEND SETBIT SETRANGE
+INCR INCRBY INCRBYFLOAT DECR DECRBY
+
+# Key 写
+DEL UNLINK EXPIRE PEXPIRE EXPIREAT PEXPIREAT PERSIST
+RENAME RENAMENX MOVE COPY TOUCH RESTORE FLUSHDB FLUSHALL
+
+# List 写 / 阻塞弹出
+LPUSH LPUSHX RPUSH RPUSHX LPOP RPOP LREM LSET LTRIM
+LMOVE BLMOVE LINSERT
+BLPOP BRPOP BRPOPLPUSH BZPOPMIN BZPOPMAX
+
+# Set 写
+SADD SREM SMOVE SPOP SDIFFSTORE SINTERSTORE SUNIONSTORE
+
+# ZSet 写
+ZADD ZREM ZINCRBY ZPOPMIN ZPOPMAX
+ZREMRANGEBYRANK ZREMRANGEBYSCORE ZREMRANGEBYLEX
+ZINTERSTORE ZUNIONSTORE ZDIFFSTORE
+
+# Hash 写
+HSET HMSET HSETNX HDEL HINCRBY HINCRBYFLOAT
+
+# Stream 写 / 消费状态
+XADD XDEL XTRIM XACK XCLAIM XAUTOCLAIM XGROUP XREAD XREADGROUP
+
+# GEO 写
+GEOADD GEORADIUS GEORADIUSBYMEMBER GEOSEARCHSTORE
+
+# HyperLogLog 写
+PFADD PFMERGE
+
+# Lua / 事务 / 订阅
+EVAL EVALSHA SCRIPT
+MULTI EXEC DISCARD WATCH UNWATCH PIPELINE
+SUBSCRIBE PSUBSCRIBE SSUBSCRIBE UNSUBSCRIBE PUNSUBSCRIBE
+PUBLISH SPUBLISH
+
+# 其它
+BITOP BITFIELD
+SELECT SWAPDB
+MIGRATE RESTORE-ASKING
+```
+
+`SET` 即使看起来像幂等，也带 `NX` / `XX` / `GET` / `EX` / `KEEPTTL` 等语义，默认不 Retry。若业务确认安全，只能通过配置 `extra_commands` 显式打开。
+
+`EVAL` / `EVALSHA` 内部可执行任意写命令，Library 无法判断脚本幂等，默认禁止。
+
+未知命令：默认 no retry。
+
+## 5.6 MULTI / PIPELINE
+
+PHPRedis 的 `multi()` / `pipeline()` 之后，后续 `__call` 只是把命令入队。如果入队或 `exec` 时断线：
+
+```text
+reconnect 后的连接不在 MULTI 中
+若 replay INCR → 变成独立写命令
+```
+
+因此：只要连接处于 MULTI / PIPELINE / WATCH 中，任何命令都不 Retry。reconnect 后 throw。
+
+## 5.7 Redis 配置
+
+内置白名单始终生效；用户配置只做开关、覆盖或增量，避免业务把默认列表抄成 5 个命令后丢失 `SMEMBERS` 等。
 
 ```php
 [
     'retry' => [
         'enabled' => true,
-
-        'commands' => [
-            'GET',
-            'MGET',
-            'HGET',
-            'HMGET',
-            'HGETALL',
+        'max_times' => 1,
+        'delay' => 0.5,
+        // 不填则使用内置白名单
+        // 'commands' => ['GET', 'MGET'],
+        // 在内置（或 commands 覆盖结果）之上追加
+        'extra_commands' => [
+            // 'SET',
         ],
     ],
 ]
 ```
 
-配置语义：
-
 | 配置 | 含义 |
 |---|---|
-| `enabled = false` | Redis 操作异常后不自动 Retry |
-| `enabled = true` | 根据命令白名单判断是否 Retry |
-| `commands` | 明确允许 Retry 的命令 |
-| 未出现在 `commands` | 不 Retry |
+| `enabled = false` | 断线只 reconnect，任何命令都不 replay |
+| `enabled = true` | 按白名单决定是否 replay |
+| `max_times` | 额外 replay 次数，默认 `1`。不允许无限重试 |
+| `delay` | reconnect 前等待秒数，默认 `0.5`，兼容当前行为；仅连接异常路径使用 |
+| `commands` | 若提供非空数组，**替换**内置白名单 |
+| `extra_commands` | 追加到最终白名单，例如显式打开 `SET` |
+| 未出现在最终白名单 | 不 Retry |
+
+PHPRedis 当前没有统一 config 数组（连接参数在 `connect()` 里）。实现时在 `RedisConnection` 增加 `setRetryOptions()` / 默认值即可，不必强行改 `connect()` 签名。
 
 ---
 
-# 8. Redis 默认允许 Retry 的命令
+# 6. PDO Retry 设计
 
-## 8.1 String 读取命令
-
-```text
-GET
-MGET
-
-STRLEN
-GETRANGE
-GETBIT
-BITCOUNT
-BITPOS
-```
-
-这些操作不会修改 Redis 数据。
-
----
-
-# 9. Redis Key / TTL 查询
-
-可以 Retry：
+## 6.1 总流程
 
 ```text
-EXISTS
-TYPE
-TTL
-PTTL
-EXPIRETIME
-PEXPIRETIME
+SQL
+ │
+ ▼
+execute
+ │
+ ├── success ────────→ return
+ │
+ ▼
+connection exception ?
+ ├── no  → throw（含死锁、语法错误、约束冲突）
+ ▼ yes
+reconnect()              ← 愈合连接；事务中同时复位 transTimes
+ │
+ ▼
+处于事务？或 SQL 不可 Retry？
+ ├── yes → throw 原异常
+ ▼ no
+replay once
+ ├── success → return
+ └── fail    → throw
 ```
 
-以下不属于 Retry：
+`query()` 与 `execute()` 都走 `PDOStatementHandle()`。Retry 必须以 **SQL 文本** 分类，不能用调用方法名判断。业务完全可以 `execute("SELECT ...")`。
 
-```text
-EXPIRE
-PEXPIRE
-EXPIREAT
-PEXPIREAT
-PERSIST
-```
-
-因为这些属于修改操作。
-
----
-
-# 10. Redis Hash 查询
-
-可以 Retry：
-
-```text
-HGET
-HMGET
-HGETALL
-HEXISTS
-HLEN
-HKEYS
-HVALS
-HSTRLEN
-```
-
-以下不属于 Retry：
-
-```text
-HSET
-HSETNX
-HDEL
-HINCRBY
-HINCRBYFLOAT
-```
-
----
-
-# 11. Redis Set 查询
-
-可以 Retry：
-
-```text
-SCARD
-SISMEMBER
-SMISMEMBER
-SINTER
-SINTERCARD
-SUNION
-SDIFF
-SRANDMEMBER
-```
-
-以下不 Retry：
-
-```text
-SADD
-SREM
-SMOVE
-SPOP
-```
-
----
-
-# 12. Redis List 查询
-
-可以 Retry：
-
-```text
-LLEN
-LINDEX
-LRANGE
-```
-
-以下不 Retry：
-
-```text
-LPUSH
-LPUSHX
-RPUSH
-RPUSHX
-LPOP
-RPOP
-LREM
-LSET
-LTRIM
-LMOVE
-BLMOVE
-```
-
----
-
-# 13. Redis Sorted Set 查询
-
-可以 Retry：
-
-```text
-ZCARD
-ZCOUNT
-ZRANGE
-ZRANGEBYSCORE
-ZRANK
-ZREVRANGE
-ZREVRANK
-ZSCORE
-ZMSCORE
-```
-
-以下不 Retry：
-
-```text
-ZADD
-ZREM
-ZINCRBY
-ZPOPMIN
-ZPOPMAX
-```
-
----
-
-# 14. Redis HyperLogLog
-
-可以 Retry：
-
-```text
-PFCOUNT
-```
-
-以下不 Retry：
-
-```text
-PFADD
-```
-
-因为 `PFADD` 属于修改操作。
-
----
-
-# 15. Redis GEO
-
-查询类命令可以 Retry：
-
-```text
-GEODIST
-GEOHASH
-GEOPOS
-GEORADIUS
-GEORADIUS_RO
-GEOSEARCH
-```
-
-以下不 Retry：
-
-```text
-GEOADD
-GEOSEARCHSTORE
-```
-
-其中 `GEOSEARCHSTORE` 会写入 Redis，因此不能 Retry。
-
----
-
-# 16. Redis SET
-
-`SET` 不建议默认 Retry。
-
-虽然：
-
-```redis
-SET key value
-```
-
-表面上可能是幂等的，但 `SET` 可以包含改变语义的参数：
-
-```redis
-SET key value NX
-SET key value XX
-SET key value EX 10
-SET key value PX 1000
-SET key value GET
-SET key value KEEPTTL
-```
-
-例如：
-
-```redis
-SET lock:order 123 NX EX 10
-```
-
-第一次成功：
-
-```text
-OK
-```
-
-响应丢失后 Retry：
-
-```text
-(nil)
-```
-
-最终客户端得到的结果与第一次执行不同。
-
-因此：
-
-```text
-SET
- ↓
-默认不 Retry
-```
-
-如果未来确实存在明确需要，可以通过配置显式开启，但默认不开放。
-
----
-
-# 17. Redis 自增命令
-
-以下全部禁止 Retry：
-
-```text
-INCR
-INCRBY
-INCRBYFLOAT
-DECR
-DECRBY
-```
-
-例如：
-
-```redis
-INCR counter
-```
-
-第一次执行：
-
-```text
-counter = 101
-```
-
-响应丢失后再次执行：
-
-```text
-counter = 102
-```
-
-会产生明确的数据错误。
-
----
-
-# 18. Redis String 修改命令
-
-以下不 Retry：
-
-```text
-APPEND
-SETBIT
-SETRANGE
-```
-
-例如：
-
-```redis
-APPEND key abc
-```
-
-执行两次：
-
-```text
-abcabc
-```
-
----
-
-# 19. Redis Key 修改命令
-
-以下不 Retry：
-
-```text
-DEL
-UNLINK
-
-EXPIRE
-PEXPIRE
-EXPIREAT
-PEXPIREAT
-PERSIST
-
-RENAME
-RENAMENX
-```
-
-尤其 `EXPIRE` / `PEXPIRE` 等命令，重复执行可能改变最终 TTL。
-
----
-
-# 20. Redis List 修改命令
-
-以下不 Retry：
-
-```text
-LPUSH
-LPUSHX
-RPUSH
-RPUSHX
-LPOP
-RPOP
-LREM
-LSET
-LTRIM
-LMOVE
-BLMOVE
-```
-
-例如：
-
-```redis
-LPUSH queue message
-```
-
-如果第一次成功、响应丢失，再 Retry 会产生重复消息。
-
----
-
-# 21. Redis Set 修改命令
-
-以下不 Retry：
-
-```text
-SADD
-SREM
-SMOVE
-SPOP
-```
-
-即使某些 Set 操作在数据层面重复执行可能没有明显问题，也不应该由基础库假设其业务语义安全。
-
----
-
-# 22. Redis Sorted Set 修改命令
-
-以下不 Retry：
-
-```text
-ZADD
-ZREM
-ZINCRBY
-ZPOPMIN
-ZPOPMAX
-```
-
-特别是：
-
-```text
-ZINCRBY
-```
-
-属于典型非幂等操作。
-
----
-
-# 23. Redis Hash 修改命令
-
-以下不 Retry：
-
-```text
-HSET
-HSETNX
-HDEL
-HINCRBY
-HINCRBYFLOAT
-```
-
-尤其：
-
-```text
-HINCRBY
-HINCRBYFLOAT
-```
-
-重复执行会直接产生数据错误。
-
----
-
-# 24. Redis Stream
-
-默认全部不 Retry：
-
-```text
-XADD
-XDEL
-XTRIM
-XACK
-XCLAIM
-XAUTOCLAIM
-```
-
-原因：
-
-- `XADD` 可能产生重复消息。
-- `XACK` 涉及消费状态。
-- `XCLAIM` / `XAUTOCLAIM` 涉及消息所有权状态。
-- 基础库不应该在执行结果未知时自动重放。
-
----
-
-# 25. Redis Lua
-
-以下命令默认禁止：
-
-```text
-EVAL
-EVALSHA
-```
-
-原因是 Lua 脚本内部可以执行任意 Redis 操作，例如：
-
-```lua
-redis.call('INCR', ...)
-redis.call('SET', ...)
-redis.call('LPUSH', ...)
-redis.call('ZADD', ...)
-```
-
-Library 无法仅通过 `EVAL` / `EVALSHA` 判断脚本是否幂等。
-
-因此：
-
-```text
-EVAL
-EVALSHA
-    ↓
-默认 no retry
-```
-
----
-
-# 26. Redis 最终 Retry 分类
-
-## 默认 Retry
-
-```text
-GET
-MGET
-
-STRLEN
-GETRANGE
-GETBIT
-BITCOUNT
-BITPOS
-
-EXISTS
-TYPE
-TTL
-PTTL
-EXPIRETIME
-PEXPIRETIME
-
-HGET
-HMGET
-HGETALL
-HEXISTS
-HLEN
-HKEYS
-HVALS
-HSTRLEN
-
-SCARD
-SISMEMBER
-SMISMEMBER
-SINTER
-SINTERCARD
-SUNION
-SDIFF
-SRANDMEMBER
-
-LLEN
-LINDEX
-LRANGE
-
-ZCARD
-ZCOUNT
-ZRANGE
-ZRANGEBYSCORE
-ZRANK
-ZREVRANGE
-ZREVRANK
-ZSCORE
-ZMSCORE
-
-PFCOUNT
-
-GEODIST
-GEOHASH
-GEOPOS
-GEORADIUS
-GEORADIUS_RO
-GEOSEARCH
-```
-
-## 默认不 Retry
-
-```text
-SET
-
-INCR
-INCRBY
-INCRBYFLOAT
-DECR
-DECRBY
-
-APPEND
-SETBIT
-SETRANGE
-
-DEL
-UNLINK
-EXPIRE
-PEXPIRE
-EXPIREAT
-PEXPIREAT
-PERSIST
-RENAME
-RENAMENX
-
-LPUSH
-LPUSHX
-RPUSH
-RPUSHX
-LPOP
-RPOP
-LREM
-LSET
-LTRIM
-LMOVE
-BLMOVE
-
-SADD
-SREM
-SMOVE
-SPOP
-
-ZADD
-ZREM
-ZINCRBY
-ZPOPMIN
-ZPOPMAX
-
-HSET
-HSETNX
-HDEL
-HINCRBY
-HINCRBYFLOAT
-
-XADD
-XDEL
-XTRIM
-XACK
-XCLAIM
-XAUTOCLAIM
-
-PFADD
-
-GEOADD
-GEOSEARCHSTORE
-
-EVAL
-EVALSHA
-```
-
-## 未知命令
-
-```text
-UNKNOWN
-   ↓
-默认 no retry
-```
-
----
-
-# 27. Predis
-
-Predis 与 PHPRedis 必须保持完全一致的 Retry 语义。
-
-两套 Driver 应该共用相同的 Retry Policy：
-
-```text
-                Redis Retry Policy
-                       │
-             ┌─────────┴─────────┐
-             │                   │
-         PHPRedis             Predis
-             │                   │
-             └───────┬───────────┘
-                     │
-                 retry / throw
-```
-
-不能出现 PHPRedis 与 Predis 对同一命令产生不同 Retry 行为。
-
----
-
-# 28. PDO Retry 设计
-
-PDO 与 Redis 的核心原则相同：
-
-```text
-Connection Exception
-        ↓
-    reconnect()
-        ↓
-    SQL Retry Policy
-        ↓
- retry / throw
-```
-
-但 PDO 的默认策略更加严格。
-
----
-
-# 29. PDO SQL Retry 总规则
+## 6.2 SQL 类型与默认 Retry
 
 | SQL 类型 | 默认 Retry |
-|---|---:|
-| 普通 SELECT | ✅ |
-| SELECT FOR UPDATE | ❌ |
-| SELECT LOCK IN SHARE MODE | ❌ |
-| INSERT | ❌ |
-| UPDATE | ❌ |
-| DELETE | ❌ |
-| REPLACE | ❌ |
-| CALL | ❌ |
-| DDL | ❌ |
-| TRUNCATE | ❌ |
-| UNKNOWN | ❌ |
+|---|---|
+| 普通 SELECT | 是 |
+| SHOW / DESC / DESCRIBE | 是 |
+| SELECT FOR UPDATE / FOR SHARE / LOCK IN SHARE MODE / FOR NO KEY UPDATE / FOR KEY SHARE | 否 |
+| SELECT INTO OUTFILE / INTO DUMPFILE | 否 |
+| WITH（CTE，不解析后续主句） | 否 |
+| EXPLAIN（含 EXPLAIN ANALYZE，PG 会真正执行） | 否 |
+| INSERT | **永远否** |
+| UPDATE | 否 |
+| DELETE | 否 |
+| REPLACE | 否 |
+| CALL / EXEC / EXECUTE | 否 |
+| DDL：CREATE / ALTER / DROP / RENAME / TRUNCATE | 否 |
+| LOAD / HANDLER / DO / SET / USE | 否 |
+| UNKNOWN | 否 |
 
----
+INSERT 是硬规则：有无 `UNIQUE KEY`、是否 `INSERT ... SELECT`、是否 `ON DUPLICATE KEY UPDATE`，一律不 Retry。幂等由业务保证。
 
-# 30. SELECT
+UPDATE 不做表达式解析。`balance = balance - 100`、`NOW()`、`UUID()`、`JOIN`、子查询、`LIMIT` 都可能不安全。当前版本 **全部 UPDATE 不 Retry**。
 
-普通 SELECT 可以 Retry：
+## 6.3 轻量分类，不做 AST Parser
 
-```sql
-SELECT *
-FROM user
-WHERE id = ?;
-```
+只做：
 
-连接异常：
+1. 去掉前导空白
+2. 去掉前导注释：`/* ... */`、`-- ...`、`# ...`
+3. 去掉前导左括号（兼容 `(SELECT ...)`）
+4. 取第一个关键字（大小写不敏感）
+5. 若是 `SELECT`，再用子串检测锁 / 导出子句
 
-```text
-SELECT
- ↓
-connection exception
- ↓
-reconnect
- ↓
-retry SELECT
-```
+不做 JOIN / 子查询 / 表达式幂等分析。
 
-原因：
+`WITH cte AS (...) SELECT ...` 若不解析主句，无法区分后面是 SELECT 还是 INSERT。P0 将 `WITH` 视为 UNKNOWN，不 Retry。这会牺牲部分 CTE 查询的自动恢复，但避免把 `WITH ... INSERT` replay 出去。
 
-```text
-SELECT 本身不修改业务数据。
-```
+## 6.4 事务
 
----
-
-# 31. SELECT FOR UPDATE
-
-禁止 Retry：
-
-```sql
-SELECT *
-FROM account
-WHERE id = ?
-FOR UPDATE;
-```
-
-因为 `SELECT FOR UPDATE` 依赖：
-
-- 当前事务
-- 当前数据库连接
-- 当前事务上下文
-- 数据库锁
-
-发生连接断开以后，原事务上下文已经无法保证。
-
-因此：
+硬规则：
 
 ```text
-SELECT FOR UPDATE → no retry
+transTimes > 0
+    → 连接异常时 close()（复位 transTimes / 回调）
+    → throw
+    → 不 replay 任何 SQL
 ```
 
----
+即使是普通 SELECT，事务中也不 Retry。新连接上的快照、锁、隔离级别都已经不是原事务。
 
-# 32. LOCK IN SHARE MODE
+`beginTransaction()` 在 `transTimes == 0` 时因断线失败：允许 reconnect 后再 `beginTransaction`。这不是业务 SQL replay。
 
-同样禁止：
+## 6.5 连接异常判定
 
-```sql
-SELECT *
-FROM user
-WHERE id = ?
-LOCK IN SHARE MODE;
-```
-
-因为涉及锁语义。
-
----
-
-# 33. INSERT：一律不 Retry
-
-这是本方案明确的硬规则：
+继续使用 `isBreak()` + `2006` / `2013`，但要从 `breakMatchStr` **移除** 或拆出：
 
 ```text
-INSERT
- ↓
-永远 no retry
+Resource deadlock avoided
 ```
 
-无论：
+以及其它明显不是「连接已断开、执行结果未知」的条目。死锁在 autocommit 下语句已回滚，语义不同，不走本方案。
 
-```sql
-INSERT INTO user (...) VALUES (...);
-```
+只在 `break_reconnect = true` 时启用 reconnect（保持现有开关）。
 
-还是：
+## 6.6 Retry 次数
 
-```sql
-INSERT INTO user (...)
-SELECT ...
-FROM ...
-```
+| 路径 | 次数 |
+|---|---|
+| 业务 SQL replay | **最多 1 次**（现状最多 4 次，本方案收紧） |
+| `connect()` 建连 | 保持当前「失败再试一次」 |
+| `beginTransaction()` | 可保留现有最多 4 次，因其无 SQL replay |
 
-都不 Retry。
+不允许无限重试。
 
-原因：
+## 6.7 为何非 Retry 的 SQL 也要先 reconnect 再 throw
 
-```text
-第一次 INSERT
-    ↓
-数据库成功
-    ↓
-response 丢失
-    ↓
-第二次 INSERT
-    ↓
-可能产生第二条记录
-```
+Swoole 连接池和长生命周期的 `PDOConnection` 会复用同一对象。断线后如果只 throw、不 close/reconnect，坏连接会被还回池里。
 
-即使存在 `UNIQUE KEY`，Library 也不能假定所有业务都有唯一键。
-
-因此：
-
-> INSERT 的幂等性属于业务层，不由 Library 自动推断。
-
----
-
-# 34. UPDATE：默认不 Retry
-
-UPDATE 的最终规则：
+因此 UPDATE 断线后的正确行为是：
 
 ```text
 UPDATE
- ↓
-默认 no retry
+ → connection exception
+ → reconnect（愈合）
+ → 不 replay
+ → throw 原异常
 ```
 
-例如：
-
-```sql
-UPDATE account
-SET balance = balance - 100
-WHERE id = ?;
-```
-
-不会因为：
-
-```text
-2006
-2013
-connection lost
-server has gone away
-```
-
-而重新执行。
-
-处理方式：
-
-```text
-UPDATE
- ↓
-connection exception
- ↓
-reconnect
- ↓
-throw exception
-```
+由业务决定是否补偿。Library 不得假定 UPDATE 幂等。
 
 ---
 
-# 35. UPDATE 中尤其不能 Retry 的操作
+# 7. 统一异常处理流程
 
-以下全部属于 `no retry`。
-
-## 字段自身运算
-
-```sql
-SET count = count + 1
-SET count = count - 1
-SET balance = balance + ?
-SET balance = balance - ?
-SET amount = amount * ?
-SET amount = amount / ?
-```
-
-## 函数
-
-```sql
-SET updated_at = NOW()
-SET token = UUID()
-SET value = RAND()
-```
-
-以及其他函数调用。
-
-## CASE / IF
-
-```sql
-SET status =
-    CASE
-        WHEN ... THEN ...
-        ELSE ...
-    END
-```
-
-或者：
-
-```sql
-SET value = IF(...);
-```
-
-## 字段引用
-
-```sql
-SET a = b
-SET a = b + 1
-SET a = CONCAT(a, 'xxx')
-```
-
-这些都不 Retry。
-
----
-
-# 36. UPDATE JOIN
-
-禁止 Retry：
-
-```sql
-UPDATE user u
-JOIN user_profile p
-    ON p.user_id = u.id
-SET u.name = p.name
-WHERE ...;
-```
-
-因为第二次执行时 JOIN 结果可能已经发生变化。
-
----
-
-# 37. UPDATE 子查询
-
-禁止：
-
-```sql
-UPDATE user
-SET score = (
-    SELECT score
-    FROM ...
-)
-WHERE ...;
-```
-
-第二次执行时读取到的数据可能已经发生变化。
-
----
-
-# 38. UPDATE LIMIT
-
-禁止：
-
-```sql
-UPDATE user
-SET status = 1
-WHERE status = 0
-LIMIT 100;
-```
-
-第一次可能修改 100 条，第二次可能继续修改另外 100 条。
-
----
-
-# 39. UPDATE ORDER BY
-
-禁止：
-
-```sql
-UPDATE user
-SET status = 1
-WHERE status = 0
-ORDER BY id
-LIMIT 100;
-```
-
-第二次执行可能作用于不同的数据集合。
-
----
-
-# 40. DELETE
-
-默认不 Retry：
-
-```text
-DELETE → no retry
-```
-
-例如：
-
-```sql
-DELETE FROM user
-WHERE id = ?;
-```
-
-虽然第二次 DELETE 可能影响 0 行，但数据库还可能存在：
-
-```text
-Trigger
-Cascade
-Audit
-其他数据库副作用
-```
-
-所以 Library 不自行判断。
-
----
-
-# 41. REPLACE
-
-禁止：
-
-```sql
-REPLACE INTO user (...)
-VALUES (...);
-```
-
-因为 `REPLACE` 可能包含：
-
-```text
-DELETE
-+
-INSERT
-```
-
-重复执行可能产生不同数据库副作用。
-
----
-
-# 42. CALL
-
-禁止：
-
-```sql
-CALL create_order(...);
-```
-
-原因：
-
-存储过程内部可能执行：
-
-```text
-INSERT
-UPDATE
-DELETE
-事务
-其他副作用
-```
-
-Library 无法判断。
-
----
-
-# 43. DDL
-
-以下全部禁止 Retry：
-
-```text
-CREATE
-ALTER
-DROP
-RENAME
-TRUNCATE
-```
-
-包括：
-
-```sql
-CREATE TABLE ...
-ALTER TABLE ...
-DROP TABLE ...
-TRUNCATE TABLE ...
-```
-
----
-
-# 44. UNKNOWN SQL
-
-SQL 类型无法明确判断时：
-
-```text
-UNKNOWN
- ↓
-no retry
-```
-
-继续采用安全优先的白名单策略。
-
----
-
-# 45. 不做 UPDATE SQL Parser
-
-本方案明确：
-
-> 当前版本不增加复杂 SQL Parser。
-
-不做：
-
-```text
-UPDATE
- ↓
-解析 SQL AST
- ↓
-判断字段表达式
- ↓
-判断函数
- ↓
-判断 JOIN
- ↓
-判断子查询
- ↓
-判断 LIMIT
- ↓
-决定 retry
-```
-
-原因：
-
-1. 增加 Library 复杂度。
-2. SQL 方言复杂。
-3. MySQL SQL 语法边界很多。
-4. Parser 本身可能引入新的 Bug。
-5. 当前默认 UPDATE 不 Retry 已经可以覆盖最危险场景。
-
-因此：
-
-```text
-UPDATE → 默认 no retry
-```
-
-就是当前版本最稳妥的策略。
-
----
-
-# 46. 统一异常处理流程
-
-## Redis
+## Redis / Predis / RedisCluster
 
 ```text
 command
@@ -1427,17 +550,18 @@ execute
    ├── success ────────→ return
    │
    ▼
-connection exception
+是连接异常？
+   ├── no → throw
+   ▼ yes
+reconnect + 恢复 AUTH / SELECT db
    │
    ▼
-reconnect
-   │
-   ▼
-Retry Policy
-   │
-   ├── retryable ──────→ execute once more
-   │
-   └── non-retryable ──→ throw
+MULTI/PIPELINE 中？或命令不在白名单？或 retry.enabled=false？
+   ├── yes → throw 原异常
+   ▼ no
+replay once
+   ├── success → return
+   └── fail    → throw
 ```
 
 ## PDO
@@ -1451,237 +575,107 @@ execute
  ├── success ────────→ return
  │
  ▼
-connection exception
- │
- ▼
+是连接异常？
+ ├── no → throw
+ ▼ yes
 reconnect
  │
  ▼
-Retry Policy
- │
- ├── retryable ──────→ execute once more
- │
- └── non-retryable ──→ throw
+事务中？或 SQL 不可 Retry？
+ ├── yes → throw 原异常
+ ▼ no
+replay once
+```
+
+Reconnect 失败时：抛出 reconnect 异常，并 `previous` 保留原异常。
+
+非 Retry 路径必须抛出 **第一次** 的连接异常，不能吞掉。业务需要知道写操作结果不确定。
+
+---
+
+# 8. 日志
+
+允许记录命令名 / SQL 类型 / 次数 / 原因，**不要把完整 SQL、绑定参数、Redis value 打进日志**。
+
+当前 `RedisConnection::log()` 会把 `arguments` JSON 进去，Retry 路径不要沿用这套参数日志。
+
+示例：
+
+```text
+redis retry: command=GET attempt=2 reason=connection_error
+redis retry skipped: command=INCR reason=non_retryable
+pdo retry: sql_type=SELECT attempt=2 reason=connection_error
+pdo retry skipped: sql_type=UPDATE reason=non_retryable
+pdo retry skipped: sql_type=SELECT reason=in_transaction
 ```
 
 ---
 
-# 47. Retry 次数
+# 9. 测试要求
 
-默认 Retry 次数：
+Policy 用纯函数单测即可，不依赖真 Redis / MySQL。Driver 层可用 mock 异常覆盖流程。
 
-```text
-1
-```
+## Redis
 
-即：
+| 用例 | 期望 |
+|---|---|
+| `GET` 遇到连接异常 | reconnect，replay 1 次，成功 |
+| `SMEMBERS` 遇到连接异常 | replay 1 次 |
+| `INCR` 遇到连接异常 | reconnect，不发第二次 INCR，throw |
+| `EVAL` / `EVALSHA` | 不 replay |
+| `SET` / `SET NX` | 默认不 replay |
+| `GEORADIUS` | 不 replay |
+| `rawCommand('INCR', key)` | 不 replay |
+| `rawCommand('GET', key)` | 可 replay |
+| `hGet` / `HGET` / `hget` | 规范化后按 `HGET` 可 replay |
+| WRONGTYPE / ServerException | 不 reconnect、不 replay |
+| MULTI 进行中的任意命令 | 不 replay |
+| 断线前 `SELECT 2`，之后 `GET` 连接异常 | reconnect 后先 SELECT 2，再 replay GET |
+| 未知命令 `JSON.GET` | 不 replay |
+| RedisCluster `GET` / `INCR` | 与单机语义一致 |
+| Predis `GET` / `INCR` | 与 PHPRedis 语义一致 |
+| `retry.enabled = false` | 任何命令都不 replay |
+| 第二次仍失败 | throw，不再第三次 |
 
-```text
-第一次执行
-    ↓
-connection exception
-    ↓
-reconnect
-    ↓
-允许 retry
-    ↓
-第二次执行
-    ↓
-成功 → return
-失败 → throw
-```
+## PDO
 
-不允许无限重试。
-
-对于安全 Retry 操作：
-
-```text
-最多一次 replay
-```
-
-即可。
-
----
-
-# 48. Retry 与日志
-
-建议保留 Retry 日志，例如：
-
-```text
-redis retry:
-command=GET
-attempt=2
-reason=connection_error
-```
-
-PDO：
-
-```text
-pdo retry:
-sql_type=SELECT
-attempt=2
-reason=connection_error
-```
-
-对于禁止 Retry 的操作，可以记录：
-
-```text
-pdo retry skipped:
-sql_type=UPDATE
-reason=non_retryable
-```
-
-但不需要把完整 SQL / 参数全部打入日志，避免敏感数据泄漏。
+| 用例 | 期望 |
+|---|---|
+| 普通 SELECT 断线 | reconnect + replay 1 次 |
+| `SELECT ... FOR UPDATE` | 不 replay |
+| `LOCK IN SHARE MODE` / `FOR SHARE` | 不 replay |
+| INSERT | execute 次数 = 1，throw |
+| UPDATE / DELETE / REPLACE | 不 replay |
+| 前导注释 `/* x */ SELECT ...` | 仍识别为 SELECT，可 replay |
+| `WITH ... INSERT` / `WITH ... SELECT` | 均不 replay |
+| 事务中 SELECT 断线 | close + throw，不 replay |
+| `beginTransaction` 断线 | 允许重试开启事务 |
+| 死锁 1213 | 不走断线 reconnect/replay |
+| 语法错误 / 约束冲突 | 不 reconnect |
+| `query("UPDATE ...")` | 按 SQL 文本禁止 replay |
+| replay 最多 1 次 | `reConnectTimes` 不得再打到 4 |
 
 ---
 
-# 49. 测试要求
+# 10. 兼容性与行为变化
 
-## 49.1 Redis GET
-
-```text
-第一次 GET
- ↓
-模拟 connection exception
- ↓
-reconnect
- ↓
-retry GET
- ↓
-成功
-```
-
-确认：
+正常成功请求行为不变：
 
 ```text
-执行次数 = 2
+正常连接 → 正常执行 → 正常返回
 ```
 
----
+相对当前 `library-6.x` 的可见变化（这是 P0 修复，不是新功能）：
 
-## 49.2 Redis INCR
+| 变化 | 说明 |
+|---|---|
+| 写命令 / 写 SQL 断线后不再自动成功 | 业务会收到异常，需自行补偿或提示失败。这是修复重复扣款 / 重复插入所必须的 |
+| PDO 断线 replay 从最多 4 次变为最多 1 次 | 仅对可 Retry 的 SELECT / SHOW 生效 |
+| Redis 业务错误不再被当成断线 | `WRONGTYPE` 等会更快失败，不再 sleep 0.5 秒 |
+| 死锁不再走 `isBreak` 盲 replay | 与「结果未知的断线」分开 |
+| 事务中断线会 `close()` | 避免坏连接留在对象上 |
 
-```text
-第一次 INCR
- ↓
-模拟 connection exception
- ↓
-reconnect
- ↓
-禁止 retry
- ↓
-throw
-```
-
-确认：
-
-```text
-不会发送第二次 INCR
-```
-
----
-
-## 49.3 Redis EVAL
-
-```text
-EVAL
- ↓
-connection exception
- ↓
-no retry
-```
-
-确认不会重复执行 Lua。
-
----
-
-## 49.4 PDO SELECT
-
-```text
-SELECT
- ↓
-connection exception
- ↓
-reconnect
- ↓
-retry
- ↓
-success
-```
-
----
-
-## 49.5 PDO INSERT
-
-```text
-INSERT
- ↓
-connection exception
- ↓
-reconnect
- ↓
-no retry
- ↓
-throw
-```
-
-必须确认：
-
-```text
-execute 次数 = 1
-```
-
----
-
-## 49.6 PDO UPDATE
-
-```text
-UPDATE
- ↓
-connection exception
- ↓
-reconnect
- ↓
-no retry
- ↓
-throw
-```
-
----
-
-## 49.7 SELECT FOR UPDATE
-
-```text
-SELECT FOR UPDATE
- ↓
-connection exception
- ↓
-no retry
-```
-
----
-
-# 50. 兼容性要求
-
-该方案不能改变正常成功请求的行为：
-
-```text
-正常连接
- ↓
-正常执行
- ↓
-正常返回
-```
-
-Retry 逻辑只应该在：
-
-```text
-明确的 connection exception
-```
-
-情况下触发。
-
-以下普通业务异常不能因为 Retry Policy 而重新执行：
+以下异常在任何版本都不应因为 Retry Policy 被重放：
 
 ```text
 syntax error
@@ -1693,189 +687,57 @@ wrong type
 
 ---
 
-# 51. 最终设计
+# 11. 实现要点
+
+建议抽两个无 IO 的 Policy，三套 Redis Driver 和 `PDOConnection` 只负责「判连接异常 → reconnect → 问 Policy → 决定 replay / throw」。
 
 ```text
-┌──────────────────────────────────────────────┐
-│              Library Retry Policy            │
-├──────────────────────────────────────────────┤
-│                                              │
-│  Connection Exception                        │
-│          │                                   │
-│          ▼                                   │
-│      reconnect()                             │
-│          │                                   │
-│          ▼                                   │
-│      Retry Policy                            │
-│          │                                   │
-│    ┌─────┴─────┐                             │
-│    │           │                             │
-│  retry       no retry                        │
-│    │           │                             │
-│ replay once   throw                          │
-│                                              │
-└──────────────────────────────────────────────┘
+src/Redis/RedisRetryPolicy.php
+src/Db/SqlRetryPolicy.php
 ```
 
-## Redis
+修改文件：
 
 ```text
-明确安全的只读命令
-        ↓
-      Retry
-
-写命令
-        ↓
-    默认不 Retry
-
-EVAL / EVALSHA
-        ↓
-    默认不 Retry
-
-未知命令
-        ↓
-    默认不 Retry
-
-SET
-        ↓
-    默认不 Retry
-    可配置开启
+src/Redis/RedisConnection.php    共享 retry 配置、SELECT db、连接异常匹配、日志
+src/Redis/Redis.php
+src/Redis/Predis.php
+src/Redis/RedisCluster.php
+src/Db/PDOConnection.php         PDOStatementHandle / isBreak / 事务断线 close
+src/Db/README.md                 补充 break_reconnect 与 SQL retry 语义（实现时再改）
 ```
 
-## PDO
+不在本次范围：
 
-```text
-普通 SELECT
-        ↓
-      Retry
-
-SELECT FOR UPDATE
-        ↓
-    不 Retry
-
-INSERT
-        ↓
-永远不 Retry
-
-UPDATE
-        ↓
-默认不 Retry
-
-DELETE
-        ↓
-不 Retry
-
-REPLACE
-        ↓
-不 Retry
-
-CALL
-        ↓
-不 Retry
-
-DDL / TRUNCATE
-        ↓
-不 Retry
-
-UNKNOWN
-        ↓
-不 Retry
-```
-
----
-
-# 52. 本方案解决的问题
-
-实施以后，以下危险路径被消除：
-
-```text
-INCR
- ↓
-connection lost
- ↓
-reconnect
- ↓
-❌ 第二次 INCR
-```
-
-```text
-INSERT
- ↓
-connection lost
- ↓
-reconnect
- ↓
-❌ 第二次 INSERT
-```
-
-```text
-UPDATE balance = balance - 100
- ↓
-connection lost
- ↓
-reconnect
- ↓
-❌ 第二次 UPDATE
-```
-
-同时保留：
-
-```text
-GET
- ↓
-connection lost
- ↓
-reconnect
- ↓
-retry GET
-```
-
-这种低风险自动恢复能力。
-
----
-
-# 53. 最终结论
-
-本次 `library-6.x` P0 修复不需要引入复杂的：
-
-- 分布式幂等
-- Request ID
-- 业务状态表
-- SQL AST Parser
+- 分布式幂等 / Request ID / 业务状态表
+- SQL AST Parser / UPDATE 表达式幂等判断
 - Redis Lua 幂等包装
-- 事务恢复机制
+- 事务恢复 / 把死事务接续到新连接
+- 死锁自动重试
+- 完整恢复 Redis `setOption`
 
-只需要把当前：
+---
 
-```text
-connection exception
-       ↓
-reconnect
-       ↓
-blind replay
-```
-
-修改成：
+# 12. 最终硬规则
 
 ```text
-connection exception
-       ↓
-reconnect
-       ↓
-Retry Policy
-       ↓
-明确安全 → retry once
-不安全   → throw
-```
+1. 先 reconnect，再问 Retry Policy；Reconnect ≠ Retry。
 
-最终三个硬规则：
+2. 只处理连接异常。业务错误、死锁、MOVED/ASK 不走本路径。
 
-```text
-1. Redis：Retry 使用白名单，未知命令默认不 Retry。
+3. Redis：内置只读白名单；未知命令默认不 Retry。
+   PHPRedis / Predis / RedisCluster 语义完全一致。
 
-2. PDO：INSERT 永远不 Retry。
+4. Redis：EVAL / EVALSHA / MULTI / PIPELINE / rawCommand 写命令不 Retry。
+   reconnect 必须恢复 AUTH 与 SELECT db。
 
-3. PDO：UPDATE 默认不 Retry。
+5. PDO：INSERT 永远不 Retry。
+   UPDATE / DELETE / REPLACE / DDL / CALL 不 Retry。
+   仅普通 SELECT / SHOW / DESC 可 Retry 一次。
+
+6. 事务中（PDO transTimes > 0）任何 SQL 都不 Retry。
+
+7. 业务 SQL / Redis 命令最多 replay 1 次。
 ```
 
 最终原则：

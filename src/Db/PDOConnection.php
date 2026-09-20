@@ -57,8 +57,14 @@ abstract class PDOConnection implements ConnectionInterface
         'prefix' => '',
         // fetchType
         'fetch_type' => PDO::FETCH_ASSOC,
-        // 是否需要断线重连
+        // 是否需要断线重连（愈合连接）。关闭后既不 reconnect 也不 replay。
         'break_reconnect' => true,
+        // Reconnect ≠ Retry：先愈合连接，是否重放原 SQL 由 SqlRetryPolicy 白名单决定。
+        // INSERT/UPDATE/DELETE 即使 enabled=true 也永不 replay。
+        'retry' => [
+            'enabled' => true,
+            'max_times' => 1,
+        ],
         // 是否支持事务嵌套
         'support_savepoint' => false,
         // sql执行日志条目设置,不能设置太大,适合调试使用,设置为0，则不使用
@@ -104,6 +110,9 @@ abstract class PDOConnection implements ConnectionInterface
     private $tenantInterceptorIgnoreDepth = 0;
 
     /**
+     * 当前这条 SQL 已经 replay 的次数。成功后归零。
+     * 业务 SQL 最多 replay 1 次；beginTransaction 建连仍可多次（无 SQL 重放风险）。
+     *
      * @var int
      */
     private $reConnectTimes = 0;
@@ -212,7 +221,13 @@ abstract class PDOConnection implements ConnectionInterface
     ];
 
     /**
-     * 服务器断线标识字符
+     * 服务器断线标识字符。
+     *
+     * 只收录「连接已断开、执行结果未知」的特征。已明确剔除：
+     * - Resource deadlock avoided：autocommit 下语句已被回滚，不是 connection-lost
+     * - read-only replica：连接仍活着，reconnect 可能打到同一只读节点
+     * - PolarDB 1105 Seamless Scaling：事务被中止，语义接近死锁而非丢响应
+     *
      * @var array
      */
     protected $breakMatchStr = [
@@ -225,7 +240,6 @@ abstract class PDOConnection implements ConnectionInterface
         'server closed the connection unexpectedly',
         'SSL connection has been closed unexpectedly',
         'Error writing data to the connection',
-        'Resource deadlock avoided',
         'failed with errno',
         'child connection forced to terminate due to client_idle_limit',
         'query_wait_timeout',
@@ -240,22 +254,29 @@ abstract class PDOConnection implements ConnectionInterface
         'Server shutdown in progress',
         'Login timeout expired',
         'SQLSTATE[HY000] [2002] Connection refused',
-        'running with the --read-only option so it cannot execute this statement',
         'The connection is broken and recovery is not possible. The connection is marked by the client driver as unrecoverable. No attempt was made to restore the connection.',
         'SQLSTATE[HY000] [2002] php_network_getaddresses: getaddrinfo failed: Try again',
         'SQLSTATE[HY000] [2002] php_network_getaddresses: getaddrinfo failed: Name or service not known',
         'SQLSTATE[HY000]: General error: 7 SSL SYSCALL error: EOF detected',
         'SQLSTATE[HY000] [2002] Connection timed out',
         'SSL: Connection timed out',
-        'SQLSTATE[HY000]: General error: 1105 The last transaction was aborted due to Seamless Scaling. Please retry.',
     ];
 
     /**
-     * @param array $config 数据库配置数组
+     * @param array $config 数据库配置数组。retry 与默认值做浅合并，避免业务只传 enabled 时丢掉 max_times。
      */
     public function __construct(array $config = [])
     {
+        $retry = array_merge([
+            'enabled' => true,
+            'max_times' => 1,
+        ], is_array($config['retry'] ?? null) ? $config['retry'] : []);
+        unset($config['retry']);
         $this->config = array_merge($this->config, $config);
+        $this->config['retry'] = [
+            'enabled' => (bool)$retry['enabled'],
+            'max_times' => max(0, min(3, (int)$retry['max_times'])),
+        ];
         $this->fetchType = $this->config['fetch_type'] ?: PDO::FETCH_ASSOC;
         // 全局debug配置
         $this->debug = (int)($this->config['debug'] ?? 1);
@@ -475,9 +496,14 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * 所有 SQL 的统一执行入口（query / execute / Query Builder 最终都到这里）。
+     *
+     * Retry 必须按 SQL 文本分类，不能按调用方法名：execute("SELECT ...") 仍可能是只读。
+     * $intercept=false 用于 replay：拦截器已在第一次调用时改写过 SQL，避免租户条件被追加两次。
+     *
      * @param string $sql
      * @param array $bindParams
-     * @param bool $procedure
+     * @param bool $intercept 是否走 SQL 拦截器
      * @return PDOStatement
      * @throws \PDOException
      * @throws \Exception
@@ -497,27 +523,105 @@ abstract class PDOConnection implements ConnectionInterface
             if ($this->isEnableDebug()) {
                 $queryStartTime = microtime(true);
             }
-            // 预处理
-            $this->PDOStatement = $this->PDOInstance->prepare($sql);
-            // 参数绑定
-            $this->bindValue($bindParams);
-
-            // 执行查询
-            $this->PDOStatement->execute();
+            $this->performPreparedExecute($sql, $bindParams);
 
             $this->saveRuntimeSql($queryStartTime ?? (microtime(true)) );
 
+            // 成功后清零，避免上次 SELECT replay 把计数留给下一条无关 SQL
             $this->reConnectTimes = 0;
             return $this->PDOStatement;
         } catch (\PDOException $e) {
-            if ($this->transTimes <= 0 && $this->reConnectTimes < 4 && ($this->isBreak($e) || ($e->errorInfo[1] ?? null) == 2006 || ($e->errorInfo[1] ?? null) == 2013)) {
-                ++$this->reConnectTimes;
-                return $this->close()->PDOStatementHandle($sql, $bindParams, false);
-            }
-            throw $e;
+            return $this->handleStatementConnectionException($sql, $bindParams, $e);
         } catch (\Exception|\Throwable $exception) {
             throw $exception;
         }
+    }
+
+    /**
+     * prepare + bind + execute。抽出以便测试桩模拟「执行时断线」。
+     *
+     * @param string $sql
+     * @param array $bindParams
+     * @return PDOStatement
+     * @throws \PDOException
+     */
+    protected function performPreparedExecute(string $sql, array $bindParams): PDOStatement
+    {
+        $this->PDOStatement = $this->PDOInstance->prepare($sql);
+        $this->bindValue($bindParams);
+        $this->PDOStatement->execute();
+
+        return $this->PDOStatement;
+    }
+
+    /**
+     * 连接异常处理：Reconnect ≠ Retry。
+     *
+     * 1. 非连接异常（语法错误、约束冲突、死锁）直接抛出，不重连。
+     * 2. close() 丢掉死 PDO。事务中同时复位 transTimes：原事务已随连接死去，
+     *    不能把 transTimes 留在新连接上，否则后续 commit 会提交一笔空事务。
+     * 3. initConnect() 愈合连接。Swoole 连接池复用同一 PDOConnection 对象，
+     *    若不重连，坏连接会被还回池里。UPDATE 即使不 replay 也要先愈合。
+     * 4. 事务中 / 非白名单 SQL / 已达 max_times：抛出**第一次**连接异常，不二次执行。
+     * 5. 普通 SELECT 等可 retry：递归执行一次（intercept=false）。第二次仍失败则不再第三次。
+     *
+     * @param string $sql
+     * @param array $bindParams
+     * @param \PDOException $e
+     * @return PDOStatement
+     * @throws \PDOException
+     */
+    protected function handleStatementConnectionException(string $sql, array $bindParams, \PDOException $e): PDOStatement
+    {
+        if (!$this->isConnectionException($e)) {
+            throw $e;
+        }
+
+        $inTransaction = $this->transTimes > 0;
+        $sqlType = SqlRetryPolicy::classify($sql);
+        $retryConfig = $this->config['retry'] ?? ['enabled' => true, 'max_times' => 1];
+        $retryEnabled = (bool)($retryConfig['enabled'] ?? true);
+        $maxTimes = max(0, min(3, (int)($retryConfig['max_times'] ?? 1)));
+
+        // close() 会复位 transTimes；必须在 close 前记下是否处于事务
+        $this->close();
+
+        try {
+            $this->initConnect();
+        } catch (\Throwable $reconnectException) {
+            throw new \PDOException(
+                'DB reconnect failed: ' . $reconnectException->getMessage(),
+                0,
+                $e
+            );
+        }
+
+        $canReplay = $retryEnabled
+            && !$inTransaction
+            && SqlRetryPolicy::isRetryable($sql)
+            && $this->reConnectTimes < $maxTimes;
+
+        if (!$canReplay) {
+            $reason = 'non_retryable';
+            if ($inTransaction) {
+                $reason = 'in_transaction';
+            } elseif (!$retryEnabled) {
+                $reason = 'disabled';
+            } elseif ($this->reConnectTimes >= $maxTimes && SqlRetryPolicy::isRetryable($sql)) {
+                $reason = 'retry_exhausted';
+            }
+            $this->recordRetryLog('pdo retry skipped', 'sql_type=' . $sqlType . ' reason=' . $reason);
+            throw $e;
+        }
+
+        ++$this->reConnectTimes;
+        $this->recordRetryLog(
+            'pdo retry',
+            'sql_type=' . $sqlType . ' attempt=' . ($this->reConnectTimes + 1) . ' reason=connection_error'
+        );
+
+        // intercept=false：拦截器已在第一次调用时改写过 SQL
+        return $this->PDOStatementHandle($sql, $bindParams, false);
     }
 
     /**
@@ -593,6 +697,8 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * query / execute 都走 PDOStatementHandle，Retry 只看 SQL 文本不看方法名。
+     *
      * @param string $sql
      * @param array $bindParams
      * @return array
@@ -604,6 +710,9 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * 写入口同样走 PDOStatementHandle。INSERT/UPDATE 不会因为走了 execute() 就被 replay，
+     * 也不会因为误用 query("UPDATE ...") 而漏拦。
+     *
      * @param string $sql
      * @param array $bindParams
      * @return int
@@ -1121,7 +1230,11 @@ abstract class PDOConnection implements ConnectionInterface
 
 
     /**
-     * 启动事务
+     * 启动事务。
+     *
+     * begin 失败时只重试「开启事务」，没有业务 SQL replay，因此仍允许最多 4 次。
+     * 与 PDOStatementHandle 的 SQL replay（最多 1 次）是两条路径。
+     *
      * @return void
      * @throws \Throwable
      */
@@ -1142,8 +1255,9 @@ abstract class PDOConnection implements ConnectionInterface
             $this->reConnectTimes = 0;
             $this->log('Start transaction', 'reConnectTimes=' . $this->reConnectTimes);
         } catch (\PDOException|\Exception|\Throwable $exception) {
-            if ($this->transTimes == 0 && $this->reConnectTimes < 4 && $this->isBreak($exception)) {
+            if ($this->transTimes == 0 && $this->reConnectTimes < 4 && $this->isConnectionException($exception)) {
                 ++$this->reConnectTimes;
+                // 尚无业务 SQL，重试 begin 本身是安全的
                 $this->close()->beginTransaction();
                 $this->log('Start transaction failed, try to start again', 'reConnectTimes=' . $this->reConnectTimes);
                 return;
@@ -1389,7 +1503,11 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
-     * 关闭数据库（或者重新连接）
+     * 关闭数据库（丢掉当前 PDO，下次 initConnect 再建）。
+     *
+     * 事务中连接异常必须走这里：free() 会把 transTimes 置 0，
+     * 避免业务随后 commit() 作用在新连接的空事务上。
+     *
      * @return $this
      */
     public function close()
@@ -1414,7 +1532,8 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
-     * 是否断线
+     * 按 message 子串判断是否像断线。受 break_reconnect 开关约束。
+     *
      * @param \PDOException|\Exception $e 异常对象
      * @return bool
      */
@@ -1432,6 +1551,68 @@ abstract class PDOConnection implements ConnectionInterface
             }
         }
         return false;
+    }
+
+    /**
+     * 仅识别「连接已断开、执行结果未知」的异常。
+     *
+     * 判定顺序：
+     * 1. break_reconnect=false → 整条 reconnect/retry 路径关闭
+     * 2. message 命中 breakMatchStr
+     * 3. MySQL 驱动码 2006（server gone away）/ 2013（lost connection）
+     * 4. SQLSTATE 08xxx（SQL 标准连接异常类）
+     *
+     * 死锁是 1213 / 40001，不会命中上述条件。autocommit 下死锁语句已被回滚，
+     * 与「响应丢失、不知道有没有执行成功」不是同一类问题，不走本路径。
+     *
+     * @param \Throwable $e
+     * @return bool
+     */
+    protected function isConnectionException(\Throwable $e): bool
+    {
+        if (empty($this->config['break_reconnect'])) {
+            return false;
+        }
+
+        if ($this->isBreak($e)) {
+            return true;
+        }
+
+        if (!$e instanceof \PDOException) {
+            return false;
+        }
+
+        $driverCode = $e->errorInfo[1] ?? null;
+        if ($driverCode == 2006 || $driverCode == 2013) {
+            return true;
+        }
+
+        $sqlState = (string)($e->errorInfo[0] ?? $e->getCode());
+        if ($sqlState !== '' && str_starts_with($sqlState, '08')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Retry 审计日志：只记 sql_type / reason / attempt，不记完整 SQL 和绑定参数。
+     *
+     * @param string $action
+     * @param string $msg
+     */
+    protected function recordRetryLog(string $action, string $msg): void
+    {
+        $limit = (int)($this->config['spend_log_limit'] ?? 30);
+        if ($limit > 0 && count($this->lastLogs) >= $limit) {
+            array_shift($this->lastLogs);
+        }
+        $this->lastLogs[] = [
+            'time' => date('Y-m-d H:i:s'),
+            'action' => $action,
+            'msg' => $msg,
+        ];
+        $this->log($action, $msg);
     }
 
     /**

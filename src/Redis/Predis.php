@@ -15,6 +15,10 @@ use Predis\Client;
 
 /**
  * Class Predis
+ *
+ * Retry 语义与 PHPRedis 完全一致（共用 RedisRetryPolicy）。
+ * 连接异常只认 Predis ConnectionException，ServerException 不得 reconnect。
+ *
  * @package Swoolefy\Library\Redis
  * @see \Predis\Client
  * @mixin \Predis\Client
@@ -200,6 +204,7 @@ class Predis extends RedisConnection
      */
     public function __construct($parameters = null, $options = null)
     {
+        parent::__construct();
         if ($parameters) {
             $this->buildRedis($parameters, $options);
         }
@@ -236,25 +241,59 @@ class Predis extends RedisConnection
     }
 
     /**
-     * __call overload
+     * 与 PHPRedis 共用 RedisRetryPolicy。连接异常判定走 Predis 的 ConnectionException，
+     * 不得把 ServerException（WRONGTYPE 等 Redis 业务错误）当成断线。
+     *
      * @param string $method
      * @param array $arguments
      * @return mixed
+     * @throws \Throwable
      */
     public function __call(string $method, array $arguments)
     {
-        try {
-            $result = $this->redis->{$method}(...$arguments);
-            return $result;
-        } catch (\Exception $exception) {
-            $this->redis->disconnect();
-            $this->sleep(0.5);
-            $this->redis = new \Predis\Client($this->parameters, $this->options);
-            $result = $this->redis->{$method}(...$arguments);
-            return $result;
-        } catch (\Throwable $throwable) {
-            throw $throwable;
+        return $this->callWithRetry($method, $arguments, function (string $method, array $arguments) {
+            return $this->redis->{$method}(...$arguments);
+        });
+    }
+
+    /**
+     * Predis 必须覆盖：父类默认按 PHPRedis message 子串判断。
+     *
+     * @param \Throwable $exception
+     * @return bool
+     */
+    protected function isRedisConnectionException(\Throwable $exception): bool
+    {
+        return RedisRetryPolicy::isPredisConnectionException($exception);
+    }
+
+    /**
+     * disconnect 失败时连接可能已经断了，忽略后重建 Client。
+     */
+    protected function closeNativeConnection(): void
+    {
+        if (!$this->redis) {
+            return;
         }
+        try {
+            $this->redis->disconnect();
+        } catch (\Throwable $ignored) {
+        }
+    }
+
+    /**
+     * 用原 parameters/options 重建 Client（通常已含 database/password）。
+     * 若业务后来又 SELECT / AUTH 过，再覆盖一次，避免读错库或用旧密码。
+     */
+    protected function reConnect()
+    {
+        $this->buildRedis((array)$this->parameters, $this->options);
+        if ($this->password) {
+            $this->redis->auth($this->password);
+        }
+        $this->restoreSelectedDatabase(function (int $database) {
+            $this->redis->select($database);
+        });
     }
 
     /**

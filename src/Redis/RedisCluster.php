@@ -12,6 +12,9 @@
 namespace Swoolefy\Library\Redis;
 
 /**
+ * Redis Cluster 封装。与单机 PHPRedis 共用 {@see RedisConnection::callWithRetry()} 和同一套白名单。
+ * Cluster 不支持 SELECT，reConnect 只按原构造参数重建，不恢复 db index。
+ *
  * @see \RedisCluster
  * @mixin \RedisCluster
  */
@@ -82,6 +85,7 @@ class RedisCluster extends RedisConnection
         $this->persistent = $persistent;
         $this->auth = $auth;
         $this->constructParams = func_get_args();
+        parent::__construct();
         $this->buildRedisCluster();
     }
 
@@ -100,6 +104,8 @@ class RedisCluster extends RedisConnection
     }
 
     /**
+     * 命令入口与 PHPRedis 相同：原生 RedisCluster 方法名进入 Retry Policy。
+     *
      * @param string $method
      * @param array $arguments
      * @return mixed
@@ -108,26 +114,31 @@ class RedisCluster extends RedisConnection
      */
     public function __call(string $method, array $arguments)
     {
-        try {
-            $this->log($method, $arguments, "redisCluster start to exec method={$method}");
-            $result = $this->redisCluster->{$method}(...$arguments);
-            $this->log($method, $arguments);
-            return $result;
-        } catch (\RedisClusterException|\Exception $exception) {
-            $this->log($method, $arguments, $exception->getMessage());
-            $this->log($method, $arguments, 'redisCluster start to reBuild instance');
-            $this->sleep(0.5);
-            @$this->redisCluster->close();
-            // rebuild RedisCluster
-            $this->buildRedisCluster();
-            $this->log($method, $arguments, "RedisCluster rebuild instance successful, start to try exec method={$method} again");
-            $result = $this->redisCluster->{$method}(...$arguments);
-            $this->log($method, $arguments, 'RedisCluster exec retry ok');
-            return $result;
-        } catch (\Throwable $throwable) {
-            $this->log($method, $arguments, 'RedisCluster retry exec failed,errorMsg=' . $throwable->getMessage());
-            throw $throwable;
+        return $this->callWithRetry($method, $arguments, function (string $method, array $arguments) {
+            return $this->redisCluster->{$method}(...$arguments);
+        });
+    }
+
+    /**
+     * Cluster close 在节点已断开时可能告警，忽略后按原 seeds/auth 重建。
+     */
+    protected function closeNativeConnection(): void
+    {
+        if (!$this->redisCluster) {
+            return;
         }
+        try {
+            $this->redisCluster->close();
+        } catch (\Throwable $ignored) {
+        }
+    }
+
+    /**
+     * 用构造时的 name/seeds/timeout/auth/persistent 重建整个 Cluster 客户端。
+     */
+    protected function reConnect()
+    {
+        $this->buildRedisCluster();
     }
 
     /**

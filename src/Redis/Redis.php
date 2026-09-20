@@ -12,6 +12,8 @@
 namespace Swoolefy\Library\Redis;
 
 /**
+ * PHPRedis 封装。业务方法（get/incr/eval...）均走 __call，因此 Retry Policy 能覆盖几乎全部命令。
+ *
  * @see \Redis
  * @mixin \Redis
  */
@@ -29,11 +31,6 @@ class Redis extends RedisConnection
     protected $config = [];
 
     /**
-     * @var string
-     */
-    protected $password;
-
-    /**
      * @var bool
      */
     protected $isPersistent = false;
@@ -43,6 +40,7 @@ class Redis extends RedisConnection
      */
     public function __construct()
     {
+        parent::__construct();
         $this->buildRedis();
     }
 
@@ -109,7 +107,9 @@ class Redis extends RedisConnection
     }
 
     /**
-     * reConnect
+     * 用原始 connect/pconnect 参数重建客户端，然后恢复 AUTH 与 SELECT。
+     *
+     * auth / select 必须打在原生 `\Redis` 上，避免再进入 __call 造成递归重连。
      */
     protected function reConnect()
     {
@@ -121,11 +121,16 @@ class Redis extends RedisConnection
             $this->connect(...$config);
         }
         if ($this->password) {
-            $this->auth($this->password);
+            $this->redis->auth($this->password);
         }
+        $this->restoreSelectedDatabase(function (int $database) {
+            $this->redis->select($database);
+        });
     }
 
     /**
+     * 记录 password，供 reConnect() 恢复。connect() 之后的 AUTH 必须走这里，否则重连会丢密码。
+     *
      * @param string $password
      */
     public function auth(string $password)
@@ -135,6 +140,8 @@ class Redis extends RedisConnection
     }
 
     /**
+     * 所有未显式声明的 Redis 命令入口。invoke 闭包打原生实例，由父类决定是否 replay。
+     *
      * @param string $method
      * @param array $arguments
      * @return mixed
@@ -142,19 +149,9 @@ class Redis extends RedisConnection
      */
     public function __call(string $method, array $arguments)
     {
-        try {
-            $result = $this->redis->{$method}(...$arguments);
-            $this->log($method, $arguments);
-            return $result;
-        } catch (\RedisException|\Exception $exception) {
-            $this->sleep(0.5);
-            $this->redis->close();
-            $this->reConnect();
-            $result = $this->redis->{$method}(...$arguments);
-            return $result;
-        } catch (\Throwable $throwable) {
-            throw $throwable;
-        }
+        return $this->callWithRetry($method, $arguments, function (string $method, array $arguments) {
+            return $this->redis->{$method}(...$arguments);
+        });
     }
 
     /**
@@ -197,10 +194,25 @@ class Redis extends RedisConnection
      */
     public function isConnect()
     {
-        if ($this->redis->ping() == '+PONG') {
+        $pong = $this->redis->ping();
+        if ($pong === true || $pong === '+PONG' || $pong === 'PONG') {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 死连接上 close() 常会再抛一次，忽略后交给 reConnect() 重建。
+     */
+    protected function closeNativeConnection(): void
+    {
+        if (!$this->redis) {
+            return;
+        }
+        try {
+            $this->redis->close();
+        } catch (\Throwable $ignored) {
+        }
     }
 
     /**
@@ -209,8 +221,11 @@ class Redis extends RedisConnection
     public function __destruct()
     {
         parent::__destruct();
-        if (!$this->isPersistent) {
-            $this->redis->close();
+        if (!$this->isPersistent && $this->redis) {
+            try {
+                $this->redis->close();
+            } catch (\Throwable $ignored) {
+            }
         }
     }
 }

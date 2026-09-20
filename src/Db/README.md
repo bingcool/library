@@ -136,6 +136,8 @@ return [
 | `charset` | 字符集 | `utf8mb4` |
 | `prefix` | 表前缀 | `''` |
 | `break_reconnect` | 断线自动重连 | `true` |
+| `retry.enabled` | 断线愈合后是否允许 SQL replay | `true` |
+| `retry.max_times` | 可 replay SQL 的额外执行次数，默认 1 | `1` |
 | `support_savepoint` | 嵌套事务 savepoint | `false` |
 | `debug` / `print_sql` | SQL 调试与打印 | `0` |
 | `fetch_type` | PDO fetch 模式 | `PDO::FETCH_ASSOC` |
@@ -153,11 +155,17 @@ return [
     'hostport'          => env('DB_HOST_PORT'),
     'charset'           => 'utf8mb4',
     'break_reconnect'   => true,
+    'retry'             => [
+        'enabled'   => true,
+        'max_times' => 1, // 仅普通 SELECT / SHOW / DESC 会 replay 一次；INSERT/UPDATE/DELETE 永不 replay
+    ],
     'support_savepoint' => false,
     'debug'             => 1,
     'print_sql'         => 1,
 ],
 ```
+
+断线后 Library 会先 `reconnect` 再按 SQL 类型决定是否重放：普通 `SELECT` / `SHOW` / `DESC` 最多 replay 一次；`INSERT` / `UPDATE` / `DELETE` / `REPLACE` / `SELECT FOR UPDATE` / 事务中的任何 SQL 只愈合连接、不重放。死锁不属于断线，不会走这条路径。
 
 ### 3. 直接拿连接
 

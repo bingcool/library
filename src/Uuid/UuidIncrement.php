@@ -37,6 +37,8 @@ class UuidIncrement
     protected $followConnections = [];
 
     /**
+     * 单次 generateId 的默认重试次数（配置）。循环内只递减局部变量，避免污染实例。
+     *
      * @var int
      */
     protected $retryTimes = 3;
@@ -64,7 +66,7 @@ class UuidIncrement
      * @param string $incrKey
      * @param integer $ttl
      * @param array $followConnections
-     * @param \Closure $errorReportClosure
+     * @param \Closure|null $errorReportClosure
      * @return void
      */
     public function __construct(
@@ -72,7 +74,7 @@ class UuidIncrement
         string $incrKey,
         int $ttl = 15,
         array $followConnections = [],
-        \Closure $errorReportClosure = null
+        ?\Closure $errorReportClosure = null
     )
     {
         $this->redis = $redis;
@@ -97,6 +99,9 @@ class UuidIncrement
             $count = 10;
         }
         $maxId = $this->generateId($count);
+        if ($maxId === null) {
+            return true;
+        }
         $minId = $maxId - $count;
         if($minId > 0) {
             for($i=0; $i<$count; $i++) {
@@ -107,7 +112,7 @@ class UuidIncrement
     }
 
     /**
-     * generateId
+     * 向 Redis 申请一段自增 ID。失败返回 null；调用方不得把 null 代入 $maxId - $count。
      *
      * @param int|null $count
      * @return int|null
@@ -119,14 +124,15 @@ class UuidIncrement
         }
 
         $usleepTime = 15 * 1000;
+        $retryTimes = $this->retryTimes;
         do {
             $dataArr = $this->doHandle($this->redis, $count);
             if (!empty($dataArr)) {
                 break;
             }
-            usleep($usleepTime);
-            --$this->retryTimes;
-        } while ($this->retryTimes);
+            $this->waitBeforeRetry($usleepTime);
+            --$retryTimes;
+        } while ($retryTimes);
 
         if (empty($dataArr)) {
             if ($this->errorReportClosure instanceof \Closure) {
@@ -172,6 +178,17 @@ class UuidIncrement
             return array_shift($this->poolIds);
         }
         return $this->generateId(1);
+    }
+
+    /**
+     * @param int $microseconds
+     */
+    protected function waitBeforeRetry(int $microseconds): void
+    {
+        if ($microseconds <= 0) {
+            return;
+        }
+        usleep($microseconds);
     }
 
     /**

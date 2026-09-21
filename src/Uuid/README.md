@@ -132,7 +132,8 @@ $id = $uuid->getIncrId();
 1. 主 Redis `EVAL` 失败或返回空 → 短暂休眠后最多重试 **3** 次  
 2. 仍失败 → 执行 `$errorReportClosure`（若有）  
 3. 再遍历 `$followConnections` 备用连接  
-4. 全部失败 → `getOneId` / `generateId` 返回 `null`，`getIncrIds` 可能得到不完整列表  
+4. 全部失败 → `generateId` / `getIncrId` 返回 `null`；`getIncrIds` 返回已从池中取出的部分（可能是 `[]`），**不会**把 `null` 当最大 ID 做减法（避免 PHP 8 TypeError）；`getOneId` 在没有可用 ID 时返回 `null`  
+5. 每次 `generateId` 使用独立的重试计数，失败不会减少后续请求的默认 3 次重试，也不会在耗尽后死循环  
 
 请保证 Redis 高可用，或配置只读从库以外的可写备用实例。
 

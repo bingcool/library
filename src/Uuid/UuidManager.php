@@ -44,6 +44,9 @@ class UuidManager
     protected $followConnections = [];
 
     /**
+     * 单次 generateId 的默认重试次数（配置，禁止在循环里递减本属性）。
+     * 直接 --$this->retryTimes 会污染被容器复用的实例，耗尽后 --0 变成 -1 可能死循环。
+     *
      * @var int
      */
     protected $retryTimes = 3;
@@ -76,7 +79,7 @@ class UuidManager
      * @param string $incrKey
      * @param integer $ttl
      * @param array $followConnections
-     * @param \Closure $errorReportClosure
+     * @param \Closure|null $errorReportClosure
      * @return void
      */
     public function __construct(
@@ -84,7 +87,7 @@ class UuidManager
         string          $incrKey,
         int             $ttl = 15,
         array           $followConnections = [],
-        \Closure        $errorReportClosure = null
+        ?\Closure        $errorReportClosure = null
     )
     {
         $this->redis              = $redis;
@@ -156,6 +159,9 @@ class UuidManager
                 }
 
                 $maxId = $this->generateId($poolSize);
+                if ($maxId === null) {
+                    return;
+                }
                 $minId = $maxId - $poolSize;
                 if ($minId > 0) {
                     for ($i = 0; $i < $poolSize; $i++) {
@@ -171,10 +177,10 @@ class UuidManager
     }
 
     /**
-     * generateId
+     * 向 Redis 申请一段自增 ID。失败返回 null，调用方不得把 null 代入减法。
      *
      * @param int|null $count
-     * @param RedisConnection
+     * @param RedisConnection|null $redis
      * @return int|null
      */
     protected function generateId(?int $count = null, ?RedisConnection $redis = null)
@@ -184,14 +190,15 @@ class UuidManager
         }
 
         $sleepTimeSecond = 0.15;
+        $retryTimes = $this->retryTimes;
         do {
             $dataArr = $this->doHandle($redis ?? $this->redis, $count);
             if (!empty($dataArr)) {
                 break;
             }
-            Coroutine::sleep($sleepTimeSecond);
-            --$this->retryTimes;
-        } while ($this->retryTimes);
+            $this->waitBeforeRetry($sleepTimeSecond);
+            --$retryTimes;
+        } while ($retryTimes);
 
         if (empty($dataArr)) {
             if ($this->errorReportClosure instanceof \Closure) {
@@ -229,23 +236,30 @@ class UuidManager
     }
 
     /**
-     * 获取UUIDS
+     * 批量取号：Channel 有存货时先出队（能取多少取多少），不足再向 Redis 要一段。
      *
-     * @param RedisConnection $redis
+     * 必须先判断是否已满再 pop，否则会多消费 1 个 ID 并丢弃。
+     * generateId() 失败返回 null 时直接返回已收集部分，禁止 $maxId - $remainNum。
+     *
      * @param int $num
      * @return array
      */
     public function getIncrIds(int $num = 1): array
     {
+        if ($num <= 0) {
+            return [];
+        }
+
         if (!(self::$poolIdsQueue instanceof Channel)) {
             self::$poolIdsQueue = new Channel(100);
         }
 
         $poolIds = [];
-        if(self::$poolIdsQueue->length() > ($num + 1) ) {
+        if (self::$poolIdsQueue->length() > 0) {
             $popNum = 0;
-            while ($uuid = self::$poolIdsQueue->pop(0.05)) {
-                if ($popNum >= $num) {
+            while ($popNum < $num) {
+                $uuid = self::$poolIdsQueue->pop(0.05);
+                if ($uuid === false) {
                     break;
                 }
                 $popNum++;
@@ -255,9 +269,12 @@ class UuidManager
 
         $poolIds = array_unique($poolIds);
         $hasNum  = count($poolIds);
-        if($hasNum < $num) {
+        if ($hasNum < $num) {
             $remainNum = $num - $hasNum;
             $maxId = $this->generateId($remainNum, $this->redis);
+            if ($maxId === null) {
+                return $poolIds;
+            }
             $minId = $maxId - $remainNum;
             if ($minId > 0) {
                 for ($i = 0; $i < $remainNum; $i++) {
@@ -269,12 +286,29 @@ class UuidManager
     }
 
     /**
-     * @return int
+     * @return int|null 失败时返回 null（空列表不再 current([]) === false）
      */
     public function getOneId()
     {
         $poolIds = $this->getIncrIds(1);
-        return current($poolIds);
+        return $poolIds[0] ?? null;
+    }
+
+    /**
+     * 重试间隔：协程内用 Coroutine::sleep，避免阻塞 Worker；非协程退回 usleep。
+     *
+     * @param float $seconds
+     */
+    protected function waitBeforeRetry(float $seconds): void
+    {
+        if ($seconds <= 0) {
+            return;
+        }
+        if (Coroutine::getCid() >= 0) {
+            Coroutine::sleep($seconds);
+            return;
+        }
+        usleep((int)round($seconds * 1000000));
     }
 
     /**

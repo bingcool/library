@@ -28,7 +28,7 @@ composer require bingcool/library
 |------|------|------|
 | `Db` | PDO 连接、Query Builder、Model。支持 MySQL / PostgreSQL / Oracle / SQLite，含事务、软删除、多租户、分页 | [src/Db/README.md](src/Db/README.md) |
 | `Mongodb` | MongoDB Model / Collection | — |
-| `Redis` | PHPRedis、Predis、RedisCluster 封装 | — |
+| `Redis` | PHPRedis、Predis、RedisCluster 封装。断线先重连，只读命令才重放 | [src/Redis/README.md](src/Redis/README.md) |
 | `Cache` | `RedisCache`，统一缓存接口 | — |
 | `Pool` | 基于 `Swoole\ConnectionPool` 的 Redis / MySQL 连接池 | — |
 

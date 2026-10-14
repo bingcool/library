@@ -471,6 +471,13 @@ try {
 - `support_savepoint = true`：内层用 SAVEPOINT
 - `support_savepoint = false`：内层只增加计数；内层 `rollback` 会标记外层最终真正回滚
 
+### 事务异常语义
+
+- 最外层事务结束（提交或回滚）时，`afterCommitCallback` / `afterRollbackCallback` 都会清空，不会泄漏到下一笔事务。
+- 最外层 `commit()` / `rollback()` 自身失败时会丢弃当前连接再抛出，连接对象不会卡在“事务中”。
+- 事务内发生连接异常后事务已经丢失：业务若吞掉异常继续调用 `commit()`，会抛 `DbException`；调用 `rollback()` 即可清除该状态。
+- `transactionXa()` 仅 MySQL 支持，其它驱动调用会抛 `DbException`。
+
 协程内请保证同一请求使用同一连接实例（框架 DI / 协程单例），避免跨协程共用一个 PDO 事务。
 
 ---

@@ -41,6 +41,7 @@ class Sqlite extends PDOConnection
     public function getFields(string $tableName): array
     {
         [$tableName] = explode(' ', $tableName);
+        $tableName = $this->normalizeMetaTableName($tableName);
         $sql         = 'PRAGMA table_info( \'' . $tableName . '\' )';
 
         $pdo    = $this->PDOStatementHandle($sql);

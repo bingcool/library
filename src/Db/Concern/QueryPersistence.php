@@ -100,7 +100,10 @@ trait QueryPersistence
     protected function applyPersistenceWhere(Query $query, bool $withSoftDeleteScope = false): void
     {
         $pk = $this->getPk();
-        $query->where($pk, '=', $this->getPkValue() ?? 0);
+        if (!$this->hasPersistencePkValue()) {
+            throw new DbException('Model persistence requires primary key value, pk=' . (is_string($pk) ? $pk : json_encode($pk)));
+        }
+        $query->where($pk, '=', $this->getPkValue());
 
         if (!empty($this->lockShareWhereFieldValues)) {
             foreach ($this->lockShareWhereFieldValues as $field => $value) {
@@ -112,6 +115,21 @@ trait QueryPersistence
         if ($withSoftDeleteScope && $this->isSoftDelete()) {
             $query->whereNull($this->getSoftDeleteField());
         }
+    }
+
+    /**
+     * getPkValue() 在主键缺失时返回 0，无法与真实的 0 区分，这里直接看 _data。
+     */
+    protected function hasPersistencePkValue(): bool
+    {
+        $pk = $this->getPk();
+        if (!is_string($pk) || $pk === '' || !array_key_exists($pk, $this->_data)) {
+            return false;
+        }
+
+        $value = $this->_data[$pk];
+
+        return $value !== null && $value !== '';
     }
 
     /**
@@ -190,9 +208,14 @@ trait QueryPersistence
      */
     protected function reloadByPrimaryKey(): ?array
     {
+        // 无自增且未设置主键的表无法按主键回读
+        if (!$this->hasPersistencePkValue()) {
+            return null;
+        }
+
         $query = $this->newPersistenceQuery(true);
         $this->applyTenantScope($query);
-        $query->where($this->getPk(), '=', $this->getPkValue() ?? 0);
+        $query->where($this->getPk(), '=', $this->getPkValue());
         if ($this->isSoftDelete()) {
             $query->whereNull($this->getSoftDeleteField());
         }

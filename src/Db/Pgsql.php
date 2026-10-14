@@ -58,6 +58,7 @@ class Pgsql extends PDOConnection
         $sourceTableName = $tableName;
         if (!isset($this->_tableFields[$tableName])) {
             [$tableName] = explode(' ', $tableName);
+            $tableName = $this->normalizeMetaTableName($tableName);
             $sql = 'select fields_name as "field",fields_type as "type",fields_not_null as "null",fields_key_name as "key",fields_default as "default",fields_default as "extra" from table_msg(\'' . $tableName . '\');';
 
             $pdo = $this->PDOStatementHandle($sql);

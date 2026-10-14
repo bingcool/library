@@ -136,6 +136,21 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     }
 
     /**
+     * 写语句无法识别目标表时不会追加租户条件，记录告警便于排查漏隔离。
+     *
+     * @param PDOConnection $connection
+     * @param string $statement
+     * @return void
+     */
+    protected function warnNotRewritten(PDOConnection $connection, string $statement): void
+    {
+        $connection->recordWarningLog(
+            'tenant interceptor skipped',
+            'sql_type=' . $statement . ' reason=target_table_not_recognized'
+        );
+    }
+
+    /**
      * 识别SQL开头的语句类型。
      *
      * 只返回当前拦截器支持的语句类型。SHOW、DESCRIBE、ALTER、CREATE、BEGIN、
@@ -198,6 +213,7 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     protected function rewriteUpdate(PDOConnection $connection, string &$sql, array &$bindParams, $tenantId): void
     {
         if (!preg_match('/^\s*UPDATE\s+(?:LOW_PRIORITY\s+|IGNORE\s+)?(`[^`]+`|"[^"]+"|\[[^\]]+\]|[\w.]+)(?:\s+(?:AS\s+)?(`?[a-zA-Z_][\w]*`?|"[a-zA-Z_][\w]*"|\[[a-zA-Z_][\w]*\]))?\s+(?:SET|JOIN|INNER|LEFT|RIGHT|FULL|CROSS)\b/i', $sql, $matches)) {
+            $this->warnNotRewritten($connection, 'UPDATE');
             return;
         }
 
@@ -231,7 +247,12 @@ class TenantLineInterceptor implements SqlInterceptorInterface
     protected function rewriteDelete(PDOConnection $connection, string &$sql, array &$bindParams, $tenantId): void
     {
         $tableInfo = $this->matchOutermostTableAfterKeyword($sql, 'FROM');
-        if (!$tableInfo || $this->shouldIgnore($connection, $tableInfo['table'])) {
+        if (!$tableInfo) {
+            $this->warnNotRewritten($connection, 'DELETE');
+            return;
+        }
+
+        if ($this->shouldIgnore($connection, $tableInfo['table'])) {
             return;
         }
 

@@ -16,7 +16,7 @@ class User extends ActiveRecord
     /**
      * @var string
      */
-    protected $table = 'tbl_users';
+    protected static $table = 'tbl_users';
 
     /**
      * @var string

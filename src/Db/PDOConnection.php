@@ -118,6 +118,14 @@ abstract class PDOConnection implements ConnectionInterface
     private $reConnectTimes = 0;
 
     /**
+     * 事务中连接断开、事务已随旧连接丢失。业务若吞掉异常继续 commit()，必须抛错而不是静默返回。
+     * 下一次最外层 beginTransaction() / rollback() 时清除。
+     *
+     * @var bool
+     */
+    private $transactionBroken = false;
+
+    /**
      * @var array
      */
     private $bind;
@@ -585,6 +593,9 @@ abstract class PDOConnection implements ConnectionInterface
 
         // close() 会复位 transTimes；必须在 close 前记下是否处于事务
         $this->close();
+        if ($inTransaction) {
+            $this->transactionBroken = true;
+        }
 
         try {
             $this->initConnect();
@@ -656,11 +667,12 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function cursor(string $sql, array $bindParams, $fetchType = '')
     {
-        $this->PDOStatementHandle($sql, $bindParams);
+        // 必须持有局部 statement：迭代期间同一连接上的其它 SQL 会替换 $this->PDOStatement
+        $statement = $this->PDOStatementHandle($sql, $bindParams);
         if (empty($fetchType)) {
             $fetchType = $this->fetchType;
         }
-        while ($result = $this->PDOStatement->fetch($fetchType)) {
+        while (($result = $statement->fetch($fetchType)) !== false) {
             yield $result;
         }
     }
@@ -785,12 +797,16 @@ abstract class PDOConnection implements ConnectionInterface
             $row = array_values($row);
             foreach ($row as $i => &$value) {
                 if (isset($fields[$i])) {
+                    if (is_null($value)) {
+                        $value = 'NULL';
+                        continue;
+                    }
                     $fieldName = $fields[$i];
+                    // parseFieldType() 对 MySQL TIMESTAMP 返回 'timestamp'，其值是日期字符串，不能转 int
                     $type = $tableFieldInfo[$fieldName] ?? 'string';
                     switch ($type) {
                         case 'int':
                         case 'integer':
-                        case 'timestamp':
                             $value = (int)$value;
                             break;
                         case 'float':
@@ -802,11 +818,12 @@ abstract class PDOConnection implements ConnectionInterface
                             $value = (int)$value;
                             break;
                         default:
-                            $value = $this->quote($value);
+                            $value = $this->quote((string)$value);
                             break;
                     }
                 }
             }
+            unset($value);
             $sqlArr[] = '(' . implode(',', $row) . ')';
         }
 
@@ -823,16 +840,28 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function multiInsert(string $table, array $dataSet)
     {
-        $fields = [];
+        if (empty($dataSet)) {
+            return 0;
+        }
+
+        // 以第一行字段为准，后续每行按同一顺序取值；行内 key 顺序不同不会错位
+        $fields = array_keys(reset($dataSet));
         $paramsKeys = [];
         $params = [];
-        foreach ($dataSet as $index => $data) {
-            foreach ($data as $k => $v) {
-                $fields[$k] = $k;
-                $paramsKeys[$index][] = $paramKey = ":{$k}_{$index}";
-                $params[$paramKey] = $v;
+        $rowNum = 0;
+        foreach ($dataSet as $data) {
+            $diff = array_merge(array_diff_key($data, array_flip($fields)), array_diff_key(array_flip($fields), $data));
+            if (!empty($diff)) {
+                throw new DbException("multiInsert rows must have the same fields, table={$table}, row={$rowNum}");
             }
-            $paramsKeys[$index] = "(" . implode(',', $paramsKeys[$index]) . ")";
+
+            $rowKeys = [];
+            foreach ($fields as $col => $field) {
+                $rowKeys[] = $paramKey = ":mi_{$rowNum}_{$col}";
+                $params[$paramKey] = $data[$field];
+            }
+            $paramsKeys[] = "(" . implode(',', $rowKeys) . ")";
+            $rowNum++;
         }
 
         $sql = "INSERT INTO {$table} (" . implode(',', $fields) . ") VALUES " . implode(',', $paramsKeys);
@@ -1030,6 +1059,23 @@ abstract class PDOConnection implements ConnectionInterface
         }
 
         return $quoteString;
+    }
+
+    /**
+     * 元数据查询需要把表名拼进 SQL 字符串字面量时使用：去掉标识符引号后只允许 [A-Za-z0-9_.]。
+     *
+     * @param string $tableName
+     * @return string
+     * @throws DbException
+     */
+    protected function normalizeMetaTableName(string $tableName): string
+    {
+        $cleanName = str_replace(['`', '"', '[', ']'], '', $tableName);
+        if (!preg_match('/^[\w.]+$/', $cleanName)) {
+            throw new DbException('Invalid table name: ' . $tableName);
+        }
+
+        return $cleanName;
     }
 
     /**
@@ -1240,29 +1286,34 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function beginTransaction()
     {
-        // 复用已有 PDO；force=true 会丢弃旧连接导致泄漏
-        $this->initConnect();
+        // begin 重试用局部计数，不占用 SQL replay 的 reConnectTimes 配额
+        $attempts = 0;
+        while (true) {
+            // 复用已有 PDO；force=true 会丢弃旧连接导致泄漏
+            $this->initConnect();
 
-        try {
-            if ($this->transTimes == 0) {
-                $this->PDOInstance->beginTransaction();
-            } elseif ($this->supportSavepoint()) {
-                $this->PDOInstance->exec(
-                    $this->parseSavepoint('trans' . ($this->transTimes + 1))
-                );
-            }
-            ++$this->transTimes;
-            $this->reConnectTimes = 0;
-            $this->log('Start transaction', 'reConnectTimes=' . $this->reConnectTimes);
-        } catch (\PDOException|\Exception|\Throwable $exception) {
-            if ($this->transTimes == 0 && $this->reConnectTimes < 4 && $this->isConnectionException($exception)) {
-                ++$this->reConnectTimes;
-                // 尚无业务 SQL，重试 begin 本身是安全的
-                $this->close()->beginTransaction();
-                $this->log('Start transaction failed, try to start again', 'reConnectTimes=' . $this->reConnectTimes);
+            try {
+                if ($this->transTimes == 0) {
+                    $this->PDOInstance->beginTransaction();
+                    $this->transactionBroken = false;
+                } elseif ($this->supportSavepoint()) {
+                    $this->PDOInstance->exec(
+                        $this->parseSavepoint('trans' . ($this->transTimes + 1))
+                    );
+                }
+                ++$this->transTimes;
+                $this->log('Start transaction', 'attempts=' . $attempts);
                 return;
+            } catch (\PDOException|\Exception|\Throwable $exception) {
+                if ($this->transTimes == 0 && $attempts < 4 && $this->isConnectionException($exception)) {
+                    ++$attempts;
+                    // 尚无业务 SQL，重试 begin 本身是安全的
+                    $this->close();
+                    $this->log('Start transaction failed, try to start again', 'attempts=' . $attempts);
+                    continue;
+                }
+                throw $exception;
             }
-            throw $exception;
         }
     }
 
@@ -1302,6 +1353,10 @@ abstract class PDOConnection implements ConnectionInterface
     public function commit()
     {
         if ($this->transTimes <= 0) {
+            if ($this->transactionBroken) {
+                $this->transactionBroken = false;
+                throw new DbException('Transaction commit failed: the transaction was lost because the DB connection was broken');
+            }
             return;
         }
 
@@ -1309,36 +1364,52 @@ abstract class PDOConnection implements ConnectionInterface
         $this->log('Transaction commit start', 'transaction commit start');
         // 不管多少层内嵌事务，最外层一次commit时候才真正一次性提交commit
         if ($this->transTimes == 1) {
-            if ($this->transRollback) {
-                $this->PDOInstance->rollBack();
-                $this->transRollback = false;
-                if (!empty($this->afterRollBackCallbacks)) {
-                    foreach ($this->afterRollBackCallbacks as $k => $afterRollBackCallback) {
-                        try {
-                            call_user_func($afterRollBackCallback);
-                        } catch (\Throwable $throwable) {
-                        } finally {
-                            unset($this->afterRollBackCallbacks[$k]);
-                        }
-                    }
-                }
-            } else {
-                $this->PDOInstance->commit();
-                if (!empty($this->afterCommitCallbacks)) {
-                    foreach ($this->afterCommitCallbacks as $k => $afterCommitCallback) {
-                        try {
-                            call_user_func($afterCommitCallback);
-                        } catch (\Throwable $throwable) {
-                        } finally {
-                            unset($this->afterCommitCallbacks[$k]);
-                        }
-                    }
-                }
+            $rollbackOnly = $this->transRollback;
+            $commitCallbacks = $this->afterCommitCallbacks;
+            $rollbackCallbacks = $this->afterRollBackCallbacks;
+            try {
+                $rollbackOnly ? $this->PDOInstance->rollBack() : $this->PDOInstance->commit();
+            } catch (\Throwable $exception) {
+                // 最外层提交失败：事务状态不可信，丢弃连接，避免池中对象一直处于「事务中」
+                $this->close();
+                throw $exception;
             }
+            $this->resetTransactionState();
+            $this->runTransactionCallbacks($rollbackOnly ? $rollbackCallbacks : $commitCallbacks);
+        } else {
+            --$this->transTimes;
         }
-        --$this->transTimes;
 
         $this->log('Transaction commit finish', 'transaction commit ok');
+    }
+
+    /**
+     * 最外层事务结束（提交或回滚）后复位事务状态。两类回调都必须清空，否则会泄漏到下一笔事务。
+     *
+     * @return void
+     */
+    private function resetTransactionState(): void
+    {
+        $this->transTimes = 0;
+        $this->transRollback = false;
+        $this->afterCommitCallbacks = [];
+        $this->afterRollBackCallbacks = [];
+    }
+
+    /**
+     * 回调异常不影响事务结果，也不影响后续回调执行。
+     *
+     * @param callable[] $callbacks
+     * @return void
+     */
+    private function runTransactionCallbacks(array $callbacks): void
+    {
+        foreach ($callbacks as $callback) {
+            try {
+                call_user_func($callback);
+            } catch (\Throwable $throwable) {
+            }
+        }
     }
 
 
@@ -1361,41 +1432,43 @@ abstract class PDOConnection implements ConnectionInterface
     public function rollback()
     {
         if ($this->transTimes <= 0) {
+            // 连接断开时事务已由数据库丢弃，回滚即为完成
+            $this->transactionBroken = false;
             return;
         }
 
         $this->initConnect();
-        $this->log('Transaction commit', 'transaction commit failed');
         $this->log('Transaction rollback start', 'transaction rollback start');
 
-        $callback = function () {
-            if (!empty($this->afterRollBackCallbacks)) {
-                foreach ($this->afterRollBackCallbacks as $k => $afterRollBackCallback) {
-                    try {
-                        call_user_func($afterRollBackCallback);
-                    } catch (\Throwable $throwable) {
-                    } finally {
-                        unset($this->afterRollBackCallbacks[$k]);
-                    }
-                }
-            }
-        };
-
         if ($this->transTimes == 1) {
-            $this->PDOInstance->rollBack();
-            $this->transRollback = false;
-            $callback();
-        } elseif ($this->transTimes > 1 && $this->supportSavepoint()) {
-            // 仅回滚到内层 savepoint；回调在外层 rollback/commit 时再执行
-            $this->PDOInstance->exec(
-                $this->parseSavepointRollBack('trans' . $this->transTimes)
-            );
-        } elseif ($this->transTimes > 1) {
-            // 不支持 savepoint：标记整笔事务，待外层 commit 时改为真正回滚
-            $this->transRollback = true;
+            $rollbackCallbacks = $this->afterRollBackCallbacks;
+            try {
+                $this->PDOInstance->rollBack();
+            } catch (\Throwable $exception) {
+                // 断开连接后数据库会自动回滚未提交事务；丢弃连接保证池中对象状态干净
+                $this->close();
+                throw $exception;
+            }
+            $this->resetTransactionState();
+            $this->runTransactionCallbacks($rollbackCallbacks);
+        } else {
+            if ($this->supportSavepoint()) {
+                // 仅回滚到内层 savepoint；回调在外层 rollback/commit 时再执行
+                try {
+                    $this->PDOInstance->exec(
+                        $this->parseSavepointRollBack('trans' . $this->transTimes)
+                    );
+                } catch (\Throwable $exception) {
+                    $this->close();
+                    throw $exception;
+                }
+            } else {
+                // 不支持 savepoint：标记整笔事务，待外层 commit 时改为真正回滚
+                $this->transRollback = true;
+            }
+            --$this->transTimes;
         }
 
-        $this->transTimes = max(0, $this->transTimes - 1);
         $this->log('Transaction rollback finish', 'transaction rollback ok');
     }
 
@@ -1428,28 +1501,40 @@ abstract class PDOConnection implements ConnectionInterface
             $dbs[] = $this;
         }
 
+        // 同一分支的 START / END / PREPARE / COMMIT / ROLLBACK 必须使用同一个 xid
+        $xids = [];
         foreach ($dbs as $key => $connection) {
-            $connection->startTransXa($connection->getUniqueXid('_' . $xid));
+            $xids[$key] = $connection->getUniqueXid('_' . $xid);
         }
 
+        $started = [];
         try {
+            foreach ($dbs as $key => $connection) {
+                $connection->startTransXa($xids[$key]);
+                $started[$key] = $connection;
+            }
+
             $result = null;
             if (is_callable($callback)) {
                 $result = $callback($this);
             }
 
-            foreach ($dbs as $connection) {
-                $connection->prepareXa($connection->getUniqueXid('_' . $xid));
+            foreach ($dbs as $key => $connection) {
+                $connection->prepareXa($xids[$key]);
             }
 
-            foreach ($dbs as $connection) {
-                $connection->commitXa($connection->getUniqueXid('_' . $xid));
+            foreach ($dbs as $key => $connection) {
+                $connection->commitXa($xids[$key]);
             }
 
             return $result;
         } catch (\Exception | \Throwable $e) {
-            foreach ($dbs as $connection) {
-                $connection->rollbackXa($connection->getUniqueXid('_' . $xid));
+            foreach ($started as $key => $connection) {
+                try {
+                    $connection->rollbackXa($xids[$key]);
+                } catch (\Throwable $rollbackException) {
+                    // 继续回滚其它分支，最终抛出原始异常
+                }
             }
             throw $e;
         }
@@ -1473,6 +1558,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function startTransXa(string $xid)
     {
+        throw new DbException('XA transaction is not supported by ' . static::class);
     }
 
     /**
@@ -1482,6 +1568,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function prepareXa(string $xid)
     {
+        throw new DbException('XA transaction is not supported by ' . static::class);
     }
 
     /**
@@ -1491,6 +1578,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function commitXa(string $xid)
     {
+        throw new DbException('XA transaction is not supported by ' . static::class);
     }
 
     /**
@@ -1500,6 +1588,7 @@ abstract class PDOConnection implements ConnectionInterface
      */
     public function rollbackXa(string $xid)
     {
+        throw new DbException('XA transaction is not supported by ' . static::class);
     }
 
     /**
@@ -1596,6 +1685,17 @@ abstract class PDOConnection implements ConnectionInterface
     }
 
     /**
+     * 供拦截器等外部组件记录告警，写入 lastLogs 并按 debug 配置输出。不要传完整 SQL 和绑定参数。
+     *
+     * @param string $action
+     * @param string $msg
+     */
+    public function recordWarningLog(string $action, string $msg): void
+    {
+        $this->recordRetryLog($action, $msg);
+    }
+
+    /**
      * Retry 审计日志：只记 sql_type / reason / attempt，不记完整 SQL 和绑定参数。
      *
      * @param string $action
@@ -1635,13 +1735,19 @@ abstract class PDOConnection implements ConnectionInterface
 
             // 判断占位符
             if (is_numeric($key)) {
-                $sql = substr_replace($sql, $value, strpos($sql, '?'), 1);
-            }else {
-                if (strpos($key,':') === 0) {
-                    $sql = substr_replace($sql, $value, strpos($sql, $key), strlen($key));
-                }else {
-                    $sql = substr_replace($sql, $value, strpos($sql, ':' . $key), strlen(':' . $key));
+                $offset = strpos($sql, '?');
+                if ($offset !== false) {
+                    $sql = substr_replace($sql, $value, $offset, 1);
                 }
+            } else {
+                $placeholder = str_starts_with((string)$key, ':') ? (string)$key : ':' . $key;
+                // (?!\w) 避免 :a 命中 :ab 的前缀
+                $sql = preg_replace_callback(
+                    '/' . preg_quote($placeholder, '/') . '(?!\w)/',
+                    static fn() => $value,
+                    $sql,
+                    1
+                );
             }
         }
 

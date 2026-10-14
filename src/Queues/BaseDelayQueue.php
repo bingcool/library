@@ -242,6 +242,10 @@ class BaseDelayQueue extends AbstractDelayQueueInterface
     public function pop(array $options =  ['limit' => [0, 9]] )
     {
         $result = $this->rangeByScore('-inf', time(), $options);
+        // phpredis 的 eval 在 Lua 返回空表时给出 false。没有到期消息时按空数组处理。
+        if (!is_array($result)) {
+            return [];
+        }
         foreach ($result as &$item) {
             if (is_string($item)) {
                 $item = json_decode($item, true) ?? $item;

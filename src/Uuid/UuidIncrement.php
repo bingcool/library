@@ -98,15 +98,13 @@ class UuidIncrement
         }else if($count <= 0) {
             $count = 10;
         }
+        $count = LuaScripts::clampStep($count);
         $maxId = $this->generateId($count);
         if ($maxId === null) {
             return true;
         }
-        $minId = $maxId - $count;
-        if($minId > 0) {
-            for($i=0; $i<$count; $i++) {
-                $this->poolIds[] = $minId+$i;
-            }
+        foreach (LuaScripts::expandRange($maxId, $count) as $id) {
+            $this->poolIds[] = $id;
         }
         return true;
     }
@@ -119,9 +117,7 @@ class UuidIncrement
      */
     protected function generateId(?int $count = null)
     {
-        if ($count <= 0) {
-            $count = 1;
-        }
+        $count = LuaScripts::clampStep((int)$count);
 
         $usleepTime = 15 * 1000;
         $retryTimes = $this->retryTimes;

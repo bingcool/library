@@ -22,8 +22,8 @@ Uuid/
 
 Lua（`LuaScripts::getUuidLuaScript()`）在单次 `EVAL` 内完成：
 
-1. `INCRBY incrKey step`，段内序号超过 `999990` 时删 key 重新自增（滚动段）
-2. 用 Redis `TIME` 取秒 + 微秒前 3 位，组成毫秒级时间串
+1. `INCRBY incrKey step`。`step` 钳到 `1 ~ 999990`；段内序号超过 `999990` 时删 key 重新自增。回绕后仍超过上限则本段作废（返回空）
+2. 用 Redis `TIME` 取秒 + 微秒。微秒先补成 6 位再取前 3 位，组成毫秒级时间串
 3. 新段首写时设置 `EXPIRE`（默认 TTL 约 15s），并与上一毫秒戳比对，同一毫秒冲突则返回空（由 PHP 侧重试）
 4. 返回 `{ prefixNumber, incrId }`，其中 `prefixNumber = second + msecond + '000000'`
 
@@ -32,6 +32,8 @@ PHP 侧最终 ID：
 ```text
 autoIncrId = (int) prefixNumber + (int) incrId
 ```
+
+单次 `generateId(1)` 直接返回这个右端值。批量展开（`getIncrIds` / Tick / `preBatchGenerateIds`）取闭区间 `[maxId - n + 1, maxId]`，`n` 是实际发给 Redis 的步长。一次申请超过 `999990` 时只发到上限，返回数量会少于请求数量。
 
 特点：趋势递增、跨节点靠 Redis 保证唯一、毫秒级冲突自动重试。
 
@@ -144,7 +146,7 @@ $id = $uuid->getIncrId();
 | Key | 说明 |
 |-----|------|
 | `{incrKey}` | 段内自增计数，带 TTL |
-| `{incrKey}_time_stamp` | 上一成功发放的毫秒时间戳，用于同毫秒冲突检测 |
+| `{incrKey}_time_stamp` | 上一成功发放的毫秒时间戳，用于同毫秒冲突检测。每次写入后按 incr TTL 续期，寿命不短于 `{incrKey}` |
 
 ---
 

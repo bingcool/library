@@ -158,15 +158,13 @@ class UuidManager
                     }
                 }
 
+                $poolSize = LuaScripts::clampStep($poolSize);
                 $maxId = $this->generateId($poolSize);
                 if ($maxId === null) {
                     return;
                 }
-                $minId = $maxId - $poolSize;
-                if ($minId > 0) {
-                    for ($i = 0; $i < $poolSize; $i++) {
-                        self::$poolIdsQueue->push($minId + $i, 0.05);
-                    }
+                foreach (LuaScripts::expandRange($maxId, $poolSize) as $id) {
+                    self::$poolIdsQueue->push($id, 0.05);
                 }
             }catch (\Throwable $throwable){
 
@@ -185,9 +183,7 @@ class UuidManager
      */
     protected function generateId(?int $count = null, ?RedisConnection $redis = null)
     {
-        if ($count <= 0) {
-            $count = 1;
-        }
+        $count = LuaScripts::clampStep((int)$count);
 
         $sleepTimeSecond = 0.15;
         $retryTimes = $this->retryTimes;
@@ -239,7 +235,8 @@ class UuidManager
      * 批量取号：Channel 有存货时先出队（能取多少取多少），不足再向 Redis 要一段。
      *
      * 必须先判断是否已满再 pop，否则会多消费 1 个 ID 并丢弃。
-     * generateId() 失败返回 null 时直接返回已收集部分，禁止 $maxId - $remainNum。
+     * generateId() 失败返回 null 时直接返回已收集部分。
+     * 展开区间必须是 [maxId - n + 1, maxId]，且 n 与实际 INCRBY 步长一致。
      *
      * @param int $num
      * @return array
@@ -270,16 +267,13 @@ class UuidManager
         $poolIds = array_unique($poolIds);
         $hasNum  = count($poolIds);
         if ($hasNum < $num) {
-            $remainNum = $num - $hasNum;
+            $remainNum = LuaScripts::clampStep($num - $hasNum);
             $maxId = $this->generateId($remainNum, $this->redis);
             if ($maxId === null) {
                 return $poolIds;
             }
-            $minId = $maxId - $remainNum;
-            if ($minId > 0) {
-                for ($i = 0; $i < $remainNum; $i++) {
-                    $poolIds[] = $minId + $i;
-                }
+            foreach (LuaScripts::expandRange($maxId, $remainNum) as $id) {
+                $poolIds[] = $id;
             }
         }
         return $poolIds;

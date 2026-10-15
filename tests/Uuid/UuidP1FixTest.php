@@ -59,8 +59,8 @@ class UuidP1FixTest extends TestCase
 
         $this->assertTrue($uuid->preBatchGenerateIds(10));
         $this->assertCount(10, $uuid->poolIds());
-        $this->assertSame(1000, $uuid->getIncrId());
         $this->assertSame(1001, $uuid->getIncrId());
+        $this->assertSame(1002, $uuid->getIncrId());
     }
 
     public function testManagerRetryTimesIsNotConsumedOnTheInstance(): void
@@ -144,7 +144,7 @@ class UuidP1FixTest extends TestCase
             $redis->evalQueue = [['1000', 1]];
             $manager = new UuidManagerHarness($redis, 'uuid-key');
 
-            $this->assertSame(['A', 'B', 1000], $manager->getIncrIds(3));
+            $this->assertSame(['A', 'B', 1001], $manager->getIncrIds(3));
             $this->assertSame(1, $redis->evalCalls);
             $this->assertSame(0, $channel->length());
         });

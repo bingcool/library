@@ -13,9 +13,15 @@ final class FakeUuidRedis extends RedisConnection
      */
     public array $evalQueue = [];
 
+    /**
+     * @var array<int, array>
+     */
+    public array $evalArgs = [];
+
     public function eval(...$args)
     {
         $this->evalCalls++;
+        $this->evalArgs[] = $args;
         if ($this->evalQueue === []) {
             return [];
         }

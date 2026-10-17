@@ -54,6 +54,7 @@ composer require bingcool/library
 | `Oauth` | QQ、微信、支付宝、飞书、钉钉、企业微信登录门面 | [src/Oauth/README.md](src/Oauth/README.md) |
 | `FileStorageSystem` | 本地 / S3 / 阿里云 OSS / 腾讯云 COS 统一存储 | [src/FileStorageSystem/README.md](src/FileStorageSystem/README.md) |
 | `Sms` | 短信统一门面：内置阿里云 / 腾讯云，可扩展新厂商；策略网关 + 配置化 + 验证码服务 | [src/Sms/README.md](src/Sms/README.md) |
+| `Mail` | 邮件发送：钉钉、QQ、腾讯企业邮、网易、飞书 SMTP，以及 sendmail / mail / log | [src/Mail/README.md](src/Mail/README.md) |
 | `OpenTelemetry` | 内置 OpenTelemetry PHP API / SDK 与 OTLP 导出 | [src/OpenTelemetry/README.md](src/OpenTelemetry/README.md) |
 
 ### 安全与校验

@@ -51,7 +51,8 @@
         "qcloud/cos-sdk-v5": "^2.6",
         "alibabacloud/dysmsapi-20170525": "~4.6.0",
         "tencentcloud/sms": "~3.0",
-        "yurunsoft/yurun-oauth-login": "^3.1.0"
+        "yurunsoft/yurun-oauth-login": "^3.1.0",
+        "phpmailer/phpmailer": "^7.0"
     },
     "require-dev": {
         "kwn/php-rdkafka-stubs": "@dev",
@@ -81,6 +82,12 @@
     "autoload-dev": {
         "psr-4": {
             "Swoolefy\\Library\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": false,
+            "tbachert/spi": false
         }
     }
 }

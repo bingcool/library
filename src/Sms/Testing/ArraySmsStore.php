@@ -12,7 +12,7 @@ use Swoolefy\Library\Sms\Contracts\SmsStoreInterface;
  * 语义对齐 RedisSmsStore：get 未命中返回 null；increment 首次创建补 TTL；exists 判存在。
  * TTL 在测试中不做真实时间衰减（用例可手动 unset），仅记录以便断言配置正确。
  */
-final class ArraySmsStore implements SmsStoreInterface
+class ArraySmsStore implements SmsStoreInterface
 {
     /** @var array<string, string> */
     private array $data = [];
@@ -24,6 +24,17 @@ final class ArraySmsStore implements SmsStoreInterface
     {
         $this->data[$key] = $value;
         $this->ttls[$key] = $ttl;
+    }
+
+    public function add(string $key, string $value, int $ttl): bool
+    {
+        if (isset($this->data[$key])) {
+            return false;
+        }
+
+        $this->put($key, $value, $ttl);
+
+        return true;
     }
 
     public function get(string $key): ?string

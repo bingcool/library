@@ -8,7 +8,7 @@ namespace Swoolefy\Library\Sms\Config;
  * sms.php 配置段的只读访问器。
  *
  * 与 `OauthConfig` / `FileStorageConfig` 一致：`fromArray()` 兼容外层再包一层 `sms` 键；
- * 业务与 Factory 不直接碰原始数组，统一 defaultGateway / hasGateway / gateway 语义。
+ * 业务与 Factory 不直接碰原始数组，统一 defaultGateway / redisComponent / hasGateway / gateway 语义。
  *
  * 注意：类名命名空间为 `Swoolefy\Library\Sms\Config\SmsConfig`，但方案里以 `SmsConfig` 直呼；
  * 通过 `Sms` 根命名空间下的类型别名（use）引用即可。
@@ -52,6 +52,17 @@ final class SmsConfig
         $gateways = $this->gateways();
 
         return (string) (array_key_first($gateways) ?? 'log');
+    }
+
+    /**
+     * 验证码与限流使用的 Redis 组件名，对应 Config/component/cache.php 的键。
+     * 未配置时用 cache.php 里的默认组件名 cache。
+     */
+    public function redisComponent(): string
+    {
+        $name = trim((string) ($this->config['redis_component'] ?? ''));
+
+        return $name !== '' ? $name : 'cache';
     }
 
     /**

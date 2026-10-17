@@ -7,6 +7,7 @@ namespace Swoolefy\Library\Sms\Verification;
 use Swoolefy\Library\RateLimit\DurationLimiter;
 use Swoolefy\Library\Redis\RedisConnection;
 use Swoolefy\Library\Sms\Contracts\RateGuardInterface;
+use Swoolefy\Library\Sms\Support\RedisComponent;
 
 /**
  * 基于库内 `RateLimit\DurationLimiter`（滑动窗口 + Lua 原子）的限流守卫。
@@ -20,14 +21,21 @@ use Swoolefy\Library\Sms\Contracts\RateGuardInterface;
  */
 final class DurationRateGuard implements RateGuardInterface
 {
-    public function __construct(private RedisConnection $redis, private string $prefix = 'sms:rg:')
+    /**
+     * @param RedisConnection|string $redis 连接，或 cache.php 组件名（sms.php 的 redis_component）
+     */
+    public function __construct(private RedisConnection|string $redis, private string $prefix = 'sms:rg:')
     {
     }
 
     public function tooMany(string $key, int $max, int $window): bool
     {
+        $redis = $this->redis instanceof RedisConnection
+            ? $this->redis
+            : RedisComponent::connection($this->redis);
+
         // 每次新建：DurationLimiter 把 key/窗口放在实例属性上，协程共用一个实例会串号
-        $limiter = new DurationLimiter($this->redis);
+        $limiter = new DurationLimiter($redis);
         $limiter->setRateKey($this->strip($key));
         $limiter->setLimitParams($max, $window);
 

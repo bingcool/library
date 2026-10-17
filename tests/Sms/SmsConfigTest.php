@@ -51,4 +51,26 @@ final class SmsConfigTest extends TestCase
         ]);
         self::assertSame(['ttl' => 120, 'max_verify' => 3], $config->verification());
     }
+
+    public function testRedisComponentDefaultsToCachePhpComponent(): void
+    {
+        $config = SmsConfig::fromArray([
+            'default_gateway' => 'aliyun',
+            'gateways' => ['aliyun' => ['gateway' => 'aliyun']],
+        ]);
+
+        self::assertSame('cache', $config->redisComponent());
+    }
+
+    public function testRedisComponentReadsConfiguredName(): void
+    {
+        $config = SmsConfig::fromArray([
+            'sms' => [
+                'default_gateway' => 'aliyun',
+                'redis_component' => 'session_cache',
+            ],
+        ]);
+
+        self::assertSame('session_cache', $config->redisComponent());
+    }
 }

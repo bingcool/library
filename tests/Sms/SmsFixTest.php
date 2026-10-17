@@ -126,7 +126,7 @@ final class SmsFixTest extends TestCase
         $verifier = $this->verifier($store, $rate);
 
         $verifier->send('13800008000');
-        self::assertSame(1, $rate->count('sms:rl:13800008000'));
+        self::assertSame(1, $rate->count('sms:rl:login_code:13800008000'));
 
         try {
             $verifier->send('13800008000');
@@ -134,21 +134,21 @@ final class SmsFixTest extends TestCase
         } catch (RateLimitExceededException) {
         }
 
-        self::assertSame(1, $rate->count('sms:rl:13800008000'));
+        self::assertSame(1, $rate->count('sms:rl:login_code:13800008000'));
     }
 
     public function testDifferentTemplatesDoNotOverwriteEachOther(): void
     {
         $store = new ArraySmsStore();
         $rate = new ArrayRateGuard();
-        $verifier = $this->verifier($store, $rate, ['resend_interval' => 0]);
+        $verifier = $this->verifier($store, $rate);
 
         $verifier->send('13800008000', 'login_code');
         $verifier->send('13800008000', 'register_code');
 
         self::assertNotNull($store->get('code:login_code:13800008000'));
         self::assertNotNull($store->get('code:register_code:13800008000'));
-        self::assertTrue($verifier->verify('13800008000', '999999', 'login_code'));
+        self::assertTrue($verifier->verify('13800008000', '999999', 'login_code')->ok);
         self::assertNotNull($store->get('code:register_code:13800008000'));
     }
 
@@ -195,7 +195,7 @@ final class SmsFixTest extends TestCase
                 'ttl' => 300,
                 'max_verify' => 5,
                 'resend_interval' => 60,
-                'rate_limit' => ['enabled' => true, 'key' => 'sms:rl:{phone}', 'max' => 5, 'period' => 3600],
+                'rate_limit' => ['enabled' => true, 'key' => 'sms:rl:{template}:{phone}', 'max' => 5, 'period' => 3600],
             ], $verification),
             new CodeGenerator(6, 'number', static fn (int $min, int $max): int => $max),
         );

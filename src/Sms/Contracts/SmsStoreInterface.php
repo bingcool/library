@@ -11,14 +11,21 @@ namespace Swoolefy\Library\Sms\Contracts;
  * 测试实现 `Testing\ArraySmsStore` 用内存数组，无 IO、可确定性断言。
  *
  * 之所以不直接依赖 `\Redis` / `CacheInterface`：二者方法面过大且语义不一（increment / TTL 缺失），
- * 收窄到 5 个原语后，替换存储后端与单测替身都只需实现本接口。
+ * 收窄到这些原语后，替换存储后端与单测替身都只需实现本接口。
  */
 interface SmsStoreInterface
 {
     /**
-     * 写入带 TTL 的字符串值。
+     * 写入带 TTL 的字符串值。已存在则覆盖。
      */
     public function put(string $key, string $value, int $ttl): void;
+
+    /**
+     * 仅当键不存在时写入。Redis SET NX，用于并发占住冷却位。
+     *
+     * @return bool true 表示本次占到；false 表示已有其它请求占住
+     */
+    public function add(string $key, string $value, int $ttl): bool;
 
     /**
      * 读取；不存在返回 null。

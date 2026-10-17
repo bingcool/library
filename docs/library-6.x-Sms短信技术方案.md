@@ -132,6 +132,8 @@ src/Sms/
 return [
     'sms' => [
         'default_gateway' => 'aliyun',
+        // Config/component/cache.php 里的组件名，验证码存储和限流都用它
+        'redis_component' => 'cache',
 
         // 逻辑通道：业务用名字，不用关心厂商
         'gateways' => [
@@ -171,11 +173,11 @@ return [
             'type'        => 'number',        // number|alnum
             'ttl'         => 300,             // code 有效期(秒)
             'max_verify'  => 5,               // 单码最大校验次数
-            ' resend_interval' => 60,          // 同号码重发间隔(秒)
+            ' resend_interval' => 60,          // 同一场景、同一号码的重发间隔(秒)
             // 依赖库内 RateLimit 组件的 key 前缀与窗口配置
             'rate_limit'  => [
                 'enabled' => true,
-                'key'     => 'sms:vl:{phone}',
+                'key'     => 'sms:vl:{template}:{phone}',
                 'max'     => 5,               // 窗口内最多发送条数
                 'period'  => 3600,            // 秒
             ],
@@ -186,7 +188,7 @@ return [
 
 ### 6.2 `SmsConfig`
 
-对齐 `OauthConfig`/`FileStorageConfig`：`fromArray()` 兼容外层 `sms` 包裹；`defaultGateway()`、`hasGateway()`、`gateway()`、`template(string $gw, string $alias)`、`verification()`。
+对齐 `OauthConfig`/`FileStorageConfig`：`fromArray()` 兼容外层 `sms` 包裹；`defaultGateway()`、`redisComponent()`、`hasGateway()`、`gateway()`、`verification()`。`redisComponent()` 默认 `cache`，对应 `Config/component/cache.php` 的组件键。
 
 ### 6.3 DI 组件 `Config/component/sms.php`
 
@@ -200,15 +202,19 @@ return [
         return new SmsManager($c['sms'], Application::getApp()->get('log'));
     },
 
-    // 验证码服务：注入 sms + redis + rateLimit（均由框架容器提供）
+    // 验证码服务：存储和限流都用 redis_component（cache.php 组件名）
     'sms_verifier' => static function (): \Swoolefy\Library\Sms\Verification\SmsVerifier {
-        $app  = Application::getApp();
-        $c    = include APP_PATH . '/Config/sms.php';
+        $config = \Swoolefy\Library\Sms\Config\SmsConfig::fromArray(include APP_PATH . '/Config/sms.php');
+        $redis = Application::getApp()->get($config->redisComponent());
+        if (is_object($redis) && method_exists($redis, 'getObject')) {
+            $redis = $redis->getObject();
+        }
+
         return new \Swoolefy\Library\Sms\Verification\SmsVerifier(
-            $app->get('sms'),
-            $app->get('redis')->getObject(),
-            $app->get('rateLimit'),
-            $c['sms']['verification'],
+            Application::getApp()->get('sms'),
+            new \Swoolefy\Library\Sms\Verification\RedisSmsStore($redis),
+            new \Swoolefy\Library\Sms\Verification\DurationRateGuard($redis),
+            $config->verification(),
         );
     },
 ];
@@ -344,20 +350,20 @@ final class SmsVerifier implements VerifierInterface
         if ($this->limiter->tooMany($this->rateKey($phone))) {   // 命中窗口上限
             throw new RateLimitExceededException('短信发送过于频繁');
         }
-        if ($this->store->get($this->cooldownKey($phone))) {       // 重发间隔
+        if ($this->store->get($this->cooldownKey($phone, $template))) { // 同一场景重发间隔
             throw new RateLimitExceededException('请 60 秒后重试');
         }
         $code = $this->generate();                                 // CodeGenerator
         $result = $this->sms->send(SmsMessage::make($phone, $template, ['code' => $code]));
         if ($result->ok) {
             $this->store->setex($this->codeKey($phone), $this->config['ttl'], $code);
-            $this->store->setex($this->cooldownKey($phone), $this->config['resend_interval'], 1);
+            $this->store->setex($this->cooldownKey($phone, $template), $this->config['resend_interval'], 1);
         }
         return $result;
     }
 
-    /** 校验：比对 + 失败计数 + 成功后销毁，防暴力 */
-    public function verify(string $phone, string $input): bool;
+    /** 校验：返回 ok / mismatch / expired / absent / locked，mismatch 带剩余次数 */
+    public function verify(string $phone, string $input, string $template = 'login_code'): VerifyResult;
 }
 ```
 
@@ -397,8 +403,10 @@ $verifier = Application::getApp()->get('sms_verifier');
 $verifier->send($phone, 'login_code');
 
 // 校验
-if (!$verifier->verify($phone, $inputCode)) {
-    return $this->returnJson(['code' => 1, 'msg' => '验证码错误或已失效']);
+$result = $verifier->verify($phone, $inputCode, 'login_code');
+if (!$result->ok) {
+    // status: mismatch|expired|absent|locked；mismatch 时看 remaining
+    return $this->returnJson(['code' => 1, 'msg' => $result->message, 'status' => $result->status]);
 }
 ```
 

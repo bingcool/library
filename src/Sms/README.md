@@ -26,6 +26,8 @@
 return [
     'sms' => [
         'default_gateway' => 'aliyun',
+        // Config/component/cache.php 里的组件名，验证码存储和限流都用它
+        'redis_component' => 'cache',
         'gateways' => [
             'aliyun' => [
                 'gateway'       => 'aliyun',
@@ -53,10 +55,10 @@ return [
             'type'            => 'number',      // number|alnum
             'ttl'             => 300,
             'max_verify'      => 5,             // 单码最大校验次数，达上限即失效（防暴力）
-            'resend_interval' => 60,            // 同号码重发间隔(秒)
+            'resend_interval' => 60,            // 同一场景、同一号码的重发间隔(秒)
             'rate_limit'      => [
                 'enabled' => true,
-                'key'     => 'sms:rl:{phone}',
+                'key'     => 'sms:rl:{template}:{phone}',
                 'max'     => 5,
                 'period'  => 3600,
             ],
@@ -70,6 +72,7 @@ return [
 ```php
 <?php
 use Swoolefy\Core\Application;
+use Swoolefy\Library\Sms\Config\SmsConfig;
 use Swoolefy\Library\Sms\SmsManager;
 use Swoolefy\Library\Sms\Verification\{RedisSmsStore, DurationRateGuard, SmsVerifier};
 
@@ -79,17 +82,19 @@ return [
         return new SmsManager($c['sms'], Application::getApp()->get('log'));
     },
 
-    // 验证码服务：注入 sms + redis 存储 + redis 限流
+    // 验证码服务：存储和限流都用 sms.php 的 redis_component（cache.php 里的组件）
     'sms_verifier' => static function (): SmsVerifier {
-        $app = Application::getApp();
-        $c   = include APP_PATH . '/Config/sms.php';
-        $redis = $app->get('redis')->getObject();   // RedisConnection（协程连接池）
+        $config = SmsConfig::fromArray(include APP_PATH . '/Config/sms.php');
+        $redis = Application::getApp()->get($config->redisComponent());
+        if (is_object($redis) && method_exists($redis, 'getObject')) {
+            $redis = $redis->getObject();
+        }
 
         return new SmsVerifier(
-            $app->get('sms'),
+            Application::getApp()->get('sms'),
             new RedisSmsStore($redis),
             new DurationRateGuard($redis),
-            $c['sms']['verification'],
+            $config->verification(),
         );
     },
 ];
@@ -129,8 +134,14 @@ try {
     return $this->returnJson(['code' => 1, 'msg' => $e->getMessage()]);
 }
 
-if (!$verifier->verify($phone, $inputCode)) {
-    return $this->returnJson(['code' => 1, 'msg' => '验证码错误或已失效']);
+$result = $verifier->verify($phone, $inputCode, 'login_code');
+if (!$result->ok) {
+    // status:
+    //   mismatch  输错，remaining 为还可尝试次数
+    //   expired   发过，验证码已过期
+    //   absent    该场景没发过
+    //   locked    错误次数用尽，码已作废
+    return $this->returnJson(['code' => 1, 'msg' => $result->message, 'status' => $result->status]);
 }
 ```
 
@@ -203,8 +214,8 @@ SdkGuard::requireClass(
 
 - HTTP 走 Guzzle/curl，Swoole `SWOOLE_HOOK_ALL` 下自动协程化，`send()` 不阻塞 Worker。
 - Gateway 无请求态（只含 AK/SK/region），可被 Manager 同请求内安全复用。
-- 限流每次调用新建 `DurationLimiter`，避免协程共用一个实例时串 key。重发冷却先于扣配额检查。
-- 验证码按 `模板 + 号码` 存储，登录码和注册码互不覆盖。冷却和小时窗口仍按号码。
+- 限流每次调用新建 `DurationLimiter`，避免协程共用一个实例时串 key。重发冷却用 SET NX 先占位，再扣配额。发送失败会放开占位。
+- 验证码、重发冷却和小时限额都按 `模板 + 号码`。登录码冷却不会挡住注册码，两边的小时次数也分开计。校验成功只清该场景的冷却。
 - `timeout`（秒，默认 5）写入阿里云连接/读取超时和腾讯云 `ReqTimeout`。
 - `LogGateway` 只保留最近 32 条且模板参数打码，不在内存里堆积验证码明文。
 - 批量群发交框架 `Job` 分片 + 重试 + 死信，组件只提供同步 `send()`。

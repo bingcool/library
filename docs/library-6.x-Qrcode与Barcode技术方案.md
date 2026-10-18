@@ -53,8 +53,8 @@
 ```jsonc
 {
     "require": {
-        "bacon/bacon-qr-code": "^3.0",
-        "picqer/php-barcode-generator": "^3.0"
+        "bacon/bacon-qr-code": "~3.1",
+        "picqer/php-barcode-generator": "~3.3"
     }
 }
 ```

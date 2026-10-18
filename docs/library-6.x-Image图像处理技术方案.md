@@ -54,7 +54,7 @@
 ```jsonc
 {
     "require": {
-        "intervention/image": "^3.9"
+        "intervention/image": "~4.4.0"
     }
 }
 ```

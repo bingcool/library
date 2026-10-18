@@ -55,6 +55,9 @@ composer require bingcool/library
 | `FileStorageSystem` | 本地 / S3 / 阿里云 OSS / 腾讯云 COS 统一存储 | [src/FileStorageSystem/README.md](src/FileStorageSystem/README.md) |
 | `Sms` | 短信统一门面：内置阿里云 / 腾讯云，可扩展新厂商；策略网关 + 配置化 + 验证码服务 | [src/Sms/README.md](src/Sms/README.md) |
 | `Mail` | 邮件发送：钉钉、QQ、腾讯企业邮、网易、飞书 SMTP，以及 sendmail / mail / log | [src/Mail/README.md](src/Mail/README.md) |
+| `Image` | Intervention Image 4：open/create、预设缩放、水印、webp/jpeg 等编码；多档派生需多次 open | [src/Image/README.md](src/Image/README.md) |
+| `Qrcode` | Bacon QR 仅生成：PNG/SVG/EPS/Base64、WiFi 串、可选 Logo（依赖 Image + 纠错 Q/H） | [src/Qrcode/README.md](src/Qrcode/README.md) |
+| `Barcode` | picqer 一维码：CODE_128/39、EAN、UPC、ITF；默认 SVG，PNG 需 gd 或 imagick | [src/Barcode/README.md](src/Barcode/README.md) |
 | `OpenTelemetry` | 内置 OpenTelemetry PHP API / SDK 与 OTLP 导出 | [src/OpenTelemetry/README.md](src/OpenTelemetry/README.md) |
 
 ### 安全与校验

@@ -52,7 +52,10 @@
         "alibabacloud/dysmsapi-20170525": "~4.6.0",
         "tencentcloud/sms": "~3.0",
         "yurunsoft/yurun-oauth-login": "^3.1.0",
-        "phpmailer/phpmailer": "^7.0"
+        "phpmailer/phpmailer": "~7.1",
+        "intervention/image": "~4.4.0",
+        "bacon/bacon-qr-code": "~3.1",
+        "picqer/php-barcode-generator": "~3.3"
     },
     "require-dev": {
         "kwn/php-rdkafka-stubs": "@dev",

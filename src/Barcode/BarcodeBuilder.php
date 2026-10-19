@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Swoolefy\Library\Barcode;
 
+use Psr\Log\LoggerInterface;
 use Swoolefy\Library\Barcode\Config\BarcodeConfig;
 use Swoolefy\Library\Barcode\Exception\UnsupportedBarcodeTypeException;
 use Swoolefy\Library\Barcode\Renderer\BarcodeRenderer;
@@ -24,17 +25,42 @@ final class BarcodeBuilder
     /**
      * @param string $content 初始条码载荷
      * @param BarcodeConfig $config 提供 default.type / height / width / show_text 等
+     * @param LoggerInterface|null $logger 用于记录配置异常（如无法识别的 default.type）
      */
-    public function __construct(string $content, private BarcodeConfig $config)
-    {
+    public function __construct(
+        string $content,
+        private BarcodeConfig $config,
+        private ?LoggerInterface $logger = null,
+    ) {
         $defaults = $this->config->defaults();
         $this->options = new BarcodeOptions(
             content: $content,
-            type: BarcodeType::tryFrom(strtoupper((string) ($defaults['type'] ?? 'CODE_128'))) ?? BarcodeType::CODE_128,
-            height: (int) ($defaults['height'] ?? 150),
-            width: (int) ($defaults['width'] ?? 0),
+            type: $this->resolveType($defaults['type'] ?? null),
+            height: max(1, (int) ($defaults['height'] ?? 150)),
+            width: max(0, (int) ($defaults['width'] ?? 0)),
             showText: (bool) ($defaults['show_text'] ?? true),
         );
+    }
+
+    /**
+     * 解析配置默认制式；无法识别时回退 CODE_128 并记录告警，避免静默生成错误制式。
+     *
+     * @param mixed $raw 配置 default.type 原始值
+     */
+    private function resolveType(mixed $raw): BarcodeType
+    {
+        $name = strtoupper(trim((string) ($raw ?? 'CODE_128')));
+        $type = BarcodeType::tryFrom($name);
+        if ($type !== null) {
+            return $type;
+        }
+
+        $this->logger?->warning(sprintf(
+            'Unknown barcode type [%s] in config default.type, fallback to CODE_128',
+            $name
+        ));
+
+        return BarcodeType::CODE_128;
     }
 
     /** 覆盖待编码载荷 */
@@ -71,7 +97,12 @@ final class BarcodeBuilder
         return $this;
     }
 
-    /** 是否显示人类可读文字（PNG/SVG 实际效果依赖 picqer 渲染器） */
+    /**
+     * 是否显示人类可读文字。
+     *
+     * SVG 输出在底部叠加 {@see \Swoolefy\Library\Barcode\Renderer\BarcodeRenderer} 自绘的 &lt;text&gt;；
+     * PNG 受 picqer v3 渲染器限制仍不绘制文字，此标志对 PNG 无效。
+     */
     public function showText(bool $show = true): self
     {
         $this->options->showText = $show;

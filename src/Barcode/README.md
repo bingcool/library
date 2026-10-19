@@ -49,7 +49,7 @@ return [
             'type'      => 'CODE_128',   // 映射 BarcodeType enum
             'height'    => 150,           // 条图高度（像素）
             'width'     => 0,             // 0=自动：max(200, intrinsic×2)；>0 为输出总宽
-            'show_text' => true,          // 预留；SVG v1 不绘制文字，PNG 依 picqer 行为
+            'show_text' => true,          // SVG 在底部叠加人类可读文字；PNG 受 picqer v3 限制无效
             'format'    => 'svg',         // base64() 默认：svg|png
         ],
     ],

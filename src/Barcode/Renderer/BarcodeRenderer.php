@@ -19,12 +19,44 @@ final class BarcodeRenderer
 {
     /**
      * @return string SVG XML
+     *
+     * showText 为真时，条状只绘制在顶部区域，底部留白带叠加人类可读文字；
+     * 为假时保持 picqer 原生输出（条状填满整个高度，无文字）。
      */
     public static function svg(Barcode $barcode, BarcodeOptions $options): string
     {
         $width = self::resolveWidth($barcode, $options);
 
-        return (new SvgRenderer())->render($barcode, $width, (float) $options->height);
+        if (! $options->showText) {
+            return (new SvgRenderer())->render($barcode, $width, (float) $options->height);
+        }
+
+        $totalHeight = max(1, $options->height);
+        $fontSize    = (int) round(max(8, $totalHeight * 0.12));
+        $textArea    = (int) round($fontSize * 1.4);
+        $barHeight   = max(1, $totalHeight - $textArea);
+
+        // 条状先按 barHeight 渲染填满顶部，再把画布高度撑回 totalHeight 以腾出底部文字带
+        $svg = (new SvgRenderer())->render($barcode, $width, (float) $barHeight);
+
+        $svg = preg_replace(
+            '#<svg width="([0-9.]+)" height="[0-9.]+" viewBox="0 0 ([0-9.]+) [0-9.]+"#',
+            '<svg width="$1" height="' . $totalHeight . '" viewBox="0 0 $2 ' . $totalHeight . '"',
+            $svg,
+            1
+        ) ?? $svg;
+
+        // 在底部留白带内垂直居中（基线略低于中线以适配数字字形）
+        $baseline = round($totalHeight - $textArea / 2 + $fontSize * 0.35, 2);
+        $textNode = sprintf(
+            "\t" . '<text x="%s" y="%s" font-family="monospace" font-size="%d" fill="#000000" text-anchor="middle">%s</text>' . PHP_EOL,
+            round($width / 2, 2),
+            $baseline,
+            $fontSize,
+            htmlspecialchars($options->content, ENT_QUOTES | ENT_XML1, 'UTF-8')
+        );
+
+        return str_replace('</svg>', $textNode . '</svg>', $svg);
     }
 
     /**

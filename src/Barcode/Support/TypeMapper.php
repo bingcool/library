@@ -13,7 +13,6 @@ use Picqer\Barcode\Types\TypeInterleaved25;
 use Picqer\Barcode\Types\TypeUpcA;
 use Swoolefy\Library\Barcode\BarcodeType;
 use Swoolefy\Library\Barcode\Exception\InvalidBarcodeContentException;
-use Swoolefy\Library\Barcode\Exception\UnsupportedBarcodeTypeException;
 use Throwable;
 
 /**
@@ -80,16 +79,18 @@ final class TypeMapper
     /** @throws InvalidBarcodeContentException */
     private static function code39(string $code): void
     {
-        if (!preg_match('/^[0-9A-Z\\-. $/+%]+$/', strtoupper($code))) {
+        if (!preg_match('/^[0-9A-Z\-. $\/+%]+$/', strtoupper($code))) {
             throw new InvalidBarcodeContentException('CODE 39 content has invalid characters');
         }
     }
 
-    /** @throws UnsupportedBarcodeTypeException|InvalidBarcodeContentException */
+    /**
+     * CODE 128 为可变长度 ASCII 制式，无额外字符集/长度约束。
+     *
+     * 空内容已在 {@see encode()} 入口统一拦截并抛 InvalidBarcodeContentException，
+     * 具体编码合法性交由 picqer TypeCode128 处理，此处无需预检。
+     */
     private static function code128(string $code): void
     {
-        if ($code === '') {
-            throw new UnsupportedBarcodeTypeException('CODE 128 content is empty');
-        }
     }
 }

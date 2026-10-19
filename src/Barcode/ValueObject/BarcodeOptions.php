@@ -25,7 +25,7 @@ final class BarcodeOptions
         public int $width = 0,
         /**
          * 是否在条下方绘制人类可读文案。
-         * v1 SVG 路径不绘制文字；PNG 依赖 picqer 渲染器行为，标志主要供配置对齐与后续扩展。
+         * SVG 由 BarcodeRenderer 自绘 <text> 生效；PNG 受 picqer v3 限制不绘制文字，此标志无效。
          */
         public bool $showText = true,
     ) {

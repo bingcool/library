@@ -17,7 +17,7 @@ final class BarcodeManager
 {
     /**
      * @param array<string, mixed>|BarcodeConfig $config barcode 配置或已解析的 BarcodeConfig
-     * @param LoggerInterface|null $logger 预留 PSR-3，当前版本未写日志
+     * @param LoggerInterface|null $logger PSR-3；透传给 Builder，用于记录无法识别的 default.type 等配置告警
      */
     public function __construct(
         private array|BarcodeConfig $config,
@@ -35,6 +35,6 @@ final class BarcodeManager
      */
     public function make(string $content): BarcodeBuilder
     {
-        return new BarcodeBuilder($content, $this->config);
+        return new BarcodeBuilder($content, $this->config, $this->logger);
     }
 }

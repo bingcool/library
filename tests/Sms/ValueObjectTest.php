@@ -6,6 +6,7 @@ namespace Swoolefy\Library\Tests\Sms;
 
 use PHPUnit\Framework\TestCase;
 use Swoolefy\Library\Sms\Exception\InvalidPhoneException;
+use Swoolefy\Library\Sms\SmsMessage;
 use Swoolefy\Library\Sms\Support\TemplateParamMapper;
 use Swoolefy\Library\Sms\ValueObject\PhoneList;
 use Swoolefy\Library\Sms\ValueObject\SendResult;
@@ -32,9 +33,77 @@ final class ValueObjectTest extends TestCase
         self::assertSame(['13800008000'], PhoneList::make(13800008000)->toArray());
     }
 
+    public function testPhoneListDedupesCanonicalSpellings(): void
+    {
+        $list = PhoneList::make(['+8613800008000', '8613800008000', '13800008000', '+86 138-0000-8000']);
+
+        self::assertSame(['+8613800008000'], $list->toArray());
+        self::assertCount(1, $list);
+    }
+
+    public function testPhoneListDedupesHongKongSpellingsWithDefaultRegion(): void
+    {
+        $list = PhoneList::make(
+            ['+85261234567', '85261234567', '61234567'],
+            PhoneList::DEFAULT_MAX,
+            'HK'
+        );
+
+        self::assertSame(['+85261234567'], $list->toArray());
+    }
+
+    public function testSmsMessageToKeepsConstructorMax(): void
+    {
+        $message = new SmsMessage(['13800008000'], 'login_code', [], null, 2);
+
+        $this->expectException(InvalidPhoneException::class);
+        $message->to(['13800008000', '13900009000', '13700007000']);
+    }
+
     public function testPhoneListAllowsInternationalPlusPrefix(): void
     {
         self::assertSame(['+8613800008000'], PhoneList::make('+8613800008000')->toArray());
+    }
+
+    public function testCanonicalUnifiesChinesePhoneSpellings(): void
+    {
+        $expected = '+8613800008000';
+
+        foreach ([
+            '13800008000',
+            '+8613800008000',
+            '8613800008000',
+            '008613800008000',
+            '+86 138-0000-8000',
+            '(86)13800008000',
+        ] as $phone) {
+            self::assertSame($expected, PhoneList::canonical($phone), $phone);
+        }
+    }
+
+    public function testCanonicalSupportsHongKongMacauAndTaiwan(): void
+    {
+        self::assertSame('+85261234567', PhoneList::canonical('+852 6123 4567'));
+        self::assertSame('+85261234567', PhoneList::canonical('0085261234567'));
+        self::assertSame('+85261234567', PhoneList::canonical('61234567', 'HK'));
+
+        self::assertSame('+85366123456', PhoneList::canonical('85366123456'));
+        self::assertSame('+85366123456', PhoneList::canonical('66123456', 'MO'));
+
+        self::assertSame('+886912345678', PhoneList::canonical('0912345678'));
+        self::assertSame('+886912345678', PhoneList::canonical('+886 912 345 678'));
+    }
+
+    public function testCanonicalKeepsOtherInternationalNumbersWithE164Prefix(): void
+    {
+        self::assertSame('+14155552671', PhoneList::canonical('+1 415-555-2671'));
+        self::assertSame('+442071838750', PhoneList::canonical('00442071838750'));
+    }
+
+    public function testCanonicalRejectsBareNumberOutsideSupportedRegions(): void
+    {
+        $this->expectException(InvalidPhoneException::class);
+        PhoneList::canonical('442071838750');
     }
 
     public function testPhoneListRejectsInvalidNumber(): void
@@ -116,6 +185,70 @@ final class ValueObjectTest extends TestCase
 
         self::assertTrue($result->ok);
         self::assertSame('tencent', $result->gateway);
+    }
+
+    public function testTencentBodyMarksMissingStatusAsFailure(): void
+    {
+        $phones = PhoneList::make(['13800008000', '13900009000']);
+        $result = SendResult::fromTencentBody([
+            ['PhoneNumber' => '+8613800008000', 'Code' => 'Ok', 'Message' => 'SUCCESS', 'SerialNumber' => 's-1'],
+        ], $phones);
+
+        self::assertFalse($result->ok);
+        self::assertSame(['13800008000'], $result->successPhones);
+        self::assertCount(1, $result->failedPhones);
+        self::assertSame('13900009000', $result->failedPhones[0]['phone']);
+        self::assertSame('MissingStatus', $result->failedPhones[0]['code']);
+    }
+
+    public function testTencentBodyIgnoresUnrequestedPhones(): void
+    {
+        $phones = PhoneList::make('13800008000');
+        $result = SendResult::fromTencentBody([
+            ['PhoneNumber' => '+8613800008000', 'Code' => 'Ok'],
+            ['PhoneNumber' => '+8613900009999', 'Code' => 'Ok'],
+        ], $phones);
+
+        self::assertTrue($result->ok);
+        self::assertSame(['13800008000'], $result->successPhones);
+        self::assertSame([], $result->failedPhones);
+    }
+
+    public function testTencentBodySkipsRowsWithoutPhoneNumber(): void
+    {
+        $phones = PhoneList::make(['13800008000', '13900009000']);
+        $result = SendResult::fromTencentBody([
+            ['PhoneNumber' => '', 'Code' => 'Ok'],
+            ['PhoneNumber' => '+8613900009000', 'Code' => 'Ok'],
+        ], $phones);
+
+        self::assertFalse($result->ok);
+        self::assertSame(['13900009000'], $result->successPhones);
+        self::assertSame('13800008000', $result->failedPhones[0]['phone']);
+        self::assertSame('MissingStatus', $result->failedPhones[0]['code']);
+    }
+
+    public function testTencentBodyDedupesRepeatedStatuses(): void
+    {
+        $phones = PhoneList::make('13800008000');
+        $result = SendResult::fromTencentBody([
+            ['PhoneNumber' => '+8613800008000', 'Code' => 'Ok'],
+            ['PhoneNumber' => '13800008000', 'Code' => 'Ok'],
+        ], $phones);
+
+        self::assertTrue($result->ok);
+        self::assertSame(['13800008000'], $result->successPhones);
+    }
+
+    public function testTencentBodyUsesPhoneMapForOverseasAlignment(): void
+    {
+        $phones = PhoneList::make('61234567');
+        $result = SendResult::fromTencentBody([
+            ['PhoneNumber' => '+85261234567', 'Code' => 'Ok'],
+        ], $phones, 'tencent', 'req-1', ['+85261234567' => '61234567']);
+
+        self::assertTrue($result->ok);
+        self::assertSame(['61234567'], $result->successPhones);
     }
 
     public function testTemplateParamMapperAliyunKeepsKeys(): void

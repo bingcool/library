@@ -60,6 +60,9 @@ if ($limiter->isLimit()) {
 
 // 查询当前窗口已使用的请求数
 $currentCount = $limiter->getCurrentCount();
+
+// 被限流后查询还需等待多少秒（最早一次请求滑出窗口的时间）；窗口为空返回 0
+$retryAfter = $limiter->getRemainingTime();
 ```
 
 ### 实现细节
@@ -67,6 +70,7 @@ $currentCount = $limiter->getCurrentCount();
 - Lua 脚本内使用 `redis.call('TIME')` 获取服务器时间，保证分布式节点时间一致
 - member 使用 `时间分数:计数` 格式（如 `17119200005678:42`），脚本内部生成，无需额外 Redis 调用
 - 清理过期数据后使用 `ZCARD`（O(1)）替代 `ZCOUNT`（O(log N)）提高性能
+- `getRemainingTime()` 只读复用同一套时间分数，返回最早一条记录滑出窗口的秒数（向上取整），被限流时可直接作为 `Retry-After`
 
 ---
 

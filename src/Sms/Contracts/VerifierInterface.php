@@ -28,9 +28,10 @@ interface VerifierInterface
      * mismatch（还可试 remaining 次）、expired（发过已过期）、
      * absent（没发过）、locked（错误次数用尽已作废）。
      *
-     * @param string $phone 目标号码，须与 send() 传入的写法一致
+     * @param string $phone 目标号码；会归一化，同一号码的不同写法共用同一验证码
      * @param string $input 用户输入的验证码
      * @param string $template 场景，与 send() 的模板一致，如 login_code / register_code
+     * @throws \Swoolefy\Library\Sms\Exception\InvalidPhoneException 号码为空或格式非法
      */
     public function verify(string $phone, string $input, string $template = 'login_code'): VerifyResult;
 }

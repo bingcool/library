@@ -14,6 +14,7 @@ use Swoolefy\Library\Sms\Exception\SmsApiException;
 use Swoolefy\Library\Sms\SmsMessage;
 use Swoolefy\Library\Sms\Support\ApiExceptionFactory;
 use Swoolefy\Library\Sms\Support\ClientTimeout;
+use Swoolefy\Library\Sms\Support\PhoneNormalizer;
 use Swoolefy\Library\Sms\Support\TemplateCodeResolver;
 use Swoolefy\Library\Sms\Support\TemplateParamMapper;
 use Swoolefy\Library\Sms\ValueObject\SendResult;
@@ -23,7 +24,7 @@ use Swoolefy\Library\Sms\ValueObject\SendResult;
  *
  * 签名 / 传输细节全部委托官方 SDK；本类只做：
  * 1. 配置校验并构造 Client
- * 2. 领域消息 → SDK 请求组装
+ * 2. 领域消息 → SDK 请求组装（国内号码 11 位；国际/港澳台为「国际区号+号码」，不带 +）
  * 3. SDK 响应 → 厂商无关 `SendResult`
  *
  * 协程：底层是 HTTP（Guzzle/curl），Swoole `SWOOLE_HOOK_ALL` 下自动协程化，`send()` 不阻塞 Worker。
@@ -44,16 +45,22 @@ final class AliyunGateway implements SmsGatewayInterface
 
     private string $region;
 
+    private string $defaultRegion;
+
     /**
-     * @param array<string, mixed> $config access_key / access_secret / region / sign_name / templates
+     * @param array<string, mixed> $config access_key / access_secret / region / sign_name / templates / default_region
      * @param object|null $client 可注入预构建 client（单测 / 高级用法），注入时跳过内部构造
      * @throws InvalidProviderException 缺必要凭证
+     * @throws \Swoolefy\Library\Sms\Exception\InvalidConfigException default_region 非法
      */
     public function __construct(private array $config, ?object $client = null)
     {
         $this->templates = is_array($config['templates'] ?? null) ? $config['templates'] : [];
         $this->signName = (string) ($config['sign_name'] ?? '');
         $this->region = (string) ($config['region'] ?? 'cn-hangzhou');
+        $this->defaultRegion = PhoneNormalizer::normalizeRegion(
+            (string) ($config['default_region'] ?? PhoneNormalizer::DEFAULT_REGION)
+        );
 
         if ($this->signName === '') {
             throw new InvalidProviderException('Aliyun sms gateway requires sign_name');
@@ -107,11 +114,21 @@ final class AliyunGateway implements SmsGatewayInterface
         }
 
         return [
-            'phoneNumbers' => $message->phones->toString(),
-            'signName' => $message->signName ?? $this->signName,
+            'phoneNumbers' => $this->toAliyunNumbers($message->phones->toArray()),
+            'signName' => $this->resolveSignName($message),
             'templateCode' => (string) $this->templateCode($message->template),
             'templateParam' => $templateParam,
         ];
+    }
+
+    /**
+     * 消息级签名只有非空才覆盖网关默认值，避免空串 / 空白把默认签名冲掉。
+     */
+    private function resolveSignName(SmsMessage $message): string
+    {
+        $signName = trim((string) ($message->signName ?? ''));
+
+        return $signName !== '' ? $signName : $this->signName;
     }
 
     /**
@@ -152,6 +169,22 @@ final class AliyunGateway implements SmsGatewayInterface
         ];
 
         return SendResult::fromAliyunBody($bodyArr, $message->phones, $this->name());
+    }
+
+    /**
+     * 阿里云号码格式：国内为 11 位号码，国际/港澳台为「国际区号+号码」，都不带 `+`。
+     *
+     * @param list<string> $phones
+     */
+    private function toAliyunNumbers(array $phones): string
+    {
+        $out = [];
+        foreach ($phones as $phone) {
+            $e164 = PhoneNormalizer::toE164($phone, $this->defaultRegion);
+            $out[] = str_starts_with($e164, '+86') ? substr($e164, 3) : substr($e164, 1);
+        }
+
+        return implode(',', $out);
     }
 
     private function assertPhoneLimit(SmsMessage $message): void

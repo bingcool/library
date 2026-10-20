@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Swoolefy\Library\Sms\Testing;
 
 use Swoolefy\Library\Sms\Contracts\RateGuardInterface;
+use Swoolefy\Library\Sms\Exception\InvalidConfigException;
 
 /**
  * 内存 / 脚本化限流守卫，供单测确定性命中或放行。
@@ -20,13 +21,25 @@ final class ArrayRateGuard implements RateGuardInterface
 
     /**
      * @param bool|null $alwaysLimit null=按计数；true=永远超限；false=永远放行
+     * @param int|null $remainingSeconds 固定剩余窗口秒数；null=返回完整 window
      */
-    public function __construct(private ?bool $alwaysLimit = null)
-    {
+    public function __construct(
+        private ?bool $alwaysLimit = null,
+        private ?int $remainingSeconds = null,
+    ) {
     }
 
     public function tooMany(string $key, int $max, int $window): bool
     {
+        // 与生产 DurationRateGuard 对齐，避免测试放行生产会拒绝的配置
+        if ($max < 1 || $window < 1) {
+            throw new InvalidConfigException(sprintf(
+                'Rate guard requires max >= 1 and window >= 1, got max=%d window=%d',
+                $max,
+                $window
+            ));
+        }
+
         if ($this->alwaysLimit !== null) {
             // 固定模式下仍然累加，便于断言「被调用过」
             $this->counts[$key] = ($this->counts[$key] ?? 0) + 1;
@@ -41,6 +54,22 @@ final class ArrayRateGuard implements RateGuardInterface
         $this->counts[$key] = $current + 1;
 
         return false;
+    }
+
+    public function remaining(string $key, int $window): int
+    {
+        if ($window < 1) {
+            throw new InvalidConfigException(sprintf(
+                'Rate guard requires window >= 1, got window=%d',
+                $window
+            ));
+        }
+
+        if ($this->remainingSeconds === null) {
+            return $window;
+        }
+
+        return max(1, min($this->remainingSeconds, $window));
     }
 
     public function count(string $key): int

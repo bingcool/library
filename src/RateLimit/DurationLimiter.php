@@ -127,6 +127,33 @@ class DurationLimiter
     }
 
     /**
+     * 距离窗口内最早一次请求滑出窗口的秒数。
+     *
+     * 返回 0 表示窗口内没有请求；被限流时即表示还需等待多久才能释放一个配额。
+     *
+     * @return int
+     * @throws RateLimitException
+     */
+    public function getRemainingTime(): int
+    {
+        if (empty($this->rateKey)) {
+            throw new RateLimitException("RateKey Missing Setting rateKey");
+        }
+
+        if (empty($this->windowSizeTime)) {
+            throw new RateLimitException("RateLimit Missing Params");
+        }
+
+        if ($this->isPredisDriver) {
+            $remaining = $this->redis->eval($this->getLuaRemainingScript(), 1, ...[$this->rateKey, $this->windowSizeTime]);
+        } else {
+            $remaining = $this->redis->eval($this->getLuaRemainingScript(), [$this->rateKey, $this->windowSizeTime], 1);
+        }
+
+        return (int)$remaining;
+    }
+
+    /**
      * @return string
      */
     public function getLuaLimitScript()
@@ -162,6 +189,43 @@ else
     redis.call('EXPIRE', rateKey, windowSizeTime * 2);
     return 1;
 end;
+
+LUA;
+        return $lua;
+    }
+
+    /**
+     * 计算剩余窗口时间的 Lua 脚本。
+     *
+     * 与限流脚本使用相同的时间分数与窗口起点，返回最早一条记录滑出窗口所需秒数。
+     *
+     * @return string
+     */
+    protected function getLuaRemainingScript()
+    {
+        $lua = <<<LUA
+local rateKey = KEYS[1];
+local windowSizeTime = tonumber(ARGV[1]);
+
+local timeStamp = redis.call('TIME');
+local second = tonumber(timeStamp[1]);
+local microFraction = tonumber(string.sub(timeStamp[2], 1, 4));
+
+local windowStartScore = (second - windowSizeTime) * 10000 + microFraction;
+
+-- 先清理窗口外数据，保证最早一条记录仍在窗口内
+redis.call('ZREMRANGEBYSCORE', rateKey, '-inf', windowStartScore);
+
+local oldest = redis.call('ZRANGE', rateKey, 0, 0, 'WITHSCORES');
+if not oldest[2] then
+    return 0;
+end
+
+local remaining = (tonumber(oldest[2]) - windowStartScore) / 10000;
+if remaining < 1 then
+    return 1;
+end
+return math.ceil(remaining);
 
 LUA;
         return $lua;

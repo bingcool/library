@@ -6,6 +6,7 @@ namespace Swoolefy\Library\Tests\Sms;
 
 use PHPUnit\Framework\TestCase;
 use Swoolefy\Library\Sms\Config\SmsConfig;
+use Swoolefy\Library\Sms\Exception\InvalidConfigException;
 
 final class SmsConfigTest extends TestCase
 {
@@ -49,7 +50,49 @@ final class SmsConfigTest extends TestCase
         $config = SmsConfig::fromArray([
             'verification' => ['ttl' => 120, 'max_verify' => 3],
         ]);
-        self::assertSame(['ttl' => 120, 'max_verify' => 3], $config->verification());
+        self::assertSame(
+            ['ttl' => 120, 'max_verify' => 3, 'default_region' => 'CN'],
+            $config->verification()
+        );
+    }
+
+    public function testDefaultRegionDefaultsToMainland(): void
+    {
+        self::assertSame('CN', SmsConfig::fromArray([])->defaultRegion());
+    }
+
+    public function testDefaultRegionAcceptsNamesAndCountryCodes(): void
+    {
+        self::assertSame('HK', SmsConfig::fromArray(['default_region' => 'hk'])->defaultRegion());
+        self::assertSame('MO', SmsConfig::fromArray(['default_region' => '+853'])->defaultRegion());
+        self::assertSame('TW', SmsConfig::fromArray(['default_region' => '886'])->defaultRegion());
+        self::assertSame('CN', SmsConfig::fromArray(['default_region' => ''])->defaultRegion());
+    }
+
+    public function testVerificationInheritsTopLevelDefaultRegion(): void
+    {
+        $config = SmsConfig::fromArray([
+            'default_region' => 'HK',
+            'verification' => ['ttl' => 60],
+        ]);
+
+        self::assertSame('HK', $config->verification()['default_region']);
+    }
+
+    public function testVerificationKeepsItsOwnDefaultRegion(): void
+    {
+        $config = SmsConfig::fromArray([
+            'default_region' => 'HK',
+            'verification' => ['default_region' => 'MO'],
+        ]);
+
+        self::assertSame('MO', $config->verification()['default_region']);
+    }
+
+    public function testUnsupportedDefaultRegionRejected(): void
+    {
+        $this->expectException(InvalidConfigException::class);
+        SmsConfig::fromArray(['default_region' => 'US'])->defaultRegion();
     }
 
     public function testRedisComponentDefaultsToCachePhpComponent(): void

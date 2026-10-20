@@ -114,38 +114,82 @@ final class SendResult
      *
      * @param array<array<string, mixed>> $sendStatusSet
      * @param string|null $requestId 响应顶层 RequestId；缺省时回退到首条 SerialNumber
+     * @param array<string, string> $phoneMap 实际下发的 E.164 → 业务原始号码；用于多地区回执对齐
      */
-    public static function fromTencentBody(array $sendStatusSet, PhoneList $phones, string $gateway = 'tencent', ?string $requestId = null): self
-    {
-        // 建立「归一化号码 → 原始请求号码」映射，腾讯云回带 +86 前缀时也能对上
-        $byNormalized = [];
-        foreach ($phones->toArray() as $p) {
-            $byNormalized[self::normalize($p)] = $p;
+    public static function fromTencentBody(
+        array $sendStatusSet,
+        PhoneList $phones,
+        string $gateway = 'tencent',
+        ?string $requestId = null,
+        array $phoneMap = [],
+    ): self {
+        // 建立「归一化号码 → 原始请求号码」映射。phoneMap 由网关按实际下发的 E.164 构造，
+        // 是完整请求集合的权威来源；没有时退回消息里的原始号码。
+        $requested = [];
+        if ($phoneMap !== []) {
+            foreach ($phoneMap as $sent => $original) {
+                $requested[self::normalize((string) $sent)] = (string) $original;
+            }
+        } else {
+            foreach ($phones->toArray() as $p) {
+                $requested[self::normalize($p)] = $p;
+            }
         }
 
         $success = [];
         $failed = [];
+        $seenSuccess = [];
+        $seenFailed = [];
         $bizId = null;
         $firstFailCode = null;
         $firstFailMsg = null;
 
         foreach ($sendStatusSet as $item) {
-            $rawPhone = isset($item['PhoneNumber']) ? (string) $item['PhoneNumber'] : '';
+            $rawPhone = trim((string) ($item['PhoneNumber'] ?? ''));
             $code = isset($item['Code']) ? (string) $item['Code'] : null;
             $message = isset($item['Message']) ? (string) $item['Message'] : null;
             $serial = isset($item['SerialNumber']) ? (string) $item['SerialNumber'] : null;
             $bizId ??= $serial;
 
-            $matched = $byNormalized[self::normalize($rawPhone)] ?? $rawPhone;
+            // 缺号码无法归属；未请求的号码不能进入结果，统一交给缺失回执逻辑补失败
+            if ($rawPhone === '') {
+                continue;
+            }
+            $key = self::normalize($rawPhone);
+            if (!isset($requested[$key])) {
+                continue;
+            }
+            $matched = $requested[$key];
 
             // 腾讯云成功码为 'Ok'（大小写不敏感兜底 'SUCCESS'）
             if ($code !== null && strcasecmp($code, 'Ok') === 0) {
-                $success[] = $matched;
-            } else {
+                if (!isset($seenSuccess[$key])) {
+                    $seenSuccess[$key] = true;
+                    $success[] = $matched;
+                }
+                continue;
+            }
+
+            if (!isset($seenFailed[$key])) {
+                $seenFailed[$key] = true;
                 $failed[] = ['phone' => $matched, 'code' => $code, 'reason' => $message];
                 $firstFailCode ??= $code;
                 $firstFailMsg ??= $message;
             }
+        }
+
+        // 厂商漏回的请求号码必须显式失败，不能静默当成发送成功
+        foreach ($requested as $key => $original) {
+            if (isset($seenSuccess[$key]) || isset($seenFailed[$key])) {
+                continue;
+            }
+            $failed[] = [
+                'phone' => $original,
+                'code' => 'MissingStatus',
+                'reason' => 'provider did not return status',
+            ];
+            $firstFailCode ??= 'MissingStatus';
+            $firstFailMsg ??= 'provider did not return status';
         }
 
         $ok = $failed === [] && $success !== [];

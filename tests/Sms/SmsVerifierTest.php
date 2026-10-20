@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Swoolefy\Library\Tests\Sms;
 
 use PHPUnit\Framework\TestCase;
+use Swoole\Coroutine\Channel;
+use Swoolefy\Library\Sms\Exception\InvalidConfigException;
+use Swoolefy\Library\Sms\Exception\InvalidPhoneException;
 use Swoolefy\Library\Sms\Exception\RateLimitExceededException;
 use Swoolefy\Library\Sms\SmsManager;
 use Swoolefy\Library\Sms\Testing\ArrayRateGuard;
@@ -21,6 +24,9 @@ use Swoolefy\Library\Sms\Verification\SmsVerifier;
 final class SmsVerifierTest extends TestCase
 {
     private const PHONE = '13800008000';
+
+    /** 缓存键统一使用的 canonical 号码 */
+    private const KEY_PHONE = '+8613800008000';
 
     private const CODE = '999999';
 
@@ -60,11 +66,11 @@ final class SmsVerifierTest extends TestCase
         $result = $verifier->send(self::PHONE);
 
         self::assertTrue($result->ok);
-        $code = $store->get('code:login_code:' . self::PHONE);
+        $code = $store->get('code:login_code:' . self::KEY_PHONE);
         self::assertSame(self::CODE, $code);
         self::assertMatchesRegularExpression('/^\d{6}$/', $code);
-        self::assertSame(300, $store->lastTtl('code:login_code:' . self::PHONE));
-        self::assertTrue($store->exists('cooldown:login_code:' . self::PHONE));
+        self::assertSame(300, $store->lastTtl('code:login_code:' . self::KEY_PHONE));
+        self::assertTrue($store->exists('cooldown:login_code:' . self::KEY_PHONE));
     }
 
     public function testSendDoesNotStoreWhenGatewayFails(): void
@@ -76,8 +82,8 @@ final class SmsVerifierTest extends TestCase
         $result = $verifier->send(self::PHONE);
 
         self::assertFalse($result->ok);
-        self::assertNull($store->get('code:login_code:' . self::PHONE));
-        self::assertFalse($store->exists('cooldown:login_code:' . self::PHONE));
+        self::assertNull($store->get('code:login_code:' . self::KEY_PHONE));
+        self::assertFalse($store->exists('cooldown:login_code:' . self::KEY_PHONE));
     }
 
     public function testSecondSendLosesAtomicCooldownClaim(): void
@@ -88,7 +94,7 @@ final class SmsVerifierTest extends TestCase
         $verifier = $this->makeVerifier($store, $rate);
 
         self::assertTrue($verifier->send(self::PHONE)->ok);
-        self::assertSame(1, $rate->count('sms:rl:login_code:' . self::PHONE));
+        self::assertSame(1, $rate->count('sms:rl:login_code:' . self::KEY_PHONE));
 
         try {
             $verifier->send(self::PHONE);
@@ -96,8 +102,8 @@ final class SmsVerifierTest extends TestCase
         } catch (RateLimitExceededException) {
         }
 
-        self::assertSame(1, $rate->count('sms:rl:login_code:' . self::PHONE));
-        self::assertSame(self::CODE, $store->get('code:login_code:' . self::PHONE));
+        self::assertSame(1, $rate->count('sms:rl:login_code:' . self::KEY_PHONE));
+        self::assertSame(self::CODE, $store->get('code:login_code:' . self::KEY_PHONE));
     }
 
     public function testResendWithinCooldownRejected(): void
@@ -130,16 +136,16 @@ final class SmsVerifierTest extends TestCase
         $verifier = $this->makeVerifier($store, $rate);
 
         $verifier->send(self::PHONE);
-        $code = (string) $store->get('code:login_code:' . self::PHONE);
+        $code = (string) $store->get('code:login_code:' . self::KEY_PHONE);
 
         $result = $verifier->verify(self::PHONE, $code);
         self::assertTrue($result->ok);
         self::assertSame(VerifyResult::STATUS_OK, $result->status);
         // 成功后 code / 冷却 / 计数 / 发送痕迹全部清理，再校验视为没发过
-        self::assertNull($store->get('code:login_code:' . self::PHONE));
-        self::assertFalse($store->exists('cooldown:login_code:' . self::PHONE));
-        self::assertFalse($store->exists('attempts:login_code:' . self::PHONE));
-        self::assertFalse($store->exists('trace:login_code:' . self::PHONE));
+        self::assertNull($store->get('code:login_code:' . self::KEY_PHONE));
+        self::assertFalse($store->exists('cooldown:login_code:' . self::KEY_PHONE));
+        self::assertFalse($store->exists('attempts:login_code:' . self::KEY_PHONE));
+        self::assertFalse($store->exists('trace:login_code:' . self::KEY_PHONE));
         self::assertSame(VerifyResult::STATUS_ABSENT, $verifier->verify(self::PHONE, $code)->status);
     }
 
@@ -156,9 +162,9 @@ final class SmsVerifierTest extends TestCase
         self::assertSame(VerifyResult::STATUS_MISMATCH, $result->status);
         self::assertSame(4, $result->remaining);
         self::assertSame('验证码错误，还可尝试 4 次', $result->message);
-        self::assertSame('1', $store->get('attempts:login_code:' . self::PHONE));
+        self::assertSame('1', $store->get('attempts:login_code:' . self::KEY_PHONE));
         // 未达上限，当前码仍可用
-        self::assertNotNull($store->get('code:login_code:' . self::PHONE));
+        self::assertNotNull($store->get('code:login_code:' . self::KEY_PHONE));
     }
 
     public function testVerifyLocksOutAfterMaxAttempts(): void
@@ -177,7 +183,7 @@ final class SmsVerifierTest extends TestCase
         self::assertSame(VerifyResult::STATUS_LOCKED, $locked->status);
         self::assertSame(0, $locked->remaining);
         self::assertSame('验证码已失效，请重新获取', $locked->message);
-        self::assertNull($store->get('code:login_code:' . self::PHONE));
+        self::assertNull($store->get('code:login_code:' . self::KEY_PHONE));
         // 即便用正确码也不再通过，仍是已作废
         self::assertSame(VerifyResult::STATUS_LOCKED, $verifier->verify(self::PHONE, self::CODE)->status);
     }
@@ -192,10 +198,10 @@ final class SmsVerifierTest extends TestCase
         $register = $verifier->send(self::PHONE, 'register_code');
 
         self::assertTrue($register->ok);
-        self::assertTrue($store->exists('cooldown:login_code:' . self::PHONE));
-        self::assertTrue($store->exists('cooldown:register_code:' . self::PHONE));
-        self::assertSame(1, $rate->count('sms:rl:login_code:' . self::PHONE));
-        self::assertSame(1, $rate->count('sms:rl:register_code:' . self::PHONE));
+        self::assertTrue($store->exists('cooldown:login_code:' . self::KEY_PHONE));
+        self::assertTrue($store->exists('cooldown:register_code:' . self::KEY_PHONE));
+        self::assertSame(1, $rate->count('sms:rl:login_code:' . self::KEY_PHONE));
+        self::assertSame(1, $rate->count('sms:rl:register_code:' . self::KEY_PHONE));
 
         $this->expectException(RateLimitExceededException::class);
         $verifier->send(self::PHONE, 'login_code');
@@ -209,11 +215,11 @@ final class SmsVerifierTest extends TestCase
 
         $verifier->send(self::PHONE, 'login_code');
         $verifier->send(self::PHONE, 'register_code');
-        $code = (string) $store->get('code:login_code:' . self::PHONE);
+        $code = (string) $store->get('code:login_code:' . self::KEY_PHONE);
 
         self::assertTrue($verifier->verify(self::PHONE, $code, 'login_code')->ok);
-        self::assertFalse($store->exists('cooldown:login_code:' . self::PHONE));
-        self::assertTrue($store->exists('cooldown:register_code:' . self::PHONE));
+        self::assertFalse($store->exists('cooldown:login_code:' . self::KEY_PHONE));
+        self::assertTrue($store->exists('cooldown:register_code:' . self::KEY_PHONE));
     }
 
     public function testVerifyUnknownPhoneIsAbsent(): void
@@ -236,12 +242,296 @@ final class SmsVerifierTest extends TestCase
         $verifier = $this->makeVerifier($store, $rate);
 
         $verifier->send(self::PHONE);
-        $store->forget('code:login_code:' . self::PHONE);
+        $store->forget('code:login_code:' . self::KEY_PHONE);
 
         $result = $verifier->verify(self::PHONE, self::CODE);
 
         self::assertSame(VerifyResult::STATUS_EXPIRED, $result->status);
         self::assertSame('验证码已过期，请重新获取', $result->message);
+    }
+
+    public function testSendAndVerifyUseCanonicalPhoneKeys(): void
+    {
+        $spellings = [
+            '+8613800008000',
+            '13800008000',
+            '8613800008000',
+            '008613800008000',
+            '+86 138-0000-8000',
+        ];
+
+        foreach ($spellings as $spelling) {
+            $store = new ArraySmsStore();
+            $rate = new ArrayRateGuard();
+            $verifier = $this->makeVerifier($store, $rate);
+
+            self::assertTrue($verifier->send('+86 138-0000-8000')->ok);
+
+            $code = $store->get('code:login_code:' . self::KEY_PHONE);
+            self::assertNotNull($code);
+            self::assertSame(1, $rate->count('sms:rl:login_code:' . self::KEY_PHONE));
+
+            try {
+                $verifier->send($spelling);
+                self::fail('不同写法的同一号码应共用冷却键: ' . $spelling);
+            } catch (RateLimitExceededException) {
+            }
+
+            self::assertTrue($verifier->verify($spelling, (string) $code)->ok);
+        }
+    }
+
+    public function testHongKongSpellingsShareCanonicalKeys(): void
+    {
+        $store = new ArraySmsStore();
+        $rate = new ArrayRateGuard();
+        $verifier = $this->makeVerifier($store, $rate, ['gateway' => 'log'], ['default_region' => 'HK']);
+
+        self::assertTrue($verifier->send('+852 6123 4567')->ok);
+        $code = $store->get('code:login_code:+85261234567');
+        self::assertNotNull($code);
+        self::assertSame(1, $rate->count('sms:rl:login_code:+85261234567'));
+
+        try {
+            $verifier->send('0085261234567');
+            self::fail('香港号码不同写法应共用冷却键');
+        } catch (RateLimitExceededException) {
+        }
+
+        self::assertTrue($verifier->verify('85261234567', (string) $code)->ok);
+    }
+
+    public function testMacauBareEightDigitUsesConfiguredRegionForKey(): void
+    {
+        $store = new ArraySmsStore();
+        $rate = new ArrayRateGuard();
+        $verifier = $this->makeVerifier($store, $rate, ['gateway' => 'log'], ['default_region' => 'MO']);
+
+        self::assertTrue($verifier->send('66123456')->ok);
+        $code = $store->get('code:login_code:+85366123456');
+        self::assertNotNull($code);
+        self::assertTrue($verifier->verify('+853 6612 3456', (string) $code)->ok);
+    }
+
+    public function testTaiwanLocalAndInternationalSpellingsShareCanonicalKeys(): void
+    {
+        $store = new ArraySmsStore();
+        $rate = new ArrayRateGuard();
+        $verifier = $this->makeVerifier($store, $rate);
+
+        self::assertTrue($verifier->send('0912345678')->ok);
+        $code = $store->get('code:login_code:+886912345678');
+        self::assertNotNull($code);
+        self::assertSame(1, $rate->count('sms:rl:login_code:+886912345678'));
+
+        try {
+            $verifier->send('+886 912 345 678');
+            self::fail('台湾号码不同写法应共用冷却键');
+        } catch (RateLimitExceededException) {
+        }
+
+        self::assertTrue($verifier->verify('886912345678', (string) $code)->ok);
+    }
+
+    public function testBareEightDigitWithoutHkMoRegionIsRejectedBeforeSend(): void
+    {
+        $store = new ArraySmsStore();
+        $rate = new ArrayRateGuard();
+        $verifier = $this->makeVerifier($store, $rate);
+
+        try {
+            $verifier->send('61234567');
+            self::fail('默认地区为 CN 时裸 8 位无法判断归属');
+        } catch (InvalidPhoneException) {
+        }
+
+        self::assertSame([], $store->dump());
+        self::assertSame(0, $rate->count('sms:rl:login_code:+85261234567'));
+    }
+
+    public function testVerifyRejectsInvalidPhoneBeforeStorageAccess(): void
+    {
+        $store = new ArraySmsStore();
+        $verifier = $this->makeVerifier($store, new ArrayRateGuard());
+
+        foreach (['', 'not-a-phone', '12345'] as $phone) {
+            try {
+                $verifier->verify($phone, '123456');
+                self::fail('非法号码应抛异常: ' . $phone);
+            } catch (InvalidPhoneException) {
+            }
+        }
+
+        self::assertSame([], $store->dump());
+    }
+
+    public function testConcurrentCorrectVerifyConsumesCodeOnlyOnce(): void
+    {
+        $store = new ArraySmsStore();
+        $verifier = $this->makeVerifier($store, new ArrayRateGuard());
+        $verifier->send(self::PHONE);
+        $code = (string) $store->get('code:login_code:' . self::KEY_PHONE);
+
+        $statuses = [];
+        $this->runInCoroutine(function () use ($verifier, $code, &$statuses): void {
+            $channel = new Channel(2);
+            for ($i = 0; $i < 2; $i++) {
+                go(function () use ($verifier, $code, $channel): void {
+                    $channel->push($verifier->verify(self::PHONE, $code)->status);
+                });
+            }
+            for ($i = 0; $i < 2; $i++) {
+                $statuses[] = $channel->pop(1.0);
+            }
+        });
+
+        sort($statuses);
+        self::assertSame([VerifyResult::STATUS_ABSENT, VerifyResult::STATUS_OK], $statuses);
+        self::assertFalse($store->exists('code:login_code:' . self::KEY_PHONE));
+    }
+
+    public function testConcurrentWrongGuessesStopAtMaxVerify(): void
+    {
+        $store = new ArraySmsStore();
+        $verifier = $this->makeVerifier($store, new ArrayRateGuard(), ['gateway' => 'log'], ['max_verify' => 5]);
+        $verifier->send(self::PHONE);
+
+        $statuses = [];
+        $this->runInCoroutine(function () use ($verifier, &$statuses): void {
+            $channel = new Channel(20);
+            for ($i = 0; $i < 20; $i++) {
+                go(function () use ($verifier, $channel): void {
+                    $channel->push($verifier->verify(self::PHONE, '000000')->status);
+                });
+            }
+            for ($i = 0; $i < 20; $i++) {
+                $statuses[] = $channel->pop(1.0);
+            }
+        });
+
+        self::assertCount(4, array_keys($statuses, VerifyResult::STATUS_MISMATCH, true));
+        self::assertCount(16, array_keys($statuses, VerifyResult::STATUS_LOCKED, true));
+        self::assertSame('5', $store->get('attempts:login_code:' . self::KEY_PHONE));
+        self::assertFalse($store->exists('code:login_code:' . self::KEY_PHONE));
+        self::assertSame('locked', $store->get('trace:login_code:' . self::KEY_PHONE));
+    }
+
+    public function testRejectsInvalidNumericConfig(): void
+    {
+        $cases = [
+            'ttl' => ['ttl' => 0],
+            'ttl-negative' => ['ttl' => -1],
+            'max_verify' => ['max_verify' => 0],
+            'resend_interval' => ['resend_interval' => -1],
+        ];
+
+        foreach ($cases as $label => $override) {
+            try {
+                $this->makeVerifier(new ArraySmsStore(), new ArrayRateGuard(), ['gateway' => 'log'], $override);
+                self::fail('invalid verification config accepted: ' . $label);
+            } catch (InvalidConfigException $e) {
+                self::assertNotSame('', $e->getMessage(), $label);
+            }
+        }
+    }
+
+    public function testRejectsInvalidRateLimitConfiguration(): void
+    {
+        $cases = [
+            'max=0' => ['enabled' => true, 'key' => 'sms:rl:{template}:{phone}', 'max' => 0, 'period' => 60],
+            'period=0' => ['enabled' => true, 'key' => 'sms:rl:{template}:{phone}', 'max' => 1, 'period' => 0],
+            'key-without-phone' => ['enabled' => true, 'key' => 'sms:rl:{template}', 'max' => 1, 'period' => 60],
+        ];
+
+        foreach ($cases as $label => $rate) {
+            try {
+                $this->makeVerifier(new ArraySmsStore(), new ArrayRateGuard(), ['gateway' => 'log'], ['rate_limit' => $rate]);
+                self::fail('invalid rate config accepted: ' . $label);
+            } catch (InvalidConfigException $e) {
+                self::assertStringContainsString('rate_limit', $e->getMessage(), $label);
+            }
+        }
+    }
+
+    public function testRejectsNonBooleanRateEnabled(): void
+    {
+        $this->expectException(InvalidConfigException::class);
+        $this->makeVerifier(new ArraySmsStore(), new ArrayRateGuard(), ['gateway' => 'log'], [
+            'rate_limit' => [
+                'enabled' => 'sometimes',
+                'key' => 'sms:rl:{template}:{phone}',
+                'max' => 5,
+                'period' => 3600,
+            ],
+        ]);
+    }
+
+    public function testStringFalseDisablesRateLimit(): void
+    {
+        $store = new ArraySmsStore();
+        $rate = new ArrayRateGuard();
+        $verifier = $this->makeVerifier($store, $rate, ['gateway' => 'log'], [
+            'rate_limit' => [
+                'enabled' => 'false',
+                'key' => 'sms:rl:{template}:{phone}',
+                'max' => 0,
+                'period' => 0,
+            ],
+        ]);
+
+        self::assertTrue($verifier->send(self::PHONE)->ok);
+        self::assertSame(0, $rate->count('sms:rl:login_code:' . self::KEY_PHONE));
+    }
+
+    public function testStringTrueKeepsRateLimitEnabled(): void
+    {
+        $verifier = $this->makeVerifier(new ArraySmsStore(), new ArrayRateGuard(true), ['gateway' => 'log'], [
+            'rate_limit' => [
+                'enabled' => 'true',
+                'key' => 'sms:rl:{template}:{phone}',
+                'max' => 5,
+                'period' => 3600,
+            ],
+        ]);
+
+        $this->expectException(RateLimitExceededException::class);
+        $verifier->send(self::PHONE);
+    }
+
+    public function testRejectsBlankCodeParamKey(): void
+    {
+        $manager = new SmsManager([
+            'default_gateway' => 'main',
+            'gateways' => ['main' => ['gateway' => 'log']],
+        ]);
+
+        $this->expectException(InvalidConfigException::class);
+        new SmsVerifier(
+            $manager,
+            new ArraySmsStore(),
+            new ArrayRateGuard(),
+            ['ttl' => 300, 'max_verify' => 5, 'resend_interval' => 60],
+            null,
+            null,
+            '  ',
+        );
+    }
+
+    /**
+     * 协程相关用例需要 ext-swoole；与 Uuid 测试保持同一跳过策略。
+     */
+    private function runInCoroutine(callable $fn): void
+    {
+        if (!class_exists(Channel::class) || !class_exists(\Swoole\Coroutine::class)) {
+            self::markTestSkipped('ext-swoole is required for concurrency tests');
+        }
+        if (\Swoole\Coroutine::getCid() > 0) {
+            $fn();
+
+            return;
+        }
+
+        \Swoole\Coroutine\run($fn);
     }
 }
 

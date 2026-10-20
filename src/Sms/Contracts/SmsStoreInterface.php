@@ -43,7 +43,39 @@ interface SmsStoreInterface
     public function exists(string $key): bool;
 
     /**
-     * 原子自增并返回自增后的值；首次创建时施加 TTL。用于失败次数计数。
+     * 剩余存活秒数。
+     *
+     * @return int 剩余秒数；-1 表示键存在但无过期时间；-2 表示键不存在或已过期
+     */
+    public function ttl(string $key): int;
+
+    /**
+     * 原子自增并返回自增后的值；首次创建时施加 TTL，已有键缺失 TTL 时补上。
      */
     public function increment(string $key, int $ttl): int;
+
+    /**
+     * 原子校验并消费验证码：读取、比较、计数、锁定和成功清理必须在同一原子操作内完成，
+     * 保证并发下同一验证码至多成功一次，且进入比较的失败次数不超过 maxAttempts。
+     *
+     * - 码不存在：按 trace 返回 expired / absent / locked；
+     * - 码匹配：删除 code / attempts / cooldown / trace，返回 ok；
+     * - 码不匹配：原子自增 attempts；达到 maxAttempts 时删除 code 并写入 locked trace。
+     *
+     * @param string $input 已 trim 的用户输入
+     * @param int $maxAttempts <=0 表示不限制错误次数
+     * @param int $attemptTtl attempts 首次创建时的 TTL（秒）
+     * @param int $traceTtl 锁定痕迹 TTL（秒）
+     * @return array{status: string, remaining: int|null} status 取 VerifyResult::STATUS_* 之一
+     */
+    public function verifyCode(
+        string $codeKey,
+        string $attemptsKey,
+        string $traceKey,
+        string $cooldownKey,
+        string $input,
+        int $maxAttempts,
+        int $attemptTtl,
+        int $traceTtl,
+    ): array;
 }

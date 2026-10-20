@@ -7,7 +7,9 @@ namespace Swoolefy\Library\Sms;
 use Psr\Log\LoggerInterface;
 use Swoolefy\Library\Sms\Config\SmsConfig;
 use Swoolefy\Library\Sms\Contracts\SmsGatewayInterface;
+use Swoolefy\Library\Sms\Exception\InvalidPhoneException;
 use Swoolefy\Library\Sms\Exception\InvalidProviderException;
+use Swoolefy\Library\Sms\Exception\SmsApiException;
 use Swoolefy\Library\Sms\Support\PhoneMask;
 use Swoolefy\Library\Sms\ValueObject\SendResult;
 
@@ -26,6 +28,9 @@ use Swoolefy\Library\Sms\ValueObject\SendResult;
  */
 final class SmsManager
 {
+    /** 日志里最多携带的脱敏号码数，避免群发时一次写入上千条 */
+    private const MAX_LOGGED_PHONES = 5;
+
     /** @var array<string, SmsGatewayInterface> 通道名 → Gateway 实例 */
     private array $gateways = [];
 
@@ -68,7 +73,12 @@ final class SmsManager
             throw new InvalidProviderException("Sms gateway [{$name}] is not configured");
         }
 
-        $gateway = $this->factory->make($name, $this->config->gateway($name));
+        $gatewayConfig = $this->config->gateway($name);
+        if (!array_key_exists('default_region', $gatewayConfig)) {
+            $gatewayConfig['default_region'] = $this->config->defaultRegion();
+        }
+
+        $gateway = $this->factory->make($name, $gatewayConfig);
         $this->gateways[$name] = $gateway;
 
         return $gateway;
@@ -90,9 +100,19 @@ final class SmsManager
     public function sendVia(?string $name, SmsMessage $message): SendResult
     {
         $gateway = $this->gateway($name);
-        $result = $gateway->send($message);
+        // channel 是配置里的通道名（同 driver 的多个通道可区分），gateway 是驱动名
+        $channel = $name ?? $this->config->defaultGateway();
+        $startedAt = microtime(true);
 
-        $this->logSend($gateway->name(), $message, $result);
+        try {
+            $result = $gateway->send($message);
+        } catch (\Throwable $e) {
+            $this->logSendFailure($channel, $gateway->name(), $message, $e, microtime(true) - $startedAt);
+
+            throw $e;
+        }
+
+        $this->logSend($channel, $gateway->name(), $message, $result, microtime(true) - $startedAt);
 
         return $result;
     }
@@ -123,20 +143,85 @@ final class SmsManager
         return $this->config;
     }
 
-    private function logSend(string $gatewayName, SmsMessage $message, SendResult $result): void
-    {
+    private function logSend(
+        string $channel,
+        string $gatewayName,
+        SmsMessage $message,
+        SendResult $result,
+        float $duration,
+    ): void {
         if ($this->logger === null) {
             return;
         }
 
-        // 安全：只记通道 / 模板 / 脱敏号码数 / 结果码，绝不记 AK/SK、验证码明文、完整号码
-        $this->logger->info('sms send', [
+        // 安全：只记通道 / 模板 / 脱敏号码 / 结果码，绝不记 AK/SK、验证码明文、完整号码
+        try {
+            $this->logger->info('sms send', $this->logContext($channel, $gatewayName, $message) + [
+                'ok' => $result->ok,
+                'code' => $result->code,
+                'request_id' => $result->requestId,
+                'failed_count' => count($result->failedPhones),
+                'duration_ms' => round($duration * 1000, 2),
+            ]);
+        } catch (\Throwable) {
+            // 日志失败不能影响发送结果
+        }
+    }
+
+    private function logSendFailure(
+        string $channel,
+        string $gatewayName,
+        SmsMessage $message,
+        \Throwable $e,
+        float $duration,
+    ): void {
+        if ($this->logger === null) {
+            return;
+        }
+
+        try {
+            $context = $this->logContext($channel, $gatewayName, $message) + [
+                'exception' => $e::class,
+                'provider_code' => $e instanceof SmsApiException ? $e->getProviderCode() : null,
+                'request_id' => $e instanceof SmsApiException ? $e->getRequestId() : null,
+                'duration_ms' => round($duration * 1000, 2),
+            ];
+            $safeMessage = $this->safeFailureMessage($e);
+            if ($safeMessage !== null) {
+                $context['message'] = $safeMessage;
+            }
+            $this->logger->error('sms send failed', $context);
+        } catch (\Throwable) {
+            // 日志失败不能覆盖原始发送异常
+        }
+    }
+
+    /**
+     * 厂商 SDK 消息可能带请求细节，号码异常会带完整号码，二者都不落原文。
+     */
+    private function safeFailureMessage(\Throwable $e): ?string
+    {
+        if ($e instanceof SmsApiException || $e instanceof InvalidPhoneException) {
+            return null;
+        }
+
+        return $e->getMessage();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function logContext(string $channel, string $gatewayName, SmsMessage $message): array
+    {
+        $phones = PhoneMask::maskAll($message->phones);
+
+        return [
+            'channel' => $channel,
             'gateway' => $gatewayName,
             'template' => $message->template,
             'count' => $message->phones->count(),
-            'phones' => PhoneMask::maskAll($message->phones),
-            'ok' => $result->ok,
-            'code' => $result->code,
-        ]);
+            'phones' => array_slice($phones, 0, self::MAX_LOGGED_PHONES),
+            'phones_truncated' => count($phones) > self::MAX_LOGGED_PHONES,
+        ];
     }
 }

@@ -10,7 +10,7 @@ use Swoolefy\Library\Sms\Exception\InvalidProviderException;
  * 模板别名 → 厂商模板码。
  *
  * 已配置的别名走映射。看起来像厂商真实码（SMS_100001、纯数字）原样放行。
- * 配了映射表却传入未知别名时抛错，避免把 login_code 这种名字直接发给厂商。
+ * 未知别名一律抛错（包括未配置任何 templates 的情况），避免把 login_code 这种名字直接发给厂商。
  */
 final class TemplateCodeResolver
 {
@@ -23,8 +23,14 @@ final class TemplateCodeResolver
             return (string) $templates[$alias];
         }
 
-        if (self::isRawCode($alias) || $templates === []) {
+        if (self::isRawCode($alias)) {
             return $alias;
+        }
+
+        if ($templates === []) {
+            throw new InvalidProviderException(
+                "Sms template alias [{$alias}] cannot be sent: no templates mapping is configured"
+            );
         }
 
         throw new InvalidProviderException("Sms template alias [{$alias}] is not configured");

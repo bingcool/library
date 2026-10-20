@@ -18,4 +18,9 @@ interface RateGuardInterface
      * @return bool true 表示已超限（应拒绝），false 表示放行
      */
     public function tooMany(string $key, int $max, int $window): bool;
+
+    /**
+     * 距离窗口内最早一次消费滑出窗口的秒数；窗口为空返回 0。
+     */
+    public function remaining(string $key, int $window): int;
 }

@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Swoolefy\Library\Sms\Gateway;
 
-use Psr\Log\LoggerInterface;
 use Swoolefy\Library\Sms\Contracts\SmsGatewayInterface;
+use Swoolefy\Library\Sms\Exception\InvalidProviderException;
 use Swoolefy\Library\Sms\Support\PhoneMask;
 use Swoolefy\Library\Sms\Support\TemplateCodeResolver;
 use Swoolefy\Library\Sms\SmsMessage;
+use Swoolefy\Library\Sms\ValueObject\LoggedSms;
 use Swoolefy\Library\Sms\ValueObject\SendResult;
 
 /**
- * 日志 / 开发网关（策略）。不接任何厂商，直接落地一条脱敏日志并返回可控结果。
+ * 日志 / 开发网关（策略）。不接任何厂商，直接返回可控结果；发送日志由 Manager 统一记录。
  *
  * 定位：
  * - 本地 / 联调 / 灰度环境免凭证跑通「发送 → 回执」全链路
@@ -23,6 +24,7 @@ use Swoolefy\Library\Sms\ValueObject\SendResult;
  * - `simulate`：`success`（默认）| `failure` | `partial`
  * - `fail_code` / `fail_message`：失败 / 部分失败时回填的状态码与描述
  * - `templates`：模板别名 → 真实 TemplateCode 映射（与其它网关一致）
+ * - `keep_phones`：默认 false，记录快照中的号码打码；本地联调需要原始号码时显式设为 true
  *
  * 注意：作为可断言的开发网关，本类**允许**记录已发消息（`sentMessages()`）；
  * 生产厂商网关仍严格遵守「无请求态」约定，二者定位不同。
@@ -44,22 +46,38 @@ final class LogGateway implements SmsGatewayInterface
 
     private ?string $failMessage;
 
-    /** 内存里只留最近若干条，且参数打码，避免 Worker 里堆积验证码明文 */
+    /** 内存里只留最近若干条，且号码/参数打码，避免 Worker 里堆积 PII 与验证码明文 */
     private const MAX_SENT = 32;
 
-    /** @var list<SmsMessage> 已发送消息的打码副本 */
+    /** @var list<LoggedSms> 已发送消息的安全快照 */
     private array $sent = [];
 
+    /** 累计发送次数（不受快照上限影响） */
+    private int $totalSends = 0;
+
+    private bool $keepPhones;
+
     /**
-     * @param array<string, mixed> $config simulate / fail_code / fail_message / templates
-     * @param LoggerInterface|null $logger 框架 log 组件；仅记录脱敏信息
+     * @param array<string, mixed> $config simulate / fail_code / fail_message / templates / keep_phones
      */
-    public function __construct(private array $config, private ?LoggerInterface $logger = null)
+    public function __construct(private array $config)
     {
         $this->templates = is_array($config['templates'] ?? null) ? $config['templates'] : [];
-        $this->mode = strtolower((string) ($config['simulate'] ?? self::MODE_SUCCESS));
+        $this->mode = strtolower(trim((string) ($config['simulate'] ?? self::MODE_SUCCESS)));
+        if (!in_array($this->mode, [self::MODE_SUCCESS, self::MODE_FAILURE, self::MODE_PARTIAL], true)) {
+            throw new InvalidProviderException(sprintf(
+                'Log gateway simulate mode [%s] must be success, failure or partial',
+                $this->mode
+            ));
+        }
         $this->failCode = (string) ($config['fail_code'] ?? 'isv.MOCK_FAILURE');
         $this->failMessage = isset($config['fail_message']) ? (string) $config['fail_message'] : 'Log gateway simulated failure';
+
+        $keepPhones = filter_var($config['keep_phones'] ?? false, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+        if ($keepPhones === null) {
+            throw new InvalidProviderException('Log gateway keep_phones must be a boolean');
+        }
+        $this->keepPhones = $keepPhones;
     }
 
     public function name(): string
@@ -74,6 +92,7 @@ final class LogGateway implements SmsGatewayInterface
 
     public function send(SmsMessage $message): SendResult
     {
+        $this->totalSends++;
         $this->remember($message);
 
         $phones = $message->phones->toArray();
@@ -84,29 +103,30 @@ final class LogGateway implements SmsGatewayInterface
             default => $this->successResult($phones),
         };
 
-        $this->log($message, $result);
-
         return $result;
     }
 
     /**
-     * 已「发送」的消息记录。
+     * 已「发送」消息的安全快照（仅保留最近 MAX_SENT 条）。
      *
-     * @return list<SmsMessage>
+     * @return list<LoggedSms>
      */
     public function sentMessages(): array
     {
         return $this->sent;
     }
 
-    public function lastMessage(): ?SmsMessage
+    public function lastMessage(): ?LoggedSms
     {
         return $this->sent === [] ? null : $this->sent[count($this->sent) - 1];
     }
 
+    /**
+     * 累计发送次数（不受内存快照上限影响）。
+     */
     public function sendCount(): int
     {
-        return count($this->sent);
+        return $this->totalSends;
     }
 
     /**
@@ -166,12 +186,13 @@ final class LogGateway implements SmsGatewayInterface
             unset($value);
         }
 
-        $this->sent[] = new SmsMessage(
-            $message->phones->toArray(),
-            $message->template,
-            $redacted,
-            $message->signName,
-        );
+        $phones = [];
+        foreach ($message->phones->toArray() as $phone) {
+            $phone = (string) $phone;
+            $phones[] = $this->keepPhones ? $phone : PhoneMask::mask($phone);
+        }
+
+        $this->sent[] = new LoggedSms($phones, $message->template, $redacted, $message->signName);
 
         if (count($this->sent) > self::MAX_SENT) {
             $this->sent = array_slice($this->sent, -self::MAX_SENT);
@@ -181,22 +202,5 @@ final class LogGateway implements SmsGatewayInterface
     private function requestId(): string
     {
         return 'log-' . bin2hex(random_bytes(8));
-    }
-
-    private function log(SmsMessage $message, SendResult $result): void
-    {
-        if ($this->logger === null) {
-            return;
-        }
-
-        // 安全：只记通道 / 模板 / 脱敏号码，绝不记验证码明文 / AK/SK
-        $this->logger->info('sms send (log gateway)', [
-            'gateway' => $this->name(),
-            'template' => $message->template,
-            'count' => $message->phones->count(),
-            'phones' => PhoneMask::maskAll($message->phones),
-            'ok' => $result->ok,
-            'code' => $result->code,
-        ]);
     }
 }

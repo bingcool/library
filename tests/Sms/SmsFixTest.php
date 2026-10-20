@@ -6,6 +6,7 @@ namespace Swoolefy\Library\Tests\Sms;
 
 use PHPUnit\Framework\TestCase;
 use Swoolefy\Library\Redis\RedisConnection;
+use Swoolefy\Library\Sms\Exception\InvalidConfigException;
 use Swoolefy\Library\Sms\Exception\InvalidPhoneException;
 use Swoolefy\Library\Sms\Exception\InvalidProviderException;
 use Swoolefy\Library\Sms\Exception\RateLimitExceededException;
@@ -21,6 +22,7 @@ use Swoolefy\Library\Sms\ValueObject\PhoneList;
 use Swoolefy\Library\Sms\ValueObject\SendResult;
 use Swoolefy\Library\Sms\Verification\CodeGenerator;
 use Swoolefy\Library\Sms\Verification\DurationRateGuard;
+use Swoolefy\Library\Sms\Verification\RedisSmsStore;
 use Swoolefy\Library\Sms\Verification\SmsVerifier;
 
 /**
@@ -46,6 +48,159 @@ final class SmsFixTest extends TestCase
         self::assertArrayNotHasKey('TemplateCode', $payload);
         self::assertSame(['123456'], $payload['TemplateParamSet']);
         self::assertSame(3, $gateway->clientTimeoutSeconds());
+    }
+
+    public function testTencentPayloadNormalizesAllFourRegions(): void
+    {
+        $gateway = new TencentGateway([
+            'sign_name' => '示例签名',
+            'sdk_app_id' => '1400000000',
+            'templates' => ['login_code' => '100001'],
+        ], new \stdClass());
+
+        self::assertSame(
+            ['+8613800008000'],
+            $gateway->buildRequestPayload(SmsMessage::make('13800008000', 'login_code'))['PhoneNumberSet']
+        );
+        self::assertSame(
+            ['+85261234567'],
+            $gateway->buildRequestPayload(SmsMessage::make('+852 6123 4567', 'login_code'))['PhoneNumberSet']
+        );
+        self::assertSame(
+            ['+85366123456'],
+            $gateway->buildRequestPayload(SmsMessage::make('85366123456', 'login_code'))['PhoneNumberSet']
+        );
+        self::assertSame(
+            ['+886912345678'],
+            $gateway->buildRequestPayload(SmsMessage::make('0912345678', 'login_code'))['PhoneNumberSet']
+        );
+    }
+
+    public function testTencentUsesDefaultRegionForBareEightDigitNumbers(): void
+    {
+        $hongKong = new TencentGateway([
+            'sign_name' => '示例签名',
+            'sdk_app_id' => '1400000000',
+            'templates' => ['login_code' => '100001'],
+            'default_region' => 'HK',
+        ], new \stdClass());
+        self::assertSame(
+            ['+85261234567'],
+            $hongKong->buildRequestPayload(SmsMessage::make('61234567', 'login_code'))['PhoneNumberSet']
+        );
+
+        $macau = new TencentGateway([
+            'sign_name' => '示例签名',
+            'sdk_app_id' => '1400000000',
+            'templates' => ['login_code' => '100001'],
+            'default_region' => 'MO',
+        ], new \stdClass());
+        self::assertSame(
+            ['+85366123456'],
+            $macau->buildRequestPayload(SmsMessage::make('66123456', 'login_code'))['PhoneNumberSet']
+        );
+    }
+
+    public function testTencentRejectsBareEightDigitWithoutHkMoDefault(): void
+    {
+        $gateway = new TencentGateway([
+            'sign_name' => '示例签名',
+            'sdk_app_id' => '1400000000',
+            'templates' => ['login_code' => '100001'],
+        ], new \stdClass());
+
+        $this->expectException(InvalidPhoneException::class);
+        $gateway->buildRequestPayload(SmsMessage::make('61234567', 'login_code'));
+    }
+
+    public function testTencentAcceptsDefaultRegionWithPlusPrefix(): void
+    {
+        $gateway = new TencentGateway([
+            'sign_name' => '示例签名',
+            'sdk_app_id' => '1400000000',
+            'templates' => ['login_code' => '100001'],
+            'default_region' => '+86',
+        ], new \stdClass());
+
+        self::assertSame(
+            ['+8613800008000'],
+            $gateway->buildRequestPayload(SmsMessage::make('13800008000', 'login_code'))['PhoneNumberSet']
+        );
+    }
+
+    public function testTencentRejectsMixedMainlandAndOverseasNumbers(): void
+    {
+        $gateway = new TencentGateway([
+            'sign_name' => '示例签名',
+            'sdk_app_id' => '1400000000',
+            'templates' => ['login_code' => '100001'],
+        ], new \stdClass());
+
+        $this->expectException(InvalidPhoneException::class);
+        $gateway->buildRequestPayload(SmsMessage::make(
+            ['13800008000', '+85261234567'],
+            'login_code'
+        ));
+    }
+
+    public function testTencentAllowsMultipleOverseasNumbers(): void
+    {
+        $gateway = new TencentGateway([
+            'sign_name' => '示例签名',
+            'sdk_app_id' => '1400000000',
+            'templates' => ['login_code' => '100001'],
+        ], new \stdClass());
+
+        $payload = $gateway->buildRequestPayload(SmsMessage::make(
+            ['+85261234567', '0912345678', '+14155552671'],
+            'login_code'
+        ));
+
+        self::assertSame(
+            ['+85261234567', '+886912345678', '+14155552671'],
+            $payload['PhoneNumberSet']
+        );
+    }
+
+    public function testAliyunPayloadNormalizesAllFourRegions(): void
+    {
+        $gateway = new AliyunGateway([
+            'sign_name' => '示例签名',
+            'templates' => ['login_code' => 'SMS_100001'],
+        ], new \stdClass());
+
+        self::assertSame(
+            '13800008000',
+            $gateway->buildRequestPayload(SmsMessage::make('+8613800008000', 'login_code'))['phoneNumbers']
+        );
+        self::assertSame(
+            '85261234567',
+            $gateway->buildRequestPayload(SmsMessage::make('+85261234567', 'login_code'))['phoneNumbers']
+        );
+        self::assertSame(
+            '85366123456',
+            $gateway->buildRequestPayload(SmsMessage::make('85366123456', 'login_code'))['phoneNumbers']
+        );
+        self::assertSame(
+            '886912345678',
+            $gateway->buildRequestPayload(SmsMessage::make('0912345678', 'login_code'))['phoneNumbers']
+        );
+    }
+
+    public function testAliyunAcceptsMixedMainlandAndOverseasNumbers(): void
+    {
+        $gateway = new AliyunGateway([
+            'sign_name' => '示例签名',
+            'templates' => ['login_code' => 'SMS_100001'],
+        ], new \stdClass());
+
+        self::assertSame(
+            '13800008000,85261234567',
+            $gateway->buildRequestPayload(SmsMessage::make(
+                ['13800008000', '+85261234567'],
+                'login_code'
+            ))['phoneNumbers']
+        );
     }
 
     public function testTencentRejectsMoreThan200Phones(): void
@@ -126,7 +281,7 @@ final class SmsFixTest extends TestCase
         $verifier = $this->verifier($store, $rate);
 
         $verifier->send('13800008000');
-        self::assertSame(1, $rate->count('sms:rl:login_code:13800008000'));
+        self::assertSame(1, $rate->count('sms:rl:login_code:+8613800008000'));
 
         try {
             $verifier->send('13800008000');
@@ -134,7 +289,7 @@ final class SmsFixTest extends TestCase
         } catch (RateLimitExceededException) {
         }
 
-        self::assertSame(1, $rate->count('sms:rl:login_code:13800008000'));
+        self::assertSame(1, $rate->count('sms:rl:login_code:+8613800008000'));
     }
 
     public function testDifferentTemplatesDoNotOverwriteEachOther(): void
@@ -146,10 +301,10 @@ final class SmsFixTest extends TestCase
         $verifier->send('13800008000', 'login_code');
         $verifier->send('13800008000', 'register_code');
 
-        self::assertNotNull($store->get('code:login_code:13800008000'));
-        self::assertNotNull($store->get('code:register_code:13800008000'));
+        self::assertNotNull($store->get('code:login_code:+8613800008000'));
+        self::assertNotNull($store->get('code:register_code:+8613800008000'));
         self::assertTrue($verifier->verify('13800008000', '999999', 'login_code')->ok);
-        self::assertNotNull($store->get('code:register_code:13800008000'));
+        self::assertNotNull($store->get('code:register_code:+8613800008000'));
     }
 
     public function testLogGatewayRedactsParamsAndCapsHistory(): void
@@ -175,6 +330,94 @@ final class SmsFixTest extends TestCase
         self::assertStringContainsString('13800008000', (string) $redis->keys[0]);
         self::assertStringContainsString('13900009000', (string) $redis->keys[1]);
         self::assertNotSame($redis->keys[0], $redis->keys[1]);
+    }
+
+    public function testTencentBlankMessageSignFallsBackToDefault(): void
+    {
+        $gateway = new TencentGateway([
+            'sign_name' => '示例签名',
+            'sdk_app_id' => '1400000000',
+            'templates' => ['login_code' => '100001'],
+        ], new \stdClass());
+
+        foreach (['', '   '] as $sign) {
+            $payload = $gateway->buildRequestPayload(SmsMessage::make('13800008000', 'login_code', [], $sign));
+            self::assertSame('示例签名', $payload['SignName']);
+        }
+
+        $payload = $gateway->buildRequestPayload(SmsMessage::make('13800008000', 'login_code', [], ' 其他签名 '));
+        self::assertSame('其他签名', $payload['SignName']);
+    }
+
+    public function testAliyunBlankMessageSignFallsBackToDefault(): void
+    {
+        $gateway = new AliyunGateway([
+            'sign_name' => '示例签名',
+            'templates' => ['login_code' => 'SMS_100001'],
+        ], new \stdClass());
+
+        foreach (['', '   '] as $sign) {
+            $payload = $gateway->buildRequestPayload(SmsMessage::make('13800008000', 'login_code', [], $sign));
+            self::assertSame('示例签名', $payload['signName']);
+        }
+
+        $payload = $gateway->buildRequestPayload(SmsMessage::make('13800008000', 'login_code', [], ' 其他签名 '));
+        self::assertSame('其他签名', $payload['signName']);
+    }
+
+    public function testRedisStoreRejectsNonPositiveTtl(): void
+    {
+        $store = new RedisSmsStore('cache');
+        $calls = [
+            'put' => static fn () => $store->put('k', 'v', 0),
+            'put-negative' => static fn () => $store->put('k', 'v', -1),
+            'add' => static fn () => $store->add('k', 'v', 0),
+            'increment' => static fn () => $store->increment('k', 0),
+            'verifyCode' => static fn () => $store->verifyCode('c', 'a', 't', 'cd', '1', 5, 0, 10),
+        ];
+
+        $rejected = 0;
+        foreach ($calls as $label => $call) {
+            try {
+                $call();
+                self::fail('ttl<=0 accepted: ' . $label);
+            } catch (InvalidConfigException) {
+                $rejected++;
+            }
+        }
+
+        self::assertSame(count($calls), $rejected);
+    }
+
+    public function testDurationRateGuardRejectsNonPositiveLimits(): void
+    {
+        $guard = new DurationRateGuard('cache');
+        $rejected = 0;
+
+        foreach ([[0, 60], [5, 0]] as [$max, $window]) {
+            try {
+                $guard->tooMany('key', $max, $window);
+                self::fail(sprintf('invalid limits accepted: max=%d window=%d', $max, $window));
+            } catch (InvalidConfigException) {
+                $rejected++;
+            }
+        }
+
+        self::assertSame(2, $rejected);
+    }
+
+    public function testCodeGeneratorRejectsUnknownType(): void
+    {
+        $this->expectException(InvalidConfigException::class);
+        new CodeGenerator(6, 'numeric');
+    }
+
+    public function testCodeGeneratorNormalizesTypeCaseAndWhitespace(): void
+    {
+        $generator = new CodeGenerator(6, ' ALNUM ', static fn (int $min, int $max): int => $max);
+
+        self::assertSame('alnum', $generator->getType());
+        self::assertSame('ZZZZZZ', $generator->generate());
     }
 
     /**

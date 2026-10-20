@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Swoolefy\Library\Sms\Verification;
 
+use Swoolefy\Library\Sms\Exception\InvalidConfigException;
 use Swoolefy\Library\Sms\Exception\SmsException;
 
 /**
@@ -34,6 +35,14 @@ final class CodeGenerator
         $this->randomInt = $randomInt === null ? null : $randomInt(...);
         if ($this->length < 4 || $this->length > 12) {
             throw new SmsException('Verification code length must be between 4 and 12');
+        }
+
+        $this->type = strtolower(trim($this->type));
+        if (!in_array($this->type, ['number', 'alnum'], true)) {
+            throw new InvalidConfigException(sprintf(
+                'Verification code type [%s] must be number or alnum',
+                $type
+            ));
         }
     }
 

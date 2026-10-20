@@ -6,6 +6,7 @@ namespace Swoolefy\Library\Sms\Testing;
 
 use Swoolefy\Library\Sms\Contracts\SmsGatewayInterface;
 use Swoolefy\Library\Sms\SmsMessage;
+use Swoolefy\Library\Sms\Support\TemplateCodeResolver;
 use Swoolefy\Library\Sms\ValueObject\SendResult;
 
 /**
@@ -91,7 +92,8 @@ final class FakeSmsGateway implements SmsGatewayInterface
 
     public function templateCode(string $alias): ?string
     {
-        return isset($this->templates[$alias]) ? (string) $this->templates[$alias] : $alias;
+        // 与生产网关共用解析规则，避免替身放行未配置的别名
+        return TemplateCodeResolver::resolve($this->templates, $alias);
     }
 
     /**

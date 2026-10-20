@@ -85,6 +85,33 @@ final class SmsManagerTest extends TestCase
         self::assertSame(1, $fake->sendCount());
     }
 
+    public function testManagerInjectsTopLevelDefaultRegionIntoGatewayConfig(): void
+    {
+        $manager = new SmsManager([
+            'sms' => [
+                'default_region' => 'HK',
+                'default_gateway' => 'custom',
+                'gateways' => [
+                    'custom' => ['gateway' => 'capture'],
+                    'override' => ['gateway' => 'capture', 'default_region' => 'MO'],
+                ],
+            ],
+        ]);
+
+        $captured = [];
+        $manager->extendDriver('capture', static function (array $config, string $name) use (&$captured): FakeSmsGateway {
+            $captured[$name] = $config;
+
+            return new FakeSmsGateway('capture');
+        });
+
+        $manager->gateway('custom');
+        $manager->gateway('override');
+
+        self::assertSame('HK', $captured['custom']['default_region']);
+        self::assertSame('MO', $captured['override']['default_region']);
+    }
+
     public function testLoggerRecordsMaskedPhoneOnly(): void
     {
         $logger = new class extends AbstractLogger {
@@ -100,7 +127,9 @@ final class SmsManagerTest extends TestCase
         $manager = new SmsManager($this->config(), $logger);
         $manager->send(SmsMessage::make('13800008000', 'login_code', ['code' => '123456']));
 
+        // 发送日志只由 Manager 记录一条，LogGateway 不再重复写
         self::assertCount(1, $logger->records);
+        self::assertSame('sms send', $logger->records[0]['message']);
         $context = $logger->records[0]['context'];
         // 号码脱敏，不含完整号码，不含验证码明文
         self::assertSame(['138****8000'], $context['phones']);

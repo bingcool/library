@@ -51,6 +51,20 @@ final class GatewayTest extends TestCase
         self::assertCount(1, $result->failedPhones);
     }
 
+    public function testLogGatewayTrimsSimulateMode(): void
+    {
+        $gw = new LogGateway(['gateway' => 'log', 'simulate' => ' Failure ']);
+        $result = $gw->send(SmsMessage::make('13800008000', 'login_code'));
+
+        self::assertFalse($result->ok);
+    }
+
+    public function testLogGatewayRejectsUnknownSimulateMode(): void
+    {
+        $this->expectException(InvalidProviderException::class);
+        new LogGateway(['gateway' => 'log', 'simulate' => 'sometimes']);
+    }
+
     public function testLogGatewayTemplateCodeAliasAndRaw(): void
     {
         $gw = new LogGateway(['templates' => ['login_code' => 'SMS_1']]);

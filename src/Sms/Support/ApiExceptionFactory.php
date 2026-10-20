@@ -36,6 +36,15 @@ final class ApiExceptionFactory
             return $e->code;
         }
 
+        // 普通 \Exception 的 code 是 protected，只能通过 getCode() 读取（整型 0 视为未设置）
+        $code = $e->getCode();
+        if (is_int($code) && $code !== 0) {
+            return (string) $code;
+        }
+        if (is_string($code) && $code !== '' && $code !== '0') {
+            return $code;
+        }
+
         return null;
     }
 
@@ -48,8 +57,15 @@ final class ApiExceptionFactory
             }
         }
 
-        if (isset($e->data) && is_array($e->data)) {
-            $requestId = $e->data['RequestId'] ?? $e->data['requestId'] ?? null;
+        $data = null;
+        if (method_exists($e, 'getData')) {
+            $data = $e->getData();
+        }
+        if (!is_array($data) && isset($e->data) && is_array($e->data)) {
+            $data = $e->data;
+        }
+        if (is_array($data)) {
+            $requestId = $data['RequestId'] ?? $data['requestId'] ?? null;
             if (is_string($requestId) && $requestId !== '') {
                 return $requestId;
             }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Swoolefy\Library\Sms\Config;
 
+use Swoolefy\Library\Sms\Support\PhoneNormalizer;
+
 /**
  * sms.php 配置段的只读访问器。
  *
@@ -101,14 +103,36 @@ final class SmsConfig
     }
 
     /**
-     * 验证码策略配置块。
+     * 号码默认地区：`default_region`（CN/HK/MO/TW 或 86/852/853/886）。
+     *
+     * 仅用于裸号码归属判断；境外号码仍应显式带 `+` 或 `00`。
+     *
+     * @throws \Swoolefy\Library\Sms\Exception\InvalidConfigException 配置了不支持的地区
+     */
+    public function defaultRegion(): string
+    {
+        $value = $this->config['default_region'] ?? null;
+        if ($value === null || (is_string($value) && trim($value) === '')) {
+            return PhoneNormalizer::DEFAULT_REGION;
+        }
+
+        return PhoneNormalizer::normalizeRegion((string) $value);
+    }
+
+    /**
+     * 验证码策略配置块。未单独配置时继承顶层 `default_region`。
      *
      * @return array<string, mixed>
      */
     public function verification(): array
     {
         $v = $this->config['verification'] ?? [];
+        $v = is_array($v) ? $v : [];
 
-        return is_array($v) ? $v : [];
+        if (!array_key_exists('default_region', $v)) {
+            $v['default_region'] = $this->defaultRegion();
+        }
+
+        return $v;
     }
 }

@@ -18,6 +18,8 @@ final class SmsMessage
 {
     public PhoneList $phones;
 
+    private int $max;
+
     /**
      * @param string $template 模板别名（如 login_code）或真实 TemplateCode
      * @param array<string, mixed> $params 模板变量（关联数组）
@@ -30,6 +32,7 @@ final class SmsMessage
         public ?string $signName = null,
         int $max = PhoneList::DEFAULT_MAX,
     ) {
+        $this->max = $max;
         $this->phones = PhoneList::make($phones, $max);
     }
 
@@ -44,8 +47,9 @@ final class SmsMessage
         string $template,
         array $params = [],
         ?string $signName = null,
+        int $max = PhoneList::DEFAULT_MAX,
     ): self {
-        return new self($phones, $template, $params, $signName);
+        return new self($phones, $template, $params, $signName, $max);
     }
 
     /**
@@ -55,7 +59,7 @@ final class SmsMessage
      */
     public function to(string|array $phones): self
     {
-        $this->phones = PhoneList::make($phones);
+        $this->phones = PhoneList::make($phones, $this->max);
 
         return $this;
     }

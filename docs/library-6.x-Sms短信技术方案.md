@@ -31,7 +31,7 @@
 **非目标：**
 
 - 不重写各家签名算法细节，委托官方 SDK
-- 不做国际短信路由 / 号码归属地（可后续扩展网关）
+- 不做号码归属地查询 / 智能路由；仅对大陆、香港、澳门、台湾做 E.164 归一化
 - 不在组件内自造限流器，复用 `RateLimit`
 - 不建 SQL 表（验证码走 Redis，与框架 Job「零建表」风格一致）
 
@@ -110,10 +110,12 @@ src/Sms/
 ├── Support/
 │   ├── SdkGuard.php
 │   ├── PhoneMask.php                # 日志脱敏 138****8000
+│   ├── PhoneNormalizer.php          # 大陆/港澳台 → E.164（默认地区、00/+ 前缀）
 │   └── TemplateParamMapper.php       # 关联数组 → 厂商参数格式
 └── Exception/
     ├── SmsException.php            # base
     ├── InvalidProviderException.php  # 网关未配置（对齐 Oauth/FileStorage 同名）
+    ├── InvalidConfigException.php    # 配置值非法（如 default_region）
     ├── MissingSdkException.php
     ├── SmsApiException.php          # 厂商返回业务错误
     ├── InvalidPhoneException.php
@@ -134,6 +136,8 @@ return [
         'default_gateway' => 'aliyun',
         // Config/component/cache.php 里的组件名，验证码存储和限流都用它
         'redis_component' => 'cache',
+        // 裸号码默认地区：CN | HK | MO | TW（兼容 86/852/853/886）
+        'default_region' => 'CN',
 
         // 逻辑通道：业务用名字，不用关心厂商
         'gateways' => [
@@ -173,11 +177,11 @@ return [
             'type'        => 'number',        // number|alnum
             'ttl'         => 300,             // code 有效期(秒)
             'max_verify'  => 5,               // 单码最大校验次数
-            ' resend_interval' => 60,          // 同一场景、同一号码的重发间隔(秒)
+            'resend_interval' => 60,           // 同一场景、同一号码的重发间隔(秒)
             // 依赖库内 RateLimit 组件的 key 前缀与窗口配置
             'rate_limit'  => [
                 'enabled' => true,
-                'key'     => 'sms:vl:{template}:{phone}',
+                'key'     => 'sms:rl:{template}:{phone}',
                 'max'     => 5,               // 窗口内最多发送条数
                 'period'  => 3600,            // 秒
             ],
@@ -188,7 +192,18 @@ return [
 
 ### 6.2 `SmsConfig`
 
-对齐 `OauthConfig`/`FileStorageConfig`：`fromArray()` 兼容外层 `sms` 包裹；`defaultGateway()`、`redisComponent()`、`hasGateway()`、`gateway()`、`verification()`。`redisComponent()` 默认 `cache`，对应 `Config/component/cache.php` 的组件键。
+对齐 `OauthConfig`/`FileStorageConfig`：`fromArray()` 兼容外层 `sms` 包裹；`defaultGateway()`、`redisComponent()`、`defaultRegion()`、`hasGateway()`、`gateway()`、`verification()`。`redisComponent()` 默认 `cache`，对应 `Config/component/cache.php` 的组件键；`defaultRegion()` 默认 `CN`，`verification()` 未单独配置时继承顶层值。
+
+### 6.2.1 号码归一化
+
+`Support\PhoneNormalizer` 统一产出 E.164：
+
+- 大陆：裸 11 位、`86`、`+86`、`00 86`；手机号 `1[3-9]xxxxxxxxx`
+- 香港 / 澳门：`+852` / `+853`、`852` / `853`、`00` 前缀；本地 8 位。两地号段重叠，裸 8 位必须由 `default_region` 指定 HK / MO
+- 台湾：`+886` / `886` / `00 886`；本地 `09xxxxxxxx` 自动去掉主干 0，E.164 为 `+8869xxxxxxxx`
+- 四地之外：必须带 `+` / `00`，原样保留为 E.164
+
+腾讯云网关统一发送 E.164，并提前拦截「大陆 + 境外」混发（厂商要求全境内或全境外）；阿里云网关国内发 11 位、国际/港澳台发「国际区号+号码」（不带 `+`）。验证码键、冷却与限流均使用同一 canonical E.164。
 
 ### 6.3 DI 组件 `Config/component/sms.php`
 
@@ -300,7 +315,7 @@ final class SmsMessage
 }
 ```
 
-`PhoneList` 负责：去重、号码格式校验（`InvalidPhoneException`）、厂商单次最大号码数限制。
+`PhoneList` 负责：去重、号码格式校验（`InvalidPhoneException`）、通用单次上限（默认 1000）。厂商各自的上限（阿里云 1000 / 腾讯云 200）由对应 Gateway 校验。
 
 ### 7.5 `AliyunGateway`（示例策略）
 
@@ -344,22 +359,43 @@ final class SmsVerifier implements VerifierInterface
         private array $config,
     ) {}
 
-    /** 生成→限流→发送→存 Redis(带 TTL) */
+    /** 冷却占位→窗口限流→生成并落码→发送；失败/抛错回滚码并释放冷却 */
     public function send(string $phone, string $template = 'login_code'): SendResult
     {
-        if ($this->limiter->tooMany($this->rateKey($phone))) {   // 命中窗口上限
-            throw new RateLimitExceededException('短信发送过于频繁');
+        $claimed = $this->store->add($this->cooldownKey($phone, $template), '1', $this->config['resend_interval']);
+        if (!$claimed) {
+            throw new RateLimitExceededException('请 N 秒后重试');   // retryAfter 取剩余 TTL
         }
-        if ($this->store->get($this->cooldownKey($phone, $template))) { // 同一场景重发间隔
-            throw new RateLimitExceededException('请 60 秒后重试');
+        $sent = false;
+        try {
+            if ($this->limiter->tooMany($this->rateKey($phone))) {    // 命中窗口上限
+                // retryAfter 取 DurationLimiter::getRemainingTime()，即最早一次消费滑出窗口的秒数
+                throw new RateLimitExceededException('短信发送过于频繁');
+            }
+            $code = $this->generate();                                // CodeGenerator
+            // 先落码再发送：用户收到短信时码一定可验
+            $this->store->put($this->codeKey($phone), $code, $this->config['ttl']);
+            $result = $this->sms->send(SmsMessage::make($phone, $template, ['code' => $code]));
+            if (!$result->ok) {
+                $this->store->forget($this->codeKey($phone));          // 未发出，不留可用码
+                return $result;
+            }
+            $sent = true;
+            $claimed = false;   // 已发出：冷却必须保留，finally 不再释放
+            // 以下记账尽力而为：失败只影响痕迹/计数，不能把成功发送改判为失败
+            $this->safeForget($this->attemptsKey($phone, $template));
+            $this->safePut($this->traceKey($phone), 'active', $this->traceTtl());
+            $this->safePut($this->cooldownKey($phone, $template), '1', $this->config['resend_interval']);
+
+            return $result;
+        } finally {
+            if (!$sent && $this->store->exists($this->codeKey($phone))) {
+                $this->store->forget($this->codeKey($phone));
+            }
+            if ($claimed) {
+                $this->store->forget($this->cooldownKey($phone, $template));
+            }
         }
-        $code = $this->generate();                                 // CodeGenerator
-        $result = $this->sms->send(SmsMessage::make($phone, $template, ['code' => $code]));
-        if ($result->ok) {
-            $this->store->setex($this->codeKey($phone), $this->config['ttl'], $code);
-            $this->store->setex($this->cooldownKey($phone, $template), $this->config['resend_interval'], 1);
-        }
-        return $result;
     }
 
     /** 校验：返回 ok / mismatch / expired / absent / locked，mismatch 带剩余次数 */

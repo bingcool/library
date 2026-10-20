@@ -10,7 +10,10 @@ namespace Swoolefy\Library\Mail\Template;
 interface TemplateEngineInterface
 {
     /**
-     * @param array<string, scalar|null> $vars
+     * 渲染模板并返回 HTML。实现应自行处理模板名到文件的映射与越权访问防护。
+     *
+     * @param array<string, scalar|null> $vars 已完成合并和类型校验的变量表
+     * @throws \Swoolefy\Library\Mail\Exception\MailException 模板不存在或渲染失败
      */
     public function render(string $name, array $vars): string;
 }

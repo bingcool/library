@@ -99,7 +99,8 @@ src/Mail/
     ├── InvalidMailerException.php       # 未知 transport、缺 host/from、加密与端口不匹配
     ├── InvalidMailMessageException.php  # 无收件人、地址非法、主题空、附件超限、头注入
     ├── TemplateNotFoundException.php
-    └── MailTransportException.php       # 连接、认证、超时、对端拒绝，一律这一类
+    ├── MailTransportException.php       # 尚无收件人被接受时的连接、认证、超时、对端拒绝
+    └── PartialDeliveryException.php     # SMTP 已接受部分收件人的正文，禁止整封重试
 ```
 
 内置传输没有 `SdkGuard` / `MissingSdkException`。可选的新传输如果依赖未写入 `require` 的包，再在该传输里检测。
@@ -121,8 +122,9 @@ return [
             'dingtalk' => [
                 'transport'  => 'smtp',
                 'host'       => 'smtp.em.dingtalk.com',
-                'port'       => 465,
-                'encryption' => 'ssl',
+                'port'       => 465,                 // 1..65535，与 encryption 独立
+                'encryption' => 'ssl',               // ssl | tls | ''
+                // 'autotls' => false,               // 可选；未配置时仅 encryption=tls 自动开启
                 'username'   => env('MAIL_DINGTALK_USER'),
                 'password'   => env('MAIL_DINGTALK_PASS'),
                 'timeout'    => 10,
@@ -215,19 +217,19 @@ return [
         'attachments' => [
             'max_bytes' => 20 * 1024 * 1024,                // 单封附件 + 内嵌图合计上限
         ],
+
+        'max_recipients' => 100,                            // to+cc+bcc 去重后的总数上限，1..10000
     ],
 ];
 ```
 
-加密与端口的对应关系（配置阶段校验，不匹配抛 `InvalidMailerException`）：
+端口与加密独立校验：`port` 必须是 1..65535 的整数，`encryption` 只接受 `ssl`、`tls` 或空字符串。`port`、`timeout`、`max_bytes`、`max_recipients` 都按严格整数解析，`'465abc'`、`'10s'`、`'20MB'` 直接抛 `InvalidMailerException`，不再 `(int)` 截断。`autotls` 未配置时只有 `tls` 默认开启；钉钉仍强制 `465 + ssl`。
 
 | encryption | PHPMailer | 常用端口 |
 |---|---|---|
 | `ssl` | `ENCRYPTION_SMTPS`（隐式 TLS） | 465 |
 | `tls` | `ENCRYPTION_STARTTLS` | 587 |
 | `''` | 不加密 | 25 |
-
-内置业务 mailer 都是 SMTP，差别只在主机和账号。组件不按厂商再写一套协议。
 
 | mailer | 服务 | SMTP | 端口 / 加密 | password 填什么 |
 |---|---|---|---|---|
@@ -242,17 +244,19 @@ return [
 
 这几家都不接受邮箱登录密码作为 SMTP 密码，必须先在网页邮箱里打开 SMTP，再生成授权码或专用密码。钉钉邮箱不要用 587：该端口并未对所有 IP 开放；阿里云 ECS 还会封 25，所以默认 465。飞书的 465 只支持 SSL，不支持 STARTTLS。
 
-`from.address` 必须与 `username` 相同。消息上的 `from()` 若改成别的地址，这些服务器会直接拒信。配置阶段两者不一致就抛 `InvalidMailerException`。
+`from.address` 必须与 `username` 相同。消息上的 `from()` 若改成别的地址，这些服务器会直接拒信。配置阶段两者不一致就抛 `InvalidMailerException`；比较前所有地址和用户名都会去掉首尾空白。
 
-`smtp` 必须有 `host`、`port`、`from.address`。`username` / `password` 在 `auth=true` 时必填。`sendmail` 与 `mail` 也必须有 `from.address`，否则 PHPMailer 无法发信。
+SMTP 用户名不要求是邮箱格式：AWS SES 用 `AKIA...`、SendGrid 用 `apikey`。自建 SMTP 只拒绝用户名里的控制字符；上述已知服务商仍额外校验 `from.address` 与 `username` 一致。
 
-DKIM 不是首发必做。需要时在对应 mailer 下加可选块，映射到 PHPMailer 的 `DKIM_domain` / `DKIM_selector` / `DKIM_private` / `DKIM_passphrase`。私钥路径只来自配置，不进日志。
+DKIM 不是首发必做。需要时在对应 mailer 下加可选块，映射到 PHPMailer 的 `DKIM_domain` / `DKIM_selector` / `DKIM_private` / `DKIM_passphrase`。只要写了 `dkim`，就必须同时有 `domain`、合法的 `selector`（`[A-Za-z0-9._-]+`）和可读私钥；环境有 openssl 时会先解析私钥，失败直接拒绝。私钥路径只来自配置，不进日志。
 
-未配置 `default_mailer` 时用 `mailers` 的第一个键。一个都没有则抛 `InvalidMailerException`，禁止静默落到 PHP `mail()`。
+`smtp` 必须有 `host`、`port`、`from.address`。`username` / `password` 在 `auth=true` 时必填；`auth` 接受布尔值以及 `'true'/'false'/'1'/'0'/'yes'/'no'/'on'/'off'`。`sendmail` 的 `path` 必须是绝对路径、可执行普通文件，不能带空格、参数或 `..`；`sendmail` 与 `mail` 也必须有 `from.address`，否则 PHPMailer 无法发信。
+
+`default_mailer` 在存在多个 mailer 时必须显式配置；只有一个 mailer 时省略仍会用该唯一账号。配置了不存在的名字，或没有任何 mailer，都抛 `InvalidMailerException`，禁止静默落到 PHP `mail()`。
 
 ### 6.2 `MailConfig`
 
-`fromArray()` 兼容外层再包一层 `mail`。提供 `defaultMailer()`、`hasMailer()`、`mailer()`、`templatePath()`、`templateVars()`、`attachmentMaxBytes()`。
+`fromArray()` 兼容外层再包一层 `mail`。提供 `defaultMailer()`、`hasMailer()`、`mailer()`、`templatePath()`、`templateVars()`、`attachmentMaxBytes()`、`maxRecipients()`。
 
 ### 6.3 DI
 
@@ -302,7 +306,7 @@ final class MailerManager
 }
 ```
 
-日志由 Manager 在 `send()` 返回或捕获 `MailTransportException` 之后写。Transport 自己不拿 Logger，避免每封信的状态进到缓存对象里。
+日志由 Manager 统一包裹整个 `send()`（含 mailer 解析、编译、传输）。成功 `info`，传输失败 `error`，配置 / 消息 / 模板错误 `warning`。Transport 自己不拿 Logger，避免每封信的状态进到缓存对象里。日志后端异常必须吞掉，不能改变发送结果。
 
 ### 7.2 `MailFactory`
 
@@ -312,26 +316,26 @@ final class MailFactory
     /** @var array<string, callable(array<string, mixed>, string): MailerInterface> */
     private array $customCreators = [];
 
-    /** 注册新传输，或在单测里替换某个 transport。已缓存的 Mailer 不会自动换掉 */
+    /** 注册新传输，或在单测里替换某个 transport。key 转小写；已缓存的 Mailer 不会自动换掉 */
     public function extend(string $transport, callable $creator): void;
 
-    public function make(string $name, array $config): MailerInterface
+    public function make(string $name, array $config, MailConfig $root): MailerInterface
     {
-        $transport = (string) ($config['transport'] ?? '');
+        $transport = strtolower(trim((string) ($config['transport'] ?? '')));
         if (isset($this->customCreators[$transport])) {
+            // 自定义创建器也必须先过 from / reply_to / DKIM 校验
+            $config = MailerConfigValidator::normalizeCommon($name, $config);
+
             return ($this->customCreators[$transport])($config, $name);
         }
 
-        return match ($transport) {
-            'smtp'     => new PhpMailerMailer(new SmtpTransport($config), $config),
-            'sendmail' => new PhpMailerMailer(new SendmailTransport($config), $config),
-            'mail'     => new PhpMailerMailer(new MailTransport($config), $config),
-            'log'      => new LogTransport($config),
-            default    => throw new InvalidMailerException("Unknown mail transport [{$transport}] for [{$name}]"),
-        };
+        $normalized = MailerConfigValidator::normalize($name, $config);
+        // 再按 $normalized['transport'] 装配内置传输
     }
 }
 ```
+
+自定义创建器收到的 `from` / `reply_to` 是 `Address` 对象，`dkim` 已归一化；`extend('SMTP')` 与 `extend('smtp')` 等价。
 
 未知 transport 是配置错误，用 `InvalidMailerException`。不要用传输异常，否则 Job 会把写错的配置当成暂时失败反复重试。
 
@@ -353,23 +357,25 @@ final class MailFactory
 final class MailMessage
 {
     /** @var list<Address> */
-    public array $to = [];
+    private array $to = [];
     /** @var list<Address> */
-    public array $cc = [];
+    private array $cc = [];
     /** @var list<Address> */
-    public array $bcc = [];
+    private array $bcc = [];
+    /** @var array<string, true> 去重集合，跨 to/cc/bcc */
+    private array $recipientKeys = [];
     public ?Address $from = null;       // 覆盖该 mailer 的默认发件人
     public ?Address $replyTo = null;
     public string $subject = '';
     public ?string $html = null;
     public ?string $text = null;        // 不传则从 html 抽出纯文本，作为 AltBody
     /** @var list<array{path?: string, data?: string, name?: string, mime?: string}> */
-    public array $attachments = [];
-    /** @var list<array{path?: string, data?: string, cid: string}> */
-    public array $embeds = [];
+    private array $attachments = [];
+    /** @var list<array{path: string, cid: string}> */
+    private array $embeds = [];
     public ?string $template = null;
     /** @var array<string, scalar|null> */
-    public array $templateVars = [];
+    private array $templateVars = [];
     public ?string $mailer = null;      // null 表示用 default_mailer
 
     public function to(string $email, ?string $name = null): self;   // 追加
@@ -385,6 +391,20 @@ final class MailMessage
     public function embed(string $path, string $cid): self;
     public function viaTemplate(string $name, array $vars = []): self;
     public function via(string $mailer): self;
+
+    /** @return list<Address> */
+    public function toList(): array;
+    /** @return list<Address> */
+    public function ccList(): array;
+    /** @return list<Address> */
+    public function bccList(): array;
+    public function recipientCount(): int;
+    /** @return list<array{path?: string, data?: string, name?: string, mime?: string}> */
+    public function attachmentList(): array;
+    /** @return list<array{path: string, cid: string}> */
+    public function embedList(): array;
+    /** @return array<string, scalar|null> */
+    public function templateVariables(): array;
 }
 ```
 
@@ -394,16 +414,21 @@ final class MailMessage
 
 - 用 `PHPMailer::validateAddress()`，不自写宽松正则。
 - 邮箱、显示名、主题拒绝包含 `\r` 或 `\n`，避免邮件头注入。
-- 同一封信里 to/cc/bcc 按邮箱去重。
+- 收件人数组改为 private，只能通过 `to()/cc()/bcc()` 追加，`toList()/ccList()/bccList()` 只读访问。
+- 邮箱先去掉首尾空白再校验和比较。同一封信里 to/cc/bcc 用 `array<string,true>` 按邮箱大小写不敏感去重，复杂度 O(n)。
+- 去重后的收件人总数必须在 `max_recipients`（默认 100）以内，超限抛 `InvalidMailMessageException`。
+- 附件 MIME 只接受裸 `type/subtype`（字母、数字和 `!#$&^_.+-`），拒绝参数、CR/LF 和控制字符；空值表示交给 PHPMailer 推断。`attachData()` 入口和编译阶段都会校验，无法再通过公开数组绕过。
 
 ### 7.4 模板
 
 内置 `TemplateRenderer`：
 
 - 文件只认 `view_path/{name}.html`。`name` 仅允许 `[A-Za-z0-9_-]`，禁止 `/`、`\`、`.`，从根上去掉路径穿越，也不 `include` PHP。
+- 只有真正使用模板时才要求 `view_path`；空路径不回退到进程 cwd，非目录、目录不存在、文件不存在或不可读都抛异常。
+- 根目录在首次渲染时 `realpath` 并缓存；模板内容按 `path + mtime + size + inode` 做进程内有界缓存（最多 128 个），文件变化后重新读取。
 - `{{ key }}` 替换前做 HTML 转义。`{{{ key }}}` 原样输出，只给调用方明确标记的可信 HTML。
 - 消息上的 `templateVars` 覆盖配置里的全局 `vars`。值只接受标量。
-- 缺文件抛 `TemplateNotFoundException`。
+- `preg_replace_callback()` 返回 `null` 时不回退原始模板，而是抛 `InvalidMailMessageException`。
 - 渲染结果写入 `html`。没传 `text` 时，用去掉标签后的文本做 AltBody；`<a href>` 保留 URL。两边都空则抛 `InvalidMailMessageException`。
 - 主题仍然必填，模板不负责生成主题。
 
@@ -412,8 +437,10 @@ final class MailMessage
 ### 7.5 `PhpMailerMailer::send()`
 
 ```text
-校验收件人、地址、主题、附件总量
+接收人数量、地址、主题、模板变量校验
  → 若有模板则渲染
+ → 读附件 / 内嵌图字节并合计封顶（转成内存 data，消除 TOCTOU）
+ → from 与 SMTP username 一致性校验
  → new PHPMailer(true)          // 异常模式；用完即弃
  → CharSet = UTF-8
  → SMTPDebug = 0                // 调试输出会带 AUTH 对话，必须关闭
@@ -421,14 +448,22 @@ final class MailMessage
  → Timeout = 配置的秒数
  → Transport 设置 isSMTP / isSendmail / isMail 及主机、加密、账号
  → 组装 from / replyTo / to / cc / bcc / subject / html / AltBody / 附件 / 内嵌图
+    ├─ PHPMailer 异常 → InvalidMailMessageException（消息用红色脱敏后的文本）
+ → SMTP 时挂 action_function，统计 DATA 被接受后的收件人
  → send()
  → 成功：MailResult{messageId}
- → PHPMailer 异常：转成 MailTransportException（消息用 ErrorInfo，去掉账号和密码）
+ → send() 返回 false 或抛 PHPMailer 异常：消息用 ErrorInfo，去掉账号和密码
+    ├─ 已有收件人被接受 → PartialDeliveryException{acceptedRecipients}
+    └─ 尚无收件人被接受 → MailTransportException
 ```
+
+附件和内嵌图在编译阶段就统一读成字节（受 `max_bytes` 合计上限约束），PHPMailer 使用 `addStringAttachment()` / `addStringEmbeddedImage()`，不再二次读文件。密码、DKIM passphrase 无论长短都会从异常消息里替换成 `***`；过短的账号名不参与替换，避免误伤普通单词。
 
 `MailResult` 只有成功这一条路，`messageId` 取 PHPMailer 的 `getLastMessageID()`。没有 `ok=false` 的失败结果。
 
-`log` 传输走同一套校验和模板渲染，然后把脱敏后的信封放进内存列表并返回成功结果，不创建 PHPMailer。
+PHPMailer 可能在部分 RCPT 成功、DATA 已投递后，才因其余 RCPT 被拒而抛异常。因此不能只看异常类型就重试：`action_function` 只在 DATA 被接受后回调，据此区分「整封可安全重试」和「已部分送达」。
+
+`log` 传输走同一套校验和模板渲染，然后把脱敏后的信封放进内存列表并返回成功结果，不创建 PHPMailer。首次使用会写一条 `error_log` 告警，提醒生产误配；`sent()` 只保留脱敏主题（前 2 个字符 + `***`）和 `subject_length`。
 
 ---
 
@@ -439,6 +474,8 @@ final class MailMessage
 ```php
 use Swoolefy\Core\Application;
 use Swoolefy\Library\Mail\Exception\MailException;
+use Swoolefy\Library\Mail\Exception\MailTransportException;
+use Swoolefy\Library\Mail\Exception\PartialDeliveryException;
 use Swoolefy\Library\Mail\MailMessage;
 
 $mail = Application::getApp()->get('mail');
@@ -452,8 +489,12 @@ try {
             ->attach('/data/pdf/invoice-10086.pdf')
     );
     $messageId = $result->messageId;
+} catch (PartialDeliveryException $e) {
+    // 部分收件人已收到正文，不要整封重试；记录 acceptedRecipients 后人工补发
+} catch (MailTransportException $e) {
+    // 没有收件人被接受，可交给上层或 Job 重试
 } catch (MailException $e) {
-    // 配置/信件错误不会靠重试变好；传输错误交给上层或 Job 重试
+    // 配置/信件错误不会靠重试变好
 }
 ```
 
@@ -472,7 +513,7 @@ $mail->send($msg);   // Resource/Mail/welcome.html，{{ name }} 会转义
 
 Web 请求只把「路径 + 标量」形式的 `MailMessage` 投给框架 Job。`SendMailJob::handle()` 里调用 `Application::getApp()->get('mail')->mailer(...)->send($message)`。
 
-重试只捕获 `MailTransportException`。`InvalidMailerException`、`InvalidMailMessageException`、`TemplateNotFoundException` 直接失败，不重试。
+重试只捕获 `MailTransportException`。`PartialDeliveryException` 表示已有收件人收到正文，整封重试会造成重复投递。`InvalidMailerException`、`InvalidMailMessageException`、`TemplateNotFoundException` 直接失败，不重试。
 
 ### 8.4 联调
 
@@ -488,9 +529,10 @@ $result = Application::getApp()->get('mail')->mailer('log')->send($msg);
 2. 每次 `send()` 新建 PHPMailer，`SMTPKeepAlive` 保持 false。SMTP 会话有状态，不放进连接池，也不跨协程复用。
 3. `Timeout` 使用配置秒数，默认建议 10，避免远端挂起一直占着协程。
 4. Web 请求里一封信的收件人控制在个位数。批量走 Job。
-5. 日志字段：`mailer`、`transport`、脱敏后的 to/cc（`z***@example.com`）、收件人个数、`messageId` 或异常类名。不记 bcc 全量、密码、正文、附件内容、`SMTPDebug`。
-6. 附件路径必须是普通文件的真实路径，拒绝 `..` 和目录。读入的字节数（含内嵌图）合计超过 `max_bytes` 抛 `InvalidMailMessageException`。
-7. 模板名白名单见 §7.4。变量默认转义。
+5. 日志由 Manager 统一记录：成功 `info`，传输失败 `error`，配置 / 消息 / 模板错误 `warning`。字段包括 `mailer`、`transport`、`source`、脱敏 `from`、前 10 个脱敏 to/cc 加 `recipients` 总数、`template`、`attachments`、`embeds`、`duration_ms`、`messageId` 或异常类名；部分投递时另有 `accepted_recipients`。不记 bcc 全量、密码、正文、附件内容、`SMTPDebug`。日志后端异常必须吞掉，不能改变发送结果，也不能覆盖原始的传输异常。
+6. 附件路径必须是普通文件的真实路径，拒绝 `..` 和目录。编译阶段实际读取字节（含内嵌图），合计超过 `max_bytes` 抛 `InvalidMailMessageException`；读完后文件再变化不影响本封。
+7. 模板名白名单见 §7.4。变量默认转义。`view_path` 缺失不会回退到 cwd。
+8. `mail` 传输调用 PHP `mail()`，不受 Swoole stream hook 覆盖；`sendmail` 通过 `popen()` 等子进程，是否协程化取决于进程 hook。两者在协程中首次使用会写一次性 `error_log` 告警，生产协程环境优先 SMTP 或任务进程。
 
 ---
 
@@ -498,12 +540,13 @@ $result = Application::getApp()->get('mail')->mailer('log')->send($msg);
 
 | 场景 | 异常 | Job 是否重试 |
 |---|---|---|
-| 未知 transport、缺 host / from、加密和端口不匹配 | `InvalidMailerException` | 否 |
-| 无收件人、地址非法、主题空、头注入、附件超限或不可读 | `InvalidMailMessageException` | 否 |
-| 模板名非法或文件不存在 | `TemplateNotFoundException` | 否 |
-| 连接失败、认证失败、超时、对端拒绝 | `MailTransportException` | 是 |
+| 未知 transport、缺 host / from、端口或加密非法、sendmail 路径非法、DKIM 不完整 | `InvalidMailerException` | 否 |
+| 无收件人、超过 `max_recipients`、地址非法、主题空、头注入、附件超限 / 不可读 / MIME 非法 | `InvalidMailMessageException` | 否 |
+| 模板名非法、view_path 缺失或非目录、文件不存在 / 不可读、PCRE 渲染失败 | `TemplateNotFoundException` / `InvalidMailMessageException` | 否 |
+| 连接失败、认证失败、超时、对端拒绝（尚无收件人被接受） | `MailTransportException` | 是 |
+| SMTP 已接受部分收件人的正文后，其余收件人被拒 | `PartialDeliveryException` | 否 |
 
-PHPMailer 把连接失败和投递拒绝都放在同一个异常的 `ErrorInfo` 里，组件不再按文案拆成两种异常。
+PHPMailer 把连接失败和投递拒绝都放在同一个异常的 `ErrorInfo` 里，因此组件不按文案判断，而是用 `action_function` 统计 DATA 被接受后的收件人：有成功回调即 `PartialDeliveryException`（带 `acceptedRecipients`），否则才是可重试的 `MailTransportException`。
 
 统一基类是 `MailException`。业务可以 `catch (MailException)`，Job 只对 `MailTransportException` 重试。
 
@@ -514,10 +557,11 @@ PHPMailer 把连接失败和投递拒绝都放在同一个异常的 `ErrorInfo` 
 | 层级 | 用例 | 依赖 |
 |---|---|---|
 | 纯逻辑 | 地址去重、拒绝 CR/LF、主题为空、附件超限、`from` 覆盖 mailer 默认值 | 无 SMTP |
-| 配置 | 外层 `mail` 包裹、缺省 default、465+`tls` 被拒绝、auth 缺密码被拒绝 | 无 |
-| 模板 | `{{ }}` 转义、`{{{ }}}` 不转义、`../` 模板名被拒绝、缺文件抛异常、html 抽出 AltBody | 无 |
-| log 传输 | 断言 subject、收件人个数、附件个数；确认没有创建外部连接 | 无 |
-| 异常消息 | 构造失败信息时不出现 password | 无 |
+| 配置 | 外层 `mail` 包裹、单 mailer 缺省、多 mailer 必须显式 default、任意端口 + 加密组合、auth 布尔字符串、严格整数、非邮箱 SMTP 用户名可用 | 无 |
+| 模板 | `{{ }}` 转义、`{{{ }}}` 不转义、`../` 模板名被拒绝、空 view_path 不回退 cwd、缺文件 / 不可读 / PCRE 失败抛异常、缓存随文件变化刷新、html 抽出 AltBody | 无 |
+| log 传输 | 断言脱敏 subject、subject_length、收件人个数、附件个数；确认没有创建外部连接；首次使用有一次性告警 | 无 |
+| 异常消息 | 构造失败信息时不出现 password（含 1–3 位短口令） | 无 |
+| P1/P2 回归 | 部分投递映射、全拒仍可重试、MIME 注入被拒、日志后端抛异常不影响结果、收件人上限与去重、附件实际字节、sendmail 路径、DKIM 校验、extend 大小写 | 无 |
 | SMTP 冒烟 `@group mail` | 可选，指向本地 MailHog 一类服务 | CI 默认跳过 |
 
 默认不连外部 SMTP。

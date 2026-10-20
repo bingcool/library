@@ -23,30 +23,44 @@ use Swoolefy\Library\Mail\Transport\SmtpTransport;
 final class MailFactory
 {
     /**
+     * 小写 transport => 创建器，优先于内置 match。
+     *
      * @var array<string, callable(array<string, mixed>, string): MailerInterface>
      */
     private array $customCreators = [];
 
+    /**
+     * @param TemplateEngineInterface|null $templates 自定义模板引擎；null 使用内置 TemplateRenderer
+     */
     public function __construct(private ?TemplateEngineInterface $templates = null)
     {
     }
 
     /**
+     * 注册自定义 transport，优先于内置 match。
+     * key 统一小写去空白；创建器收到的是 normalizeCommon() 后的配置，传输专属字段需自行校验。
+     * 已经由 Manager 缓存的 Mailer 不会因为再次 extend() 而替换。
+     *
      * @param callable(array<string, mixed>, string): MailerInterface $creator
      */
     public function extend(string $transport, callable $creator): void
     {
-        $this->customCreators[$transport] = $creator;
+        $this->customCreators[strtolower(trim($transport))] = $creator;
     }
 
     /**
+     * 按 transport 创建发信器。
+     * 内置传输先完整归一化（host/port/from/auth/DKIM 等），再用同一份模板根、
+     * 全局变量、附件上限和收件人上限创建 MessageCompiler。
+     *
      * @param array<string, mixed> $config 单个 mailer 配置块
+     * @throws InvalidMailerException 未知 transport 或配置非法
      */
     public function make(string $name, array $config, MailConfig $root): MailerInterface
     {
-        $transport = strtolower(trim((string) ($config['transport'] ?? '')));
+        $transport = strtolower(trim(is_string($config['transport'] ?? null) ? $config['transport'] : ''));
         if (isset($this->customCreators[$transport])) {
-            return ($this->customCreators[$transport])($config, $name);
+            return ($this->customCreators[$transport])(MailerConfigValidator::normalizeCommon($name, $config), $name);
         }
 
         $normalized = MailerConfigValidator::normalize($name, $config);
@@ -54,6 +68,7 @@ final class MailFactory
             $this->templates ?? new TemplateRenderer($root->templatePath()),
             $root->templateVars(),
             $root->attachmentMaxBytes(),
+            $root->maxRecipients(),
         );
 
         return match ($normalized['transport']) {

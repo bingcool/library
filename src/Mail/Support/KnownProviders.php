@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Swoolefy\Library\Mail\Support;
 
 /**
- * 国内这几家 SMTP 的固定主机。账号仍由配置填入，这里只约束端口、加密和发件人。
+ * 国内这几家 SMTP 的固定主机。账号仍由配置填入：
+ * 钉钉额外约束端口/加密，所有列出的服务商都要求 from.address 与登录账号一致。
  */
 final class KnownProviders
 {
@@ -44,11 +45,17 @@ final class KnownProviders
         self::FEISHU,
     ];
 
+    /**
+     * 主机是否属于「from.address 必须等于登录账号」的服务商。
+     */
     public static function requiresMatchingFrom(string $host): bool
     {
         return in_array(strtolower($host), self::MATCHING_FROM, true);
     }
 
+    /**
+     * 钉钉邮箱额外强制 465 + ssl（587 未对所有 IP 开放，25 常被云厂商封禁）。
+     */
     public static function isDingtalk(string $host): bool
     {
         return strtolower($host) === self::DINGTALK;

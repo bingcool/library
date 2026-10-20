@@ -13,12 +13,18 @@ use Swoolefy\Library\Mail\Contracts\TransportInterface;
 final class SmtpTransport implements TransportInterface
 {
     /**
-     * @param array<string, mixed> $config
+     * @param array<string, mixed> $config 归一化后的 SMTP 配置，端口与加密方式已分别校验
      */
     public function __construct(private array $config)
     {
     }
 
+    /**
+     * 写入 SMTP 连接参数。关键点：
+     * - ssl 对应隐式 TLS（SMTPS），tls 对应 STARTTLS，空字符串不加密；
+     * - SMTPAutoTLS 未显式配置时只在 tls 下开启，避免明文端口被自动升级；
+     * - SMTPDebug=0 防止 AUTH 对话进入日志，SMTPKeepAlive=false 不跨发送复用连接。
+     */
     public function apply(PHPMailer $mailer): void
     {
         $encryption = (string) $this->config['encryption'];
@@ -37,10 +43,12 @@ final class SmtpTransport implements TransportInterface
             'tls' => PHPMailer::ENCRYPTION_STARTTLS,
             default => '',
         };
-        // 明文 25 端口不要被 PHPMailer 自动升成 STARTTLS，否则和配置的「不加密」不一致
-        $mailer->SMTPAutoTLS = $encryption === 'tls';
+        $mailer->SMTPAutoTLS = (bool) ($this->config['autotls'] ?? $encryption === 'tls');
     }
 
+    /**
+     * @return string 固定为 smtp；PhpMailerMailer 借此启用部分投递观测
+     */
     public function name(): string
     {
         return 'smtp';

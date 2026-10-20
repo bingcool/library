@@ -14,21 +14,41 @@ use Swoolefy\Library\Mail\Template\TemplateEngineInterface;
  */
 final class MessageCompiler
 {
+    /**
+     * @param TemplateEngineInterface $templates 模板引擎，内置或业务注入
+     * @param array<string, scalar|null> $globalVars 模板全局变量，消息变量可覆盖同名键
+     * @param int $maxBytes 附件 + 内嵌图合计字节上限
+     * @param int $maxRecipients to+cc+bcc 去重后的总数上限
+     * @param AttachmentNormalizer $attachments 附件读取与快照
+     */
     public function __construct(
         private TemplateEngineInterface $templates,
         private array $globalVars,
         private int $maxBytes,
+        private int $maxRecipients = 100,
         private AttachmentNormalizer $attachments = new AttachmentNormalizer(),
     ) {
     }
 
     /**
+     * 把 MailMessage 编译成只读 PreparedMessage，log 与 PHPMailer 传输共用。
+     * 校验顺序：收件人数量 → 主题 → 模板/正文 → from 一致性 → 附件读取。
+     * 模板渲染结果为空时按纯文本处理；缺 text 时从 HTML 自动抽取 AltBody。
+     *
      * @param array<string, mixed> $mailerConfig MailerConfigValidator 归一化后的配置
+     * @throws InvalidMailMessageException 收件人、主题、正文、from 或附件不合法
      */
     public function compile(MailMessage $message, array $mailerConfig): PreparedMessage
     {
-        if ($message->to === []) {
+        $recipients = $message->recipientCount();
+        if ($recipients === 0) {
             throw new InvalidMailMessageException('Mail message requires at least one recipient');
+        }
+        if ($recipients > $this->maxRecipients) {
+            throw new InvalidMailMessageException(sprintf(
+                'Mail recipients exceed the limit of %d',
+                $this->maxRecipients
+            ));
         }
 
         $subject = trim($message->subject);
@@ -69,9 +89,9 @@ final class MessageCompiler
         return new PreparedMessage(
             $from,
             $replyTo instanceof Address ? $replyTo : null,
-            $message->to,
-            $message->cc,
-            $message->bcc,
+            $message->toList(),
+            $message->ccList(),
+            $message->bccList(),
             $subject,
             $html,
             $text,
@@ -81,11 +101,14 @@ final class MessageCompiler
     }
 
     /**
+     * 合并全局变量与消息变量（消息优先），并校验变量名是合法标识符、值是标量或 null。
+     * 在渲染前统一拒绝，避免模板回调里出现难以定位的类型错误。
+     *
      * @return array<string, scalar|null>
      */
     private function vars(MailMessage $message): array
     {
-        $vars = array_merge($this->globalVars, $message->templateVars);
+        $vars = array_merge($this->globalVars, $message->templateVariables());
         foreach ($vars as $key => $value) {
             if (!is_string($key) || preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $key) !== 1) {
                 throw new InvalidMailMessageException('Mail template variable name is invalid');

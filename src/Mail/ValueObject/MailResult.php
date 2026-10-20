@@ -10,6 +10,10 @@ namespace Swoolefy\Library\Mail\ValueObject;
  */
 final class MailResult
 {
+    /**
+     * @param string $messageId PHPMailer 生成的 Message-ID；log 传输为 log-{hex}
+     * @param string $transport 实际使用的传输名
+     */
     public function __construct(
         public readonly string $messageId,
         public readonly string $transport,

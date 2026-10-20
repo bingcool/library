@@ -9,6 +9,10 @@ namespace Swoolefy\Library\Mail\Support;
  */
 final class HtmlToText
 {
+    /**
+     * 先把 <a href> 转成「文本 (URL)」保留链接，再去标签、解实体、压缩空白。
+     * 正则失败时回退原文继续处理，纯文本降级不应让发送失败。
+     */
     public static function convert(string $html): string
     {
         $withLinks = preg_replace_callback(
@@ -19,6 +23,7 @@ final class HtmlToText
                 if ($url === '') {
                     return $text;
                 }
+                // 文本为空或与 URL 相同时只保留 URL，避免生成 "url (url)"
                 if ($text === '' || $text === $url) {
                     return $url;
                 }

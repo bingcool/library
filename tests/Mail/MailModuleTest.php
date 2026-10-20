@@ -48,12 +48,12 @@ final class MailModuleTest extends TestCase
         (new MailConfig([]))->defaultMailer();
     }
 
-    public function testSslMustUsePort465(): void
+    public function testPortAndEncryptionAreDecoupled(): void
     {
-        $this->expectException(InvalidMailerException::class);
-        $this->expectExceptionMessage('does not match port');
+        $normalized = MailerConfigValidator::normalize('qq', $this->qq(['port' => 465, 'encryption' => 'tls']));
 
-        MailerConfigValidator::normalize('qq', $this->qq(['port' => 465, 'encryption' => 'tls']));
+        self::assertSame(465, $normalized['port']);
+        self::assertSame('tls', $normalized['encryption']);
     }
 
     public function testAuthRequiresPassword(): void
@@ -107,15 +107,15 @@ final class MailModuleTest extends TestCase
         self::assertSame('smtp.126.com', $normalized['host']);
     }
 
-    public function testSendmailPathDropsFlags(): void
+    public function testSendmailPathWithFlagsIsRejected(): void
     {
-        $normalized = MailerConfigValidator::normalize('local', [
+        $this->expectException(InvalidMailerException::class);
+
+        MailerConfigValidator::normalize('local', [
             'transport' => 'sendmail',
             'path' => '/usr/sbin/sendmail -bs',
             'from' => ['address' => 'a@example.com', 'name' => 'A'],
         ]);
-
-        self::assertSame('/usr/sbin/sendmail', $normalized['sendmail_path']);
     }
 
     public function testMessageDedupAndRejectsLineBreaks(): void
@@ -126,9 +126,9 @@ final class MailModuleTest extends TestCase
             ->cc('user@example.com')
             ->bcc('other@example.com');
 
-        self::assertCount(1, $message->to);
-        self::assertCount(0, $message->cc);
-        self::assertCount(1, $message->bcc);
+        self::assertCount(1, $message->toList());
+        self::assertCount(0, $message->ccList());
+        self::assertCount(1, $message->bccList());
 
         $this->expectException(InvalidMailMessageException::class);
         (new MailMessage())->to("user@example.com", "bad\nname");
@@ -201,7 +201,8 @@ final class MailModuleTest extends TestCase
         $mailer = $manager->mailer('log');
         self::assertInstanceOf(LogTransport::class, $mailer);
         $sent = $mailer->sent();
-        self::assertSame('订单', $sent[0]['subject']);
+        self::assertSame('订单***', $sent[0]['subject']);
+        self::assertSame(2, $sent[0]['subject_length']);
         self::assertSame(['u***@example.com'], $sent[0]['to']);
         self::assertSame(['c***@example.com'], $sent[0]['cc']);
         self::assertSame(1, $sent[0]['bcc_count']);
@@ -389,15 +390,16 @@ final class MailModuleTest extends TestCase
 
     public function testSendmailAndMailApplyWithoutSending(): void
     {
+        $binary = is_file('/usr/sbin/sendmail') ? '/usr/sbin/sendmail' : PHP_BINARY;
         $sendmail = MailerConfigValidator::normalize('local', [
             'transport' => 'sendmail',
-            'path' => '/usr/sbin/sendmail -bs',
+            'path' => $binary,
             'from' => ['address' => 'a@example.com', 'name' => 'A'],
         ]);
         $phpMailer = new PHPMailer(true);
         (new SendmailTransport($sendmail))->apply($phpMailer);
         self::assertSame('sendmail', $phpMailer->Mailer);
-        self::assertSame('/usr/sbin/sendmail', $phpMailer->Sendmail);
+        self::assertSame($binary, $phpMailer->Sendmail);
 
         $mail = MailerConfigValidator::normalize('php', [
             'transport' => 'mail',

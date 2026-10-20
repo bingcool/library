@@ -9,6 +9,10 @@ namespace Swoolefy\Library\Mail\Support;
  */
 final class EmailMask
 {
+    /**
+     * 保留本地部分首字符和完整域名，例如 zhangsan@example.com → z***@example.com。
+     * 没有 @ 或 @ 在开头时整体打码。
+     */
     public static function mask(string $email): string
     {
         $at = strpos($email, '@');
@@ -24,6 +28,8 @@ final class EmailMask
     }
 
     /**
+     * 批量打码，保持原顺序。
+     *
      * @param list<string> $emails
      * @return list<string>
      */

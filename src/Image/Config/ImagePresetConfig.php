@@ -50,13 +50,13 @@ final class ImagePresetConfig
         return $this->width > 0 || $this->height > 0;
     }
 
-    /** preset 附带的编码覆盖；无 encode 段时返回 null */
+    /** preset 附带的编码覆盖；无 encode 段时返回 null。支持 format/quality/progressive/strip/max_bytes */
     public function encodeOptions(): ?EncodeOptions
     {
         if ($this->encode === null) {
             return null;
         }
 
-        return EncodeOptions::merge($this->encode, null);
+        return EncodeOptions::merge($this->encode);
     }
 }

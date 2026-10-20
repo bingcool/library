@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Swoolefy\Library\Image\Support;
 
+use Swoolefy\Library\Image\Exception\InvalidConfigException;
 use Swoolefy\Library\Image\Exception\MissingExtensionException;
 
 /**
@@ -30,14 +31,18 @@ final class ExtensionGuard
     /**
      * @param string $driver gd|imagick
      *
-     * @throws MissingExtensionException 未知 driver 或扩展缺失
+     * @throws MissingExtensionException 扩展缺失
+     * @throws InvalidConfigException 未知 driver
      */
     public static function assertDriver(string $driver): void
     {
-        match (strtolower($driver)) {
+        match (strtolower(trim($driver))) {
             'gd' => self::assertGd(),
             'imagick' => self::assertImagick(),
-            default => throw new MissingExtensionException(sprintf('Unknown image driver [%s]', $driver)),
+            default => throw new InvalidConfigException(sprintf(
+                'Unknown image driver [%s]; expected gd|imagick',
+                $driver
+            )),
         };
     }
 }

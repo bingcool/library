@@ -22,6 +22,8 @@ final class TextWatermarkConfig
         public readonly int $offsetX = 16,
         public readonly int $offsetY = 16,
         public readonly float $angle = 0,
+        /** 相对字体路径基准目录；null 时由 ImageConfig 注入 */
+        public readonly ?string $basePath = null,
     ) {
     }
 
@@ -40,6 +42,9 @@ final class TextWatermarkConfig
             offsetX: (int) ($config['offset_x'] ?? 16),
             offsetY: (int) ($config['offset_y'] ?? 16),
             angle: (float) ($config['angle'] ?? 0),
+            basePath: is_string($config['base_path'] ?? null) && trim((string) $config['base_path']) !== ''
+                ? trim((string) $config['base_path'])
+                : null,
         );
     }
 
@@ -62,6 +67,9 @@ final class TextWatermarkConfig
             offsetX: array_key_exists('offset_x', $overrides) ? (int) $overrides['offset_x'] : $this->offsetX,
             offsetY: array_key_exists('offset_y', $overrides) ? (int) $overrides['offset_y'] : $this->offsetY,
             angle: array_key_exists('angle', $overrides) ? (float) $overrides['angle'] : $this->angle,
+            basePath: array_key_exists('base_path', $overrides) && is_string($overrides['base_path'])
+                ? (trim($overrides['base_path']) !== '' ? trim($overrides['base_path']) : null)
+                : $this->basePath,
         );
     }
 }

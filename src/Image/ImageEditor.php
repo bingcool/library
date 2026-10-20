@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Swoolefy\Library\Image;
 
+use Intervention\Image\Alignment;
+use Intervention\Image\Colors\Rgb\Color;
 use Intervention\Image\Direction;
 use Intervention\Image\Encoders\AvifEncoder;
 use Intervention\Image\Encoders\GifEncoder;
@@ -15,9 +17,14 @@ use Intervention\Image\Interfaces\EncodedImageInterface;
 use Intervention\Image\Interfaces\ImageInterface;
 use Swoolefy\Library\Image\Config\ImageConfig;
 use Swoolefy\Library\Image\Config\ImagePresetConfig;
+use Swoolefy\Library\Image\Exception\ImageException;
 use Swoolefy\Library\Image\Exception\ImageTooLargeException;
+use Swoolefy\Library\Image\Exception\InvalidImageException;
+use Swoolefy\Library\Image\Exception\UnsupportedFormatException;
 use Swoolefy\Library\Image\Support\FormatNegotiator;
+use Swoolefy\Library\Image\Support\PixelGuard;
 use Swoolefy\Library\Image\Support\PositionAnchor;
+use Swoolefy\Library\Image\Support\SizeCalculator;
 use Swoolefy\Library\Image\ValueObject\EncodeOptions;
 use Swoolefy\Library\Image\ValueObject\ImageSize;
 use Swoolefy\Library\Image\ValueObject\ProcessResult;
@@ -50,46 +57,89 @@ final class ImageEditor
     /**
      * 按模式缩放/适应目标框。
      *
-     * @param int|null $w 目标宽；contain 模式下 0 或 null 表示该维不限制
-     * @param int|null $h 目标高；contain 模式下 0 或 null 表示该维不限制
+     * 各模式语义（与 v4 原生方法对应）：
+     * - contain：等比缩进框内，**只缩不放、不补白**，用 `scaleDown()`；小图保持原尺寸
+     * - cover：等比铺满后居中裁剪，宽高都必须 > 0
+     * - scale：等比缩放（允许放大），单维时按该维等比
+     * - stretch/fill：双维时强制拉到指定宽高；单维时退化为等比缩放
+     *
+     * `null`/`0`/负数表示该维不限制；两维都不限制或 mode 未知时抛异常。
+     *
+     * @param int|null $w 目标宽；null/0/负数表示不限制
+     * @param int|null $h 目标高；null/0/负数表示不限制
      * @param string $mode contain|cover|scale|stretch|fill
-     *                     - contain：等比缩进框内（宽或高一侧为 0 时仅 scaleDown 该维）
-     *                     - cover：等比铺满后居中裁剪
-     *                     - scale/stretch/fill：强制 resize 到指定宽高
+     *
+     * @throws InvalidImageException 参数组合非法或 mode 未知
+     * @throws ImageTooLargeException 目标尺寸超过 max_pixels
      */
     public function resize(?int $w, ?int $h, string $mode = 'contain'): self
     {
-        $mode = strtolower($mode);
+        $mode = strtolower(trim($mode));
+        $width = ($w !== null && $w > 0) ? $w : null;
+        $height = ($h !== null && $h > 0) ? $h : null;
+
+        if ($width === null && $height === null) {
+            throw new InvalidImageException(sprintf(
+                'resize() requires at least one positive dimension (mode: %s)',
+                $mode
+            ));
+        }
+
+        if ($mode === 'contain') {
+            // v4 的 contain() 是「固定画布 + 补白」，与本模块「等比、不补白」语义不同。
+            // 先用纯函数算出只缩不放的目标尺寸，再交给 scaleDown() 做像素采样。
+            $target = SizeCalculator::contain(
+                $this->image->width(),
+                $this->image->height(),
+                $width ?? 0,
+                $height ?? 0,
+            );
+            $this->image = $this->image->scaleDown($target['width'], $target['height']);
+
+            return $this;
+        }
+
         if ($mode === 'cover') {
-            $this->image = $this->image->cover(max(1, $w ?? 1), max(1, $h ?? 1));
+            if ($width === null || $height === null) {
+                throw new InvalidImageException('cover mode requires both width and height');
+            }
+
+            $this->assertCoverTarget($width, $height);
+            $this->image = $this->image->cover($width, $height);
 
             return $this;
         }
+
         if (in_array($mode, ['scale', 'stretch', 'fill'], true)) {
-            $this->image = $this->image->resize($w, $h);
+            $this->assertScaleTarget($width, $height);
+            $this->image = ($mode === 'scale' || $width === null || $height === null)
+                ? $this->image->scale($width, $height)
+                : $this->image->resize($width, $height);
 
             return $this;
         }
 
-        if ($w !== null && $w > 0 && ($h === null || $h < 1)) {
-            $this->image = $this->image->scaleDown(width: $w);
-
-            return $this;
-        }
-        if ($h !== null && $h > 0 && ($w === null || $w < 1)) {
-            $this->image = $this->image->scaleDown(height: $h);
-
-            return $this;
-        }
-
-        $this->image = $this->image->contain(max(1, $w ?? 1), max(1, $h ?? 1));
-
-        return $this;
+        throw new InvalidImageException(sprintf(
+            'Unknown resize mode [%s]; expected contain|cover|scale|stretch|fill',
+            $mode
+        ));
     }
 
-    /** 只缩小不放大：宽高均不超过给定上限 */
+    /**
+     * 只缩小不放大：宽高均不超过给定上限。
+     *
+     * `0`/负数表示该维不限制，但至少一维必须为正数。
+     *
+     * @throws InvalidImageException 两维都未给出正数上限
+     */
     public function thumbnail(int $maxW, int $maxH): self
     {
+        $maxW = $maxW > 0 ? $maxW : null;
+        $maxH = $maxH > 0 ? $maxH : null;
+        if ($maxW === null && $maxH === null) {
+            throw new InvalidImageException('thumbnail() requires at least one positive dimension');
+        }
+
         $this->image = $this->image->scaleDown($maxW, $maxH);
 
         return $this;
@@ -105,6 +155,11 @@ final class ImageEditor
      */
     public function crop(int $x, int $y, int $w, int $h): self
     {
+        if ($w < 1 || $h < 1) {
+            throw new InvalidImageException('Crop width and height must be positive');
+        }
+
+        PixelGuard::assertWithinLimit($w, $h, $this->config->maxPixels());
         $this->image = $this->image->crop($w, $h, $x, $y);
 
         return $this;
@@ -142,53 +197,64 @@ final class ImageEditor
         return $this;
     }
 
-    /** 叠加图片水印（logo），透明度与九宫格定位见 {@see ImageWatermark} */
+    /**
+     * 叠加图片水印（logo），定位与透明度见 {@see ImageWatermark}。
+     *
+     * logo 先经过 {@see PixelGuard::assertFilePath()} 预检，再交给 Intervention 解码，
+     * 避免超大水印图绕过 `max_pixels` 耗尽内存。
+     *
+     * @throws InvalidImageException 位置非法或 logo 无法解码
+     * @throws ImageTooLargeException logo 像素超过 max_pixels
+     */
     public function watermarkImage(ImageWatermark $mark): self
     {
-        $anchor = PositionAnchor::resolve(
-            $mark->position,
-            $this->image->width(),
-            $this->image->height(),
-            $mark->offsetX,
-            $mark->offsetY,
-        );
-        $opacity = max(0.0, min(1.0, 1.0 - $mark->opacity));
-        $this->image = $this->image->insert(
-            $mark->path,
-            $anchor['x'],
-            $anchor['y'],
-            $anchor['alignment'],
-            $opacity,
-        );
+        $this->image = $this->guard(function () use ($mark): ImageInterface {
+            PixelGuard::assertFilePath($mark->path, $this->config->maxPixels());
+            $logo = $this->manager->decodePath($mark->path);
+            $anchor = PositionAnchor::insertOffsets($mark->position, $mark->offsetX, $mark->offsetY);
+
+            return $this->image->insert(
+                $logo,
+                $anchor['x'],
+                $anchor['y'],
+                $anchor['alignment'],
+                max(0.0, min(1.0, $mark->opacity)),
+            );
+        }, 'Unable to apply image watermark');
 
         return $this;
     }
 
-    /** 叠加 TTF 文字水印，字体文件须可读 */
+    /**
+     * 叠加 TTF 文字水印，字体文件须可读。
+     *
+     * @throws InvalidImageException 位置/颜色/字体非法
+     */
     public function watermarkText(TextWatermark $mark): self
     {
-        $anchor = PositionAnchor::resolve(
-            $mark->position,
-            $this->image->width(),
-            $this->image->height(),
-            $mark->offsetX,
-            $mark->offsetY,
-        );
-        $alpha = (int) round((1.0 - max(0.0, min(1.0, $mark->opacity))) * 100);
-        $color = $mark->color . sprintf('%02x', max(0, min(100, 100 - $alpha)));
+        $this->image = $this->guard(function () use ($mark): ImageInterface {
+            $anchor = PositionAnchor::resolve(
+                $mark->position,
+                $this->image->width(),
+                $this->image->height(),
+                $mark->offsetX,
+                $mark->offsetY,
+            );
+            $color = $this->textColor($mark->color, $mark->opacity);
 
-        $this->image = $this->image->text(
-            $mark->content,
-            $anchor['x'],
-            $anchor['y'],
-            static function ($font) use ($mark, $anchor, $color): void {
-                $font->filename($mark->font);
-                $font->size($mark->size);
-                $font->color($color);
-                $font->align($anchor['horizontal'], $anchor['vertical']);
-                $font->angle($mark->angle);
-            },
-        );
+            return $this->image->text(
+                $mark->content,
+                $anchor['x'],
+                $anchor['y'],
+                static function ($font) use ($mark, $anchor, $color): void {
+                    $font->filename($mark->font);
+                    $font->size($mark->size);
+                    $font->color($color);
+                    $font->align($anchor['horizontal'], $anchor['vertical']);
+                    $font->angle($mark->angle);
+                },
+            );
+        }, 'Unable to apply text watermark');
 
         return $this;
     }
@@ -206,6 +272,9 @@ final class ImageEditor
     /** 应用 {@see ImagePresetConfig}（可来自配置，也可代码内 new） */
     public function applyPresetConfig(ImagePresetConfig $preset): self
     {
+        // 连续 apply 多个 preset 时，无 encode 段的 preset 必须清掉上一次的编码覆盖
+        $this->presetEncode = null;
+
         if ($preset->hasResize()) {
             $this->resize(
                 $preset->width > 0 ? $preset->width : null,
@@ -225,30 +294,52 @@ final class ImageEditor
     /**
      * 编码为二进制并返回元信息。
      *
-     * 合并顺序：全局 `encode` 配置 ← {@see applyPreset()} 附带 ← 本次 $options。
+     * 合并顺序（逐字段覆盖）：全局 `encode` 配置 ← {@see applyPreset()} 附带 ← 本次 $options。
      *
-     * @throws ImageTooLargeException 编码后超过 encode.max_bytes
-     * @throws \Swoolefy\Library\Image\Exception\UnsupportedFormatException 当前 driver 不支持该格式
+     * 未显式指定 format 时：源图是 png/webp/avif/gif 等可能带透明通道的格式，默认输出 png；
+     * 其他来源（含 create() 画布）默认 jpeg，避免透明区域被压成黑/白底。
+     *
+     * @throws ImageTooLargeException 编码后超过合并后的 encode.max_bytes
+     * @throws UnsupportedFormatException 当前 driver 不支持该格式，或 GIF 请求 strip
+     * @throws InvalidImageException 编码参数非法（如 quality 越界）
      */
     public function encode(?EncodeOptions $options = null): ProcessResult
     {
-        $merged = EncodeOptions::merge($this->config->encodeDefaults(), $options ?? $this->presetEncode);
-        $format = FormatNegotiator::assertSupported($this->config->driver(), (string) ($merged->format ?? 'jpeg'));
+        $merged = EncodeOptions::merge($this->config->encodeDefaults(), $this->presetEncode, $options);
+        $configured = $merged->format !== null ? trim($merged->format) : '';
+        $format = FormatNegotiator::assertSupported(
+            $this->config->driver(),
+            $configured !== '' ? $configured : $this->defaultEncodeFormat(),
+        );
         $quality = $merged->quality ?? 82;
+        if ($quality < 0 || $quality > 100) {
+            throw new InvalidImageException(sprintf(
+                'Image quality must be between 0 and 100, got %d',
+                $quality
+            ));
+        }
+
         $progressive = $merged->progressive ?? false;
         $strip = $merged->strip;
+        if ($format === 'gif' && $strip === true) {
+            throw new UnsupportedFormatException('GIF encoder does not support strip; set strip to false or null');
+        }
 
-        $encoder = match ($format) {
-            'png' => new PngEncoder(strip: $strip),
-            'webp' => new WebpEncoder(quality: $quality, strip: $strip),
-            'gif' => new GifEncoder(),
-            'avif' => new AvifEncoder(quality: $quality, strip: $strip),
-            default => new JpegEncoder(quality: $quality, progressive: $progressive, strip: $strip),
-        };
+        $encoded = $this->guard(function () use ($format, $quality, $progressive, $strip): EncodedImageInterface {
+            $encoder = match ($format) {
+                'png' => new PngEncoder(strip: $strip),
+                'webp' => new WebpEncoder(quality: $quality, strip: $strip),
+                'gif' => new GifEncoder(),
+                'avif' => new AvifEncoder(quality: $quality, strip: $strip),
+                'jpeg' => new JpegEncoder(quality: $quality, progressive: $progressive, strip: $strip),
+                default => throw new UnsupportedFormatException(sprintf('Image format [%s] has no encoder', $format)),
+            };
 
-        $encoded = $this->image->encode($encoder);
+            return $this->image->encode($encoder);
+        }, sprintf('Unable to encode image as %s', $format));
+
         $binary = (string) $encoded;
-        $maxBytes = (int) ($this->config->encodeDefaults()['max_bytes'] ?? 0);
+        $maxBytes = $merged->maxBytes ?? 0;
         if ($maxBytes > 0 && strlen($binary) > $maxBytes) {
             throw new ImageTooLargeException(sprintf('Encoded image exceeds %d bytes', $maxBytes));
         }
@@ -282,22 +373,186 @@ final class ImageEditor
      * @param string $overlayPath 可读图片路径
      * @param int $targetWidth overlay 目标宽
      * @param int $targetHeight overlay 目标高
-     * @param float $opacity Intervention insert 透明度参数，0~1
+     * @param float $opacity 0~1，越大越不透明；1.0 为原图（默认）
      */
-    public function overlayCenter(string $overlayPath, int $targetWidth, int $targetHeight, float $opacity = 0): self
+    public function overlayCenter(string $overlayPath, int $targetWidth, int $targetHeight, float $opacity = 1.0): self
     {
-        $overlay = $this->manager->decodePath($overlayPath)->cover($targetWidth, $targetHeight);
-        $x = (int) max(0, ($this->image->width() - $targetWidth) / 2);
-        $y = (int) max(0, ($this->image->height() - $targetHeight) / 2);
-        $this->image = $this->image->insert($overlay, $x, $y, \Intervention\Image\Alignment::CENTER, max(0.0, min(1.0, $opacity)));
+        $this->assertOverlayTarget($targetWidth, $targetHeight);
+
+        $overlay = $this->guard(function () use ($overlayPath): ImageInterface {
+            PixelGuard::assertFilePath($overlayPath, $this->config->maxPixels());
+
+            return $this->manager->decodePath($overlayPath);
+        }, 'Unable to decode overlay image');
+
+        return $this->overlayCenterImage($overlay, $targetWidth, $targetHeight, $opacity);
+    }
+
+    /**
+     * 与 {@see overlayCenter()} 相同，但接收已解码的 overlay，批量场景可复用同一份图像、避免重复 IO。
+     *
+     * 内部会 clone 后再 cover，不会修改调用方传入的实例。
+     *
+     * @param ImageInterface $overlay 已解码的叠加图
+     * @param int $targetWidth overlay 目标宽
+     * @param int $targetHeight overlay 目标高
+     * @param float $opacity 0~1，越大越不透明；1.0 为原图（默认）
+     */
+    public function overlayCenterImage(
+        ImageInterface $overlay,
+        int $targetWidth,
+        int $targetHeight,
+        float $opacity = 1.0,
+    ): self {
+        $this->assertOverlayTarget($targetWidth, $targetHeight);
+
+        $this->image = $this->guard(function () use ($overlay, $targetWidth, $targetHeight, $opacity): ImageInterface {
+            // insert() 的 x/y 是相对 CENTER 锚点的偏移，传 0 即精确居中
+            return $this->image->insert(
+                (clone $overlay)->cover($targetWidth, $targetHeight),
+                0,
+                0,
+                Alignment::CENTER,
+                max(0.0, min(1.0, $opacity)),
+            );
+        }, 'Unable to apply overlay image');
 
         return $this;
     }
 
-    /** 不经过 EncodeOptions 合并，直接 PNG 编码（内部组合用） */
+    /**
+     * 统一走 {@see encode()}：与普通导出一样应用三级选项合并、`max_bytes` 与异常包装。
+     *
+     * 供 Qrcode 等内部组合使用，强制 PNG。
+     */
     public function encodePngBinary(): string
     {
-        return (string) $this->image->encode(new PngEncoder());
+        return $this->encode(new EncodeOptions(format: 'png'))->binary;
+    }
+
+    /**
+     * 归一化文字水印颜色：接受 #fff / #ffffff / 命名色，并统一由 alpha 通道生成。
+     *
+     * v4 的 `#RRGGBBAA` 中 AA 是**不透明度**（00 全透明、ff 不透明），与 `$opacity` 同向，
+     * 因此直接传给 `Color::create()`；不透明时 `toHex()` 会自动省略 alpha 返回 6 位。
+     *
+     * @param float $opacity 0~1，越大越不透明
+     *
+     * @throws InvalidImageException 颜色无法解析
+     */
+    private function textColor(string $color, float $opacity): string
+    {
+        try {
+            $rgb = Color::parse($color);
+        } catch (\Throwable $e) {
+            throw new InvalidImageException(sprintf('Invalid text watermark color "%s"', $color), previous: $e);
+        }
+
+        return Color::create(
+            $rgb->red()->value(),
+            $rgb->green()->value(),
+            $rgb->blue()->value(),
+            max(0.0, min(1.0, $opacity)),
+        )->toHex(prefix: true);
+    }
+
+    /**
+     * 执行可能抛 Intervention/底层异常的操作，统一包装为模块异常。
+     *
+     * `ImageException`（含 `ImageTooLargeException`、`UnsupportedFormatException`）原样抛出，
+     * 调用方只需 `catch (ImageException)` 即可收口。
+     *
+     * @template T
+     *
+     * @param callable(): T $operation
+     *
+     * @return T
+     *
+     * @throws ImageException
+     */
+    private function guard(callable $operation, string $context): mixed
+    {
+        try {
+            return $operation();
+        } catch (ImageException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new InvalidImageException($context . ': ' . $e->getMessage(), previous: $e);
+        }
+    }
+
+    /**
+     * 未显式指定输出格式时的默认值：可能含透明通道的源图优先保留为 PNG。
+     */
+    private function defaultEncodeFormat(): string
+    {
+        $mediaType = strtolower($this->image->origin()->mediaType());
+
+        return in_array($mediaType, ['image/png', 'image/webp', 'image/avif', 'image/gif'], true)
+            ? 'png'
+            : 'jpeg';
+    }
+
+    /** overlay 目标尺寸校验，路径来源与已解码来源共用 */
+    private function assertOverlayTarget(int $width, int $height): void
+    {
+        if ($width < 1 || $height < 1) {
+            throw new InvalidImageException('Overlay target width and height must be positive');
+        }
+
+        PixelGuard::assertWithinLimit($width, $height, $this->config->maxPixels());
+    }
+
+    /**
+     * 双维目标尺寸的 max_pixels 校验；单维时由调用方按原图比例推算。
+     */
+    private function assertTargetSize(?int $width, ?int $height): void
+    {
+        if ($width === null || $height === null) {
+            return;
+        }
+
+        PixelGuard::assertWithinLimit($width, $height, $this->config->maxPixels());
+    }
+
+    /**
+     * 等比缩放的输出尺寸校验：单维时按原图比例推算另一维，防止小图被放大后超限。
+     */
+    private function assertScaleTarget(?int $width, ?int $height): void
+    {
+        if ($width !== null && $height !== null) {
+            $this->assertTargetSize($width, $height);
+
+            return;
+        }
+
+        $sourceWidth = $this->image->width();
+        $sourceHeight = $this->image->height();
+        $factor = $width !== null
+            ? $width / $sourceWidth
+            : $height / $sourceHeight;
+
+        $this->assertTargetSize(
+            max(1, (int) round($sourceWidth * $factor)),
+            max(1, (int) round($sourceHeight * $factor)),
+        );
+    }
+
+    /**
+     * cover 先按比例放大再裁剪，中间画布可能大于最终尺寸，两者都按 max_pixels 校验。
+     */
+    private function assertCoverTarget(int $width, int $height): void
+    {
+        $sourceWidth = $this->image->width();
+        $sourceHeight = $this->image->height();
+        $factor = max($width / $sourceWidth, $height / $sourceHeight);
+
+        PixelGuard::assertWithinLimit(
+            max(1, (int) ceil($sourceWidth * $factor)),
+            max(1, (int) ceil($sourceHeight * $factor)),
+            $this->config->maxPixels(),
+        );
+        $this->assertTargetSize($width, $height);
     }
 
     /**

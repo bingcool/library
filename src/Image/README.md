@@ -18,7 +18,7 @@
 
 `ImageEditor` 是**请求态**：内部持有 Intervention 解码后的位图，**禁止**跨协程共享或放进 Worker 级 static 缓存。
 
-> `ImageManager` 只缓存 **driver 对应的 Intervention ImageManager** 与 `ImageConfig`，**不缓存**任何已解码图像。首次 `open()` / `create()` 才检测 `ext-gd` / `ext-imagick`；未使用图像的应用仍可正常启动。
+> `ImageManager` 只缓存 **driver 对应的 Intervention ImageManager** 与 `ImageConfig`，**不缓存**任何已解码图像。构造时只校验配置取值（`driver` 拼写等）；首次 `open()` / `create()` 才检测 `ext-gd` / `ext-imagick`，未使用图像的应用仍可正常启动。
 
 ## 依赖与 driver
 
@@ -32,7 +32,9 @@
 | `gd`（默认） | `Drivers\Gd\Driver` | jpeg、png、webp、gif 等；**无** avif |
 | `imagick` | `Drivers\Imagick\Driver` | 含 avif 等（视 ImageMagick 编译选项） |
 
-非法 `driver` 配置会回退为 `gd`。
+上表是静态白名单，实际可用格式还会按运行时能力过滤：GD 查 `gd_info()` 的 `JPEG/PNG/WebP/GIF Create/AVIF Support`，Imagick 查 `Imagick::queryFormats()`。例如 PHP 未编译 WebP 时，`webp` 会从可用列表中消失并抛 `UnsupportedFormatException`。
+
+`driver` 只接受 `gd` / `imagick`；写错（如 `imagik`）在构造 `ImageManager` 时抛 `InvalidConfigException`，不再静默回退。扩展是否安装仍在首次 `open()` / `create()` 检测。
 
 ## 配置
 
@@ -40,8 +42,8 @@
 
 | 配置段 | 作用（解决什么问题） | 何时生效 |
 |---|---|---|
-| `driver` | 选定 PHP 用 GD 还是 Imagick 做解码/编码，适配不同机器环境 | 第一次 `open()` / `create()` |
-| `max_pixels` | 拒绝超大图进内存，防止用户上传千万像素图拖垮 Swoole Worker | `open()` / `create()` 及编码后体积校验 |
+| `driver` | 选定 PHP 用 GD 还是 Imagick 做解码/编码，适配不同机器环境 | 构造时校验取值；首次 `open()` / `create()` 检测扩展 |
+| `max_pixels` | 拒绝超大图进内存，防止用户上传千万像素图拖垮 Swoole Worker | 解码/创建前像素预检，以及 resize/cover/crop/水印/overlay 的目标尺寸校验 |
 | `encode` | 统一「导出图」的格式、质量、体积策略，避免业务里到处写死 jpeg 82 | 每次 `encode()` 的默认基线 |
 | `watermark` | 统一品牌 Logo / 版权文字的位置与样式，运营改配置即可，不必改 PHP | 代码调用 `watermarkImage()` / `watermarkText()` 时 |
 | `presets` | 统一缩略图、列表图、详情图等**规格名**，上传派生多档尺寸时全站一致 | 代码调用 `applyPreset('thumb')` 等时 |
@@ -62,15 +64,22 @@ return [
          * driver
          * 作用：决定 Intervention 使用哪套 PHP 扩展做像素运算，影响可用输出格式与部署依赖。
          * 取值：gd（默认，易装）| imagick（需 ext-imagick，格式更全如 avif）。
-         * 说明：非法值回退 gd；未装对应扩展时在首次 open/create 抛 MissingExtensionException。
+         * 说明：非法值在构造时抛 InvalidConfigException；未装对应扩展时在首次 open/create 抛 MissingExtensionException。
          */
         'driver' => env('IMAGE_DRIVER', 'gd'),
+
+        /*
+         * base_path
+         * 作用：相对路径的统一基准目录（默认 APP_PATH，再退化为进程 CWD）。
+         * 场景：watermark.image.path / watermark.text.font 写相对路径时不再受 CWD 影响。
+         */
+        // 'base_path' => APP_PATH,
 
         /*
          * max_pixels
          * 作用：限制单张图解码后的最大像素（宽×高），作为上传/处理链路的安全阀。
          * 场景：用户上传相机原图、恶意大图时尽早失败，而不是占满 Worker 内存。
-         * 说明：文件路径会先 getimagesize 预检；0=不限制（不推荐生产使用）。
+         * 说明：路径来源 fopen 后基于文件句柄预检（缩小 TOCTOU 窗口），解码后再复核一次；0=不限制（不推荐生产使用）。
          */
         'max_pixels' => 40_000_000,
 
@@ -81,6 +90,7 @@ return [
          */
         'encode' => [
             // 作用：默认存什么格式（影响体积、透明通道、浏览器兼容）。gd 不支持 avif。
+            // 说明：显式设置后即为全局默认；不配置时才按源图透明通道自动选 png/jpeg。
             'format'      => 'jpeg',
             // 作用：控制有损压缩程度，平衡清晰度与 CDN 流量（主要影响 jpeg/webp/avif）。
             'quality'     => 82,
@@ -113,6 +123,9 @@ return [
                 'offset_y' => 16,
                 // 作用：Logo 可见程度；越小越透，越大越醒目。
                 'opacity'  => 0.6,
+                // 作用：允许读取 logo 的根目录白名单；默认仅 base_path，
+                //       防止配置被篡改时读取任意本地文件（LFI）。
+                // 'allowed_roots' => [APP_PATH . '/Resource/watermark'],
             ],
 
             /*
@@ -122,7 +135,7 @@ return [
             'text' => [
                 // 作用：默认水印文案；按用户/订单动态改时用 fromConfig(..., ['content' => '...'])。
                 'content'  => 'swoolefy',
-                // 作用：指定渲染字体；中文环境需部署含汉字的 TTF。
+                // 作用：指定渲染字体；中文环境需部署含汉字的 TTF。相对路径以 base_path 为基准。
                 'font'     => APP_PATH . '/Resource/font/DejaVuSans.ttf',
                 // 作用：文字大小，与画布分辨率配合调整。
                 'size'     => 28,
@@ -247,10 +260,13 @@ return [
 
 | 字段 | 含义 |
 |---|---|
-| `path` | Logo 文件路径（PNG 透明底常用） |
+| `path` | Logo 文件路径（PNG 透明底常用）；经 `realpath()` 校验存在且可读 |
 | `position` | 九宫格锚点，如 `bottom-right`、`center`、`top-left`（Intervention `Alignment` 支持的写法） |
 | `offset_x` / `offset_y` | 相对锚点的边距（像素） |
 | `opacity` | 0~1，**越大越不透明**（如 `0.6` 为半透明 Logo） |
+| `allowed_roots` | 允许读取 logo 的根目录白名单；`ImageConfig::watermarkImage()` 未配置时默认注入 `[base_path]`，空数组表示不额外限制（仅直接 `new ImageWatermark()` 时生效） |
+
+> 相对路径以 `base_path` 为基准（默认 `APP_PATH`，再退化为进程 CWD）；路径中任何 `..` 段都会被拒绝，解析后还必须位于 `allowed_roots` 内，避免配置注入演变为任意本地文件读取。
 
 #### 读取与运行时覆盖
 
@@ -273,7 +289,7 @@ $imgWmCfg = $cfg->watermarkImage()->withOverrides([
 
 #### 叠到图上
 
-配置 → `ImageWatermark`（校验 path 可读、拒绝 `..`）→ `watermarkImage()`：
+配置 → `ImageWatermark`（`realpath` + 拒绝 `..` + `allowed_roots` 白名单）→ `watermarkImage()`：
 
 ```php
 $editor = $manager->open('/data/upload/photo.jpg');
@@ -307,7 +323,7 @@ $result = $editor->encode();
 | 字段 | 含义 |
 |---|---|
 | `content` | 水印文字（不能为空，否则构造 `TextWatermark` 抛错） |
-| `font` | TTF/OTF 路径，须存在且可读 |
+| `font` | TTF/OTF 路径，须存在且可读；相对路径以 `base_path` 为基准 |
 | `size` | 字号 |
 | `color` | 颜色 hex，如 `#ffffff` |
 | `opacity` | 0~1，越大越不透明 |
@@ -348,9 +364,12 @@ $editor = $manager->open($path)
 
 | mode | 行为（`ImageEditor::resize`） |
 |---|---|
-| `contain` | 等比缩进框内，不裁切 |
-| `cover` | 等比铺满框，居中裁剪（方图 thumb / avatar） |
-| `scale` / `stretch` / `fill` | 强制拉到指定宽高 |
+| `contain` | 等比缩进框内，**只缩不放、不补白**（小图保持原尺寸） |
+| `cover` | 等比铺满框，居中裁剪（方图 thumb / avatar）；宽高都必须 > 0 |
+| `scale` | 等比缩放（允许放大）；单维时按该维等比 |
+| `stretch` / `fill` | 双维时强制拉到指定宽高；单维时退化为等比缩放 |
+
+> `contain` / `scale` / `stretch` / `fill` 至少需要一维 > 0；未知 mode 直接抛 `InvalidImageException`，不再静默回退 contain。
 
 `size => [宽, 高]` 中 **0 表示该维度不限制**：
 
@@ -400,7 +419,7 @@ $result = $manager->open($path)
 
 #### preset 里的 `encode`
 
-全局 `encode.format` 若为 `jpeg`，而 `avatar` 预设带 `'encode' => ['format' => 'webp']`，则 **`applyPreset('avatar')` 之后** 的 `encode()` 默认用 webp；仍可在本次 `encode(new EncodeOptions(...))` 中再覆盖。
+全局 `encode.format` 若为 `jpeg`，而 `avatar` 预设带 `'encode' => ['format' => 'webp']`，则 **`applyPreset('avatar')` 之后** 的 `encode()` 默认用 webp；仍可在本次 `encode(new EncodeOptions(...))` 中再覆盖。preset 的 `encode` 同样支持 `max_bytes`，会覆盖全局值。
 
 ---
 
@@ -441,6 +460,18 @@ $manager->open($path)->applyPreset('avatar')->encode();
 // 再强制 png
 $manager->open($path)->applyPreset('avatar')->encode(new EncodeOptions(format: 'png'));
 ```
+
+#### 默认格式、质量与 `strip`
+
+| 情况 | 行为 |
+|---|---|
+| 任一层显式配置了 `format` | 使用该格式（须为当前 driver 与运行时所支持） |
+| 未配置 `format`，且源图为 png / webp / avif / gif | 默认 `png`，避免透明通道被 JPEG 压平 |
+| 未配置 `format`，其余来源（含 `create()`） | 默认 `jpeg` |
+| `quality` | 必须为 0–100，越界在入口抛 `InvalidImageException`（不再依赖编码器报错） |
+| GIF + `strip=true` | `UnsupportedFormatException`；`GifEncoder` 无 strip 能力，不再静默忽略 |
+
+> 需要绝对可控时，请显式传 `EncodeOptions(format: ...)`；自动默认只用于「没配置也不该丢透明」的兼容场景。
 
 ---
 
@@ -493,11 +524,20 @@ return $this->returnBin($result->binary, $result->mime);
 
 | 情况 | 结果 |
 |---|---|
+| `driver` 不是 `gd` / `imagick` | `InvalidConfigException`（构造 `ImageManager` 时） |
 | Logo `path` 空、不存在、含 `..` | `InvalidImageException` |
+| Logo 不在 `allowed_roots` 内 | `InvalidImageException` |
 | 文字 `content` 空或 `font` 不可读 | `InvalidImageException` |
 | `applyPreset('xxx')` 但配置无 xxx | `InvalidImageException` |
 | gd driver 下要求 avif | `UnsupportedFormatException` |
-| 原图像素超过 `max_pixels` | `ImageTooLargeException`（`open` 阶段） |
+| 请求 bmp/tiff 等无 encoder 的格式 | `UnsupportedFormatException` |
+| 原图像素超过 `max_pixels` | `ImageTooLargeException`（解码前） |
+| 水印 logo / overlay 像素超过 `max_pixels` | `ImageTooLargeException` |
+| resize/cover/crop 目标尺寸超过 `max_pixels` | `ImageTooLargeException`（分配内存前） |
+| `resize(0, 0)`、cover 单维、未知 mode | `InvalidImageException` |
+| `thumbnail(0, 0)`（两维都非正） | `InvalidImageException` |
+| `quality` 不在 0–100 | `InvalidImageException` |
+| GIF 编码传 `strip=true` | `UnsupportedFormatException` |
 
 ---
 
@@ -509,12 +549,14 @@ return $this->returnBin($result->binary, $result->mime);
 
 | 来源 | 行为 |
 |---|---|
-| `\SplFileInfo` | `decodeSplFileInfo`，路径受 `max_pixels` 预检 |
-| PHP `resource`（流） | `decodeStream` |
-| 存在且为**文件**的 string | `decodePath` |
-| 其他 string | 按**二进制** `decodeBinary`（勿把不存在路径当二进制误传） |
+| `\SplFileInfo` | 取 `getPathname()` 后走「文件路径」分支 |
+| PHP `resource`（流） | 先 `rewind()`；可 seek 流读头部（最多 1MB）预检后 `decodeStream`；不可 seek 流先复制到 `php://temp` 再预检 |
+| 存在且为**文件**的 string | `fopen('rb')` 后用**文件句柄**预检并 `decodeStream`，再回填 `origin()->setFilePath()`；避免 `getimagesize($path)` 与解码之间的文件替换窗口（TOCTOU） |
+| 其他 string | 按**二进制** `decodeBinary`，解码前 `getimagesizefromstring()` 预检 |
 
-成功后自动 `orient()`（按 EXIF 校正方向）。`ImageException` 子类（如 `ImageTooLargeException`）**原样抛出**，其余解码失败包装为 `InvalidImageException`。
+所有来源在解码后还会复核一次宽高上限（兜底）；水印 logo、`overlayCenter()` 与 `overlayCenterImage()` 的叠加图同样受 `max_pixels` 约束。
+
+Intervention v4 解码器默认 `autoOrientation=true`，EXIF 方向在解码时已校正一次，`ImageManager` 不再额外调用 `orient()`。`ImageException` 子类（如 `ImageTooLargeException`）**原样抛出**，其余解码失败包装为 `InvalidImageException`。
 
 ```php
 use Swoolefy\Core\Application;
@@ -577,12 +619,13 @@ $png = $image->create(320, 240, '#336699')
 
 ### 与 Qrcode Logo 协作
 
-`ImageEditor::overlayCenter()` / `encodePngBinary()` 供 Qrcode 模块在 PNG 码图正中叠加 Logo；业务代码一般只通过 `QrcodeBuilder::withLogo()` 使用。
+`ImageEditor::overlayCenter()` / `encodePngBinary()` 供 Qrcode 模块在 PNG 码图正中叠加 Logo；业务代码一般只通过 `QrcodeBuilder::withLogo()` 使用。批量叠加时可用 `overlayCenterImage()` 直接传入已解码的 `ImageInterface`，避免重复 IO。
 
 ## 异常与是否重试
 
 | 场景 | 异常 | Job 是否重试 |
 |---|---|---|
+| `driver` 不是 `gd` / `imagick` | `InvalidConfigException` | 否 |
 | 不支持的来源类型、无法解码 | `InvalidImageException` | 否 |
 | 像素超过 `max_pixels` | `ImageTooLargeException` | 否 |
 | driver 缺扩展 | `MissingExtensionException` | 否 |
@@ -600,6 +643,9 @@ $png = $image->create(320, 240, '#336699')
 | `ImageEditor::applyPreset($name)` | 按配置名应用预设 |
 | `ImageEditor::applyPresetConfig($preset)` | 直接应用 `ImagePresetConfig`（可代码构造） |
 | `ImageEditor::encode(?EncodeOptions)` | 返回 `ProcessResult`（binary、mime、extension、size） |
+| `ImageEditor::encodePngBinary()` | 等价于 `encode(new EncodeOptions(format: 'png'))`，受统一选项与 `max_bytes` 约束 |
+| `ImageEditor::overlayCenter($path, $w, $h, $opacity)` | 解码路径并居中叠加 |
+| `ImageEditor::overlayCenterImage($image, $w, $h, $opacity)` | 复用已解码 overlay，避免重复 IO |
 | `ImageEditor::toBinary` / `toBase64` | 便捷输出 |
 | `ImageEditor::size()` | 当前 `ImageSize` |
 | `ImageConfig::watermarkImage()` / `watermarkText()` | 返回 `ImageWatermarkConfig` / `TextWatermarkConfig` |

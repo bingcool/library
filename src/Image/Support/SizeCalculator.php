@@ -6,6 +6,9 @@ namespace Swoolefy\Library\Image\Support;
 
 /**
  * 纯函数：根据原图与目标框计算缩放后尺寸（不调用 GD/Imagick，便于单测）。
+ *
+ * {@see \Swoolefy\Library\Image\ImageEditor::resize()} 的 contain 分支直接复用
+ * {@see contain()}，保证测试与生产使用同一套「只缩不放」语义。
  */
 final class SizeCalculator
 {

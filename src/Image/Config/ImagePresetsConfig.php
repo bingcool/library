@@ -25,10 +25,11 @@ final class ImagePresetsConfig
     {
         $presets = [];
         foreach ($config as $name => $item) {
-            if (!is_string($name) || !is_array($item)) {
+            if (!is_array($item)) {
                 continue;
             }
-            $presets[$name] = ImagePresetConfig::fromArray($item);
+            // 数字键（如 '0' => [...]）统一转为字符串，保持 names() 的 list<string> 契约
+            $presets[(string) $name] = ImagePresetConfig::fromArray($item);
         }
 
         return new self($presets);
@@ -56,6 +57,6 @@ final class ImagePresetsConfig
      */
     public function names(): array
     {
-        return array_keys($this->presets);
+        return array_map('strval', array_keys($this->presets));
     }
 }

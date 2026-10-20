@@ -7,13 +7,17 @@ namespace Swoolefy\Library\Image\Watermark;
 use Swoolefy\Library\Image\Config\ImageConfig;
 use Swoolefy\Library\Image\Config\TextWatermarkConfig;
 use Swoolefy\Library\Image\Exception\InvalidImageException;
+use Swoolefy\Library\Image\Support\PathResolver;
 
 /** TTF 文字水印参数。字体文件必须在构造时可读。 */
 final class TextWatermark
 {
+    /** 已解析为 realpath 的可读字体路径 */
+    public readonly string $font;
+
     /**
      * @param string $content 水印文字，不可为空
-     * @param string $font TTF/OTF 字体文件绝对或相对路径（须可读）
+     * @param string $font TTF/OTF 字体文件绝对路径，或相对 `$basePath` 的路径（须可读）
      * @param float $size 字号（Intervention 字体单位）
      * @param string $color 前景色 hex，如 #ffffff
      * @param float $opacity 0~1，越大越不透明
@@ -21,10 +25,11 @@ final class TextWatermark
      * @param int $offsetX 边距 X
      * @param int $offsetY 边距 Y
      * @param float $angle 旋转角度（度）
+     * @param string|null $basePath 相对字体路径基准；null 时用 `APP_PATH` / CWD
      */
     public function __construct(
         public readonly string $content,
-        public readonly string $font,
+        string $font,
         public readonly float $size = 28,
         public readonly string $color = '#ffffff',
         public readonly float $opacity = 0.5,
@@ -32,13 +37,16 @@ final class TextWatermark
         public readonly int $offsetX = 16,
         public readonly int $offsetY = 16,
         public readonly float $angle = 0,
+        ?string $basePath = null,
     ) {
         if ($content === '') {
             throw new InvalidImageException('Text watermark content is required');
         }
 
-        if ($font === '' || !is_file($font) || !is_readable($font)) {
-            throw new InvalidImageException('Text watermark font is not readable');
+        try {
+            $this->font = PathResolver::resolve($font, $basePath);
+        } catch (InvalidImageException $e) {
+            throw new InvalidImageException('Text watermark font is not readable', previous: $e);
         }
     }
 
@@ -55,6 +63,7 @@ final class TextWatermark
             $config->offsetX,
             $config->offsetY,
             $config->angle,
+            $config->basePath,
         );
     }
 

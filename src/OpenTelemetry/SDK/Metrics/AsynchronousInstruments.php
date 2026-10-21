@@ -6,8 +6,8 @@ namespace Swoolefy\Library\OpenTelemetry\SDK\Metrics;
 
 use ArrayAccess;
 use Swoolefy\Library\OpenTelemetry\API\Metrics\ObservableCallbackInterface;
-use function OpenTelemetry\SDK\Common\Util\closure;
-use function OpenTelemetry\SDK\Common\Util\weaken;
+use function Swoolefy\Library\OpenTelemetry\SDK\Common\Util\closure;
+use function Swoolefy\Library\OpenTelemetry\SDK\Common\Util\weaken;
 use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistry\MetricWriterInterface;
 
 /**

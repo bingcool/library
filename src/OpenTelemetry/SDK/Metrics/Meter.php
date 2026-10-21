@@ -24,7 +24,7 @@ use Swoolefy\Library\OpenTelemetry\SDK\Common\Instrumentation\InstrumentationSco
 use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Config;
 use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurable;
 use Swoolefy\Library\OpenTelemetry\SDK\Common\InstrumentationScope\Configurator;
-use function OpenTelemetry\SDK\Common\Util\closure;
+use function Swoolefy\Library\OpenTelemetry\SDK\Common\Util\closure;
 use Swoolefy\Library\OpenTelemetry\SDK\Metrics\Exemplar\ExemplarFilterInterface;
 use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistration\MultiRegistryRegistration;
 use Swoolefy\Library\OpenTelemetry\SDK\Metrics\MetricRegistration\RegistryRegistration;

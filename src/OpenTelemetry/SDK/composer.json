@@ -50,8 +50,7 @@
     },
     "suggest": {
         "ext-gmp": "To support unlimited number of synchronous metric readers",
-        "ext-mbstring": "To increase performance of string operations",
-        "open-telemetry/sdk-configuration": "File-based OpenTelemetry SDK configuration"
+        "ext-mbstring": "To increase performance of string operations"
     },
     "extra": {
         "branch-alias": {
@@ -64,9 +63,6 @@
             "OpenTelemetry\\API\\Configuration\\ConfigEnv\\EnvComponentLoader": [
                 "OpenTelemetry\\API\\Instrumentation\\Configuration\\General\\ConfigEnv\\EnvComponentLoaderHttpConfig",
                 "OpenTelemetry\\API\\Instrumentation\\Configuration\\General\\ConfigEnv\\EnvComponentLoaderPeerConfig"
-            ],
-            "OpenTelemetry\\SDK\\Common\\Configuration\\Resolver\\ResolverInterface": [
-                "OpenTelemetry\\SDK\\Common\\Configuration\\Resolver\\SdkConfigurationResolver"
             ]
         }
     }

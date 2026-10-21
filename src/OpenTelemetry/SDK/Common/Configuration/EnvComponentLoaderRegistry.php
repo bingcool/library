@@ -21,7 +21,7 @@ use function sprintf;
 /**
  * @internal
  */
-final class EnvComponentLoaderRegistry implements \OpenTelemetry\API\Configuration\ConfigEnv\EnvComponentLoaderRegistry
+final class EnvComponentLoaderRegistry implements \Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvComponentLoaderRegistry
 {
     /**
      * @var array<string, array<string, EnvComponentLoader>>

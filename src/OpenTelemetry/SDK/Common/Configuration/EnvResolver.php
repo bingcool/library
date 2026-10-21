@@ -9,7 +9,7 @@ use function in_array;
 /**
  * @internal
  */
-final class EnvResolver implements \OpenTelemetry\API\Configuration\ConfigEnv\EnvResolver
+final class EnvResolver implements \Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvResolver
 {
     #[\Override]
     public function string(string $name): ?string

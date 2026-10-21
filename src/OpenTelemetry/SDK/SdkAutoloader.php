@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Swoolefy\Library\OpenTelemetry\SDK;
 
-use function class_exists;
 use Nevay\SPI\ServiceLoader;
 use Swoolefy\Library\OpenTelemetry\API\Behavior\LogsMessagesTrait;
 use Swoolefy\Library\OpenTelemetry\API\Configuration\ConfigEnv\EnvComponentLoader;
@@ -13,7 +12,6 @@ use Swoolefy\Library\OpenTelemetry\API\Globals;
 use Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\ConfigurationRegistry;
 use Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\Context as InstrumentationContext;
 use Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\GeneralInstrumentationConfiguration;
-use Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\HookManager;
 use Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\HookManagerInterface;
 use Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\Instrumentation;
 use Swoolefy\Library\OpenTelemetry\API\Instrumentation\AutoInstrumentation\InstrumentationConfiguration;
@@ -25,8 +23,6 @@ use Swoolefy\Library\OpenTelemetry\API\Metrics\LateBindingMeterProvider;
 use Swoolefy\Library\OpenTelemetry\API\Metrics\MeterProviderInterface;
 use Swoolefy\Library\OpenTelemetry\API\Trace\LateBindingTracerProvider;
 use Swoolefy\Library\OpenTelemetry\API\Trace\TracerProviderInterface;
-use OpenTelemetry\Config\SDK\Configuration as SdkConfiguration;
-use OpenTelemetry\Config\SDK\Instrumentation as SdkInstrumentation;
 use Swoolefy\Library\OpenTelemetry\Context\Context;
 use Swoolefy\Library\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
@@ -61,13 +57,12 @@ class SdkAutoloader
             return false;
         }
         if (Configuration::has(Variables::OTEL_EXPERIMENTAL_CONFIG_FILE)) {
-            if (!class_exists(SdkConfiguration::class)) {
-                throw new RuntimeException('File-based configuration requires open-telemetry/sdk-configuration');
-            }
-            Globals::registerInitializer(fn ($configurator) => self::fileBasedInitializer($configurator));
-        } else {
-            Globals::registerInitializer(fn ($configurator) => self::environmentBasedInitializer($configurator));
+            throw new RuntimeException(
+                'File-based OpenTelemetry configuration is not supported by the bundled SDK; '
+                . 'unset OTEL_EXPERIMENTAL_CONFIG_FILE and use environment variables'
+            );
         }
+        Globals::registerInitializer(fn ($configurator) => self::environmentBasedInitializer($configurator));
         self::registerInstrumentations();
 
         if (AutoRootSpan::isEnabled()) {
@@ -120,48 +115,12 @@ class SdkAutoloader
     }
 
     /**
-     * @phan-suppress PhanPossiblyUndeclaredVariable,PhanDeprecatedFunction
-     */
-    private static function fileBasedInitializer(Configurator $configurator): Configurator
-    {
-        $file = Configuration::getString(Variables::OTEL_EXPERIMENTAL_CONFIG_FILE);
-        $config = SdkConfiguration::parseFile($file);
-
-        //disable hook manager during SDK to avoid autoinstrumenting SDK exporters.
-        $scope = HookManager::disable(Context::getCurrent())->activate();
-
-        try {
-            $sdk = $config
-                ->create()
-                ->setAutoShutdown(true)
-                ->build();
-        } finally {
-            $scope->detach();
-        }
-
-        return $configurator
-            ->withTracerProvider($sdk->getTracerProvider())
-            ->withMeterProvider($sdk->getMeterProvider())
-            ->withLoggerProvider($sdk->getLoggerProvider())
-            ->withPropagator($sdk->getPropagator())
-            ->withEventLoggerProvider($sdk->getEventLoggerProvider())
-        ;
-    }
-
-    /**
      * Register all {@link Instrumentation} configured through SPI
      * @psalm-suppress ArgumentTypeCoercion
      */
     private static function registerInstrumentations(): void
     {
-        $files = Configuration::has(Variables::OTEL_EXPERIMENTAL_CONFIG_FILE)
-            ? Configuration::getList(Variables::OTEL_EXPERIMENTAL_CONFIG_FILE)
-            : [];
-        if (class_exists(SdkInstrumentation::class) && $files) {
-            $configuration = SdkInstrumentation::parseFile($files)->create();
-        } else {
-            $configuration = self::loadConfigPropertiesFromEnv();
-        }
+        $configuration = self::loadConfigPropertiesFromEnv();
         $hookManager = self::getHookManager();
         $tracerProvider = self::createLateBindingTracerProvider();
         $meterProvider = self::createLateBindingMeterProvider();
@@ -187,7 +146,7 @@ class SdkAutoloader
         }
 
         $env = new EnvResolver();
-        $context = new \OpenTelemetry\API\Configuration\Context();
+        $context = new \Swoolefy\Library\OpenTelemetry\API\Configuration\Context();
 
         $configuration = new ConfigurationRegistry();
         foreach ($loaderRegistry->loadAll(GeneralInstrumentationConfiguration::class, $env, $context) as $instrumentation) {

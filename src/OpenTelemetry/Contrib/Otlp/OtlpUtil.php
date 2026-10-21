@@ -9,7 +9,7 @@ use Swoolefy\Library\OpenTelemetry\API\Signals;
 use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Configuration;
 use Swoolefy\Library\OpenTelemetry\SDK\Common\Configuration\Variables;
 use Swoolefy\Library\OpenTelemetry\SDK\Resource\Detectors\Sdk;
-use OpenTelemetry\SemConv\ResourceAttributes;
+use Swoolefy\Library\OpenTelemetry\SemConv\ResourceAttributes;
 use UnexpectedValueException;
 
 class OtlpUtil

@@ -48,7 +48,7 @@ composer require bingcool/library
 
 | 模块 | 作用 | 文档 |
 |------|------|------|
-| `CurlProxy` | Guzzle Handler：透传 `x-trace-id`、记录请求/响应日志、可选 OpenTelemetry Span。响应日志里的 body 最多保留 1024KB | [src/CurlProxy/Readme.md](src/CurlProxy/Readme.md) |
+| `CurlProxy` | Guzzle Handler：透传 `x-trace-id`、记录请求/响应日志、可选 OpenTelemetry Span。响应日志里的 body 最多保留 1024KB | [src/CurlProxy/Readme.md](src/CurlProxy/README.md) |
 | `HttpClient` | 轻量 HTTP 响应解析 | — |
 | `Nacos` | 配置中心与服务发现，HTTP 走 Guzzle，可接协程连接池 | [src/Nacos/README.md](src/Nacos/README.md) |
 | `Oauth` | QQ、微信、支付宝、飞书、钉钉、企业微信登录门面 | [src/Oauth/README.md](src/Oauth/README.md) |

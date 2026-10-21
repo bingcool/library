@@ -13,8 +13,9 @@ namespace Swoolefy\Library\CurlProxy;
 
 use Closure;
 use Throwable;
+use GuzzleHttp\Promise\Create;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Swoolefy\Core\Coroutine\Context as SwooleContext;
 
 final class ResponseMiddleware
 {
@@ -24,73 +25,97 @@ final class ResponseMiddleware
      */
     public const MAX_RESPONSE_LOG_BYTES = 512 * 1024;
 
+    public const BODY_SKIPPED_PLACEHOLDER = '[body skipped: not readable or not seekable]';
+
+    private const LOG_VALUE_MAX_LENGTH = 2048;
+
     /**
-     * 记录响应的数据.
+     * 记录响应的数据。只有注册了日志通道时才读取包体。
      *
      * @return Closure
      */
     public static function responseRecordLog()
     {
-        $fn = function (ResponseInterface $response) {
-            $result = $response->getBody()->getContents();
+        $onFulfilled = static function (ResponseInterface $response, RequestInterface $request) {
             try {
                 $logger = CurlProxyHandler::buildLogChannel();
                 if ($logger) {
-                    $info = SwooleContext::get(OpentelemetryMiddleware::GUZZLE_CURL_PATH);
-                    $path = $info['path'] ?? '';
-                    $traceId = $info['trace_id'] ?? '';
+                    [$path, $traceId] = self::currentRequestInfo($request);
+                    $result = MessageBodyPreview::read($response->getBody(), self::MAX_RESPONSE_LOG_BYTES)
+                        ?? self::BODY_SKIPPED_PLACEHOLDER;
                     $dateTime = date('Y-m-d H:i:s');
-                    $loggedResult = self::limitLogResult($result);
-                    $logger->info("【response@{$dateTime}】 api={$path}, traceId={$traceId}, 响应数据：" . $loggedResult . "\r\n\r\n");
+                    $logger->info("【response@{$dateTime}】 api={$path}, traceId={$traceId}, 响应数据：" . $result . "\r\n\r\n");
                 }
-            } catch (Throwable $exception) {
+            } catch (Throwable) {
             }
-            $response->getBody()->rewind();
 
             return $response;
         };
 
-        return self::mapResponse($fn);
+        $onRejected = static function ($reason, RequestInterface $request) {
+            try {
+                $logger = CurlProxyHandler::buildLogChannel();
+                if ($logger) {
+                    [$path, $traceId] = self::currentRequestInfo($request);
+                    $error = $reason instanceof Throwable
+                        ? sprintf('%s: %s', $reason::class, $reason->getMessage())
+                        : (is_scalar($reason) ? (string) $reason : get_debug_type($reason));
+                    $error = self::sanitizeLogValue($error);
+                    $dateTime = date('Y-m-d H:i:s');
+                    $logger->warning("【response-error@{$dateTime}】 api={$path}, traceId={$traceId}, 异常：" . $error . "\r\n\r\n");
+                }
+            } catch (Throwable) {
+            }
+
+            return Create::rejectionFor($reason);
+        };
+
+        return self::mapResponse($onFulfilled, $onRejected);
     }
 
     /**
-     * 日志里的 result 最多保留 512KB。超出时截断，并附上原始字节数，避免把失败当成完整响应。
-     * 截断按字节，再用 mb_strcut 收口，避免切在 UTF-8 字符中间。
+     * @return array{0: string, 1: string}
      */
-    public static function limitLogResult(string $result): string
+    private static function currentRequestInfo(RequestInterface $request): array
     {
-        $size = strlen($result);
-        if ($size <= self::MAX_RESPONSE_LOG_BYTES) {
-            return $result;
-        }
+        $info = RequestMiddleware::getRequestInfo($request);
 
-        $suffix = sprintf('...(truncated, %d bytes)', $size);
-        $keep = self::MAX_RESPONSE_LOG_BYTES - strlen($suffix);
-        if ($keep < 0) {
-            $keep = 0;
-        }
-
-        $head = substr($result, 0, $keep);
-        if (function_exists('mb_strcut')) {
-            $head = mb_strcut($head, 0, $keep, 'UTF-8');
-        }
-
-        return $head . $suffix;
+        return [
+            self::sanitizeLogValue($info['path']),
+            self::sanitizeLogValue($info['trace_id']),
+        ];
     }
 
+    private static function sanitizeLogValue(string $value): string
+    {
+        $value = preg_replace('/[\x00-\x1F\x7F]+/', ' ', $value) ?? '';
+        if (strlen($value) > self::LOG_VALUE_MAX_LENGTH) {
+            $value = substr($value, 0, self::LOG_VALUE_MAX_LENGTH) . '...';
+        }
+
+        return $value;
+    }
 
     /**
      * @param Closure $fn
+     * @param Closure|null $onRejected
      * @return Closure
      */
-    public static function mapResponse(Closure $fn)
+    public static function mapResponse(Closure $fn, ?Closure $onRejected = null)
     {
-        return function (callable $handler) use ($fn) {
-            return function ($request, array $options) use ($handler, $fn) {
+        return function (callable $handler) use ($fn, $onRejected) {
+            return function ($request, array $options) use ($handler, $fn, $onRejected) {
                 /*
                  * @var RequestInterface $request
                  */
-                return $handler($request, $options)->then($fn);
+                $promise = $handler($request, $options);
+
+                return $onRejected === null
+                    ? $promise->then(static fn ($response) => $fn($response, $request))
+                    : $promise->then(
+                        static fn ($response) => $fn($response, $request),
+                        static fn ($reason) => $onRejected($reason, $request)
+                    );
             };
         };
     }

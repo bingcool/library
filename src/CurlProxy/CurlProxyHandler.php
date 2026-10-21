@@ -15,16 +15,11 @@ use GuzzleHttp\Handler\CurlFactory;
 use GuzzleHttp\Handler\CurlFactoryInterface;
 use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\RequestInterface;
-use Swoolefy\Core\Coroutine\Context as SwooleContext;
 use Swoolefy\Core\Log\LogManager;
 use Swoolefy\Core\Swfy;
 
 class CurlProxyHandler
 {
-    const _HTTP_CURL_MAX_SPAN_DEFAULT = 100;
-
-    const __HTTP_CURL_MAX_SPAN_TRACE = '__http_curl_max_span_trace';
-
     /** @var CurlFactoryInterface */
     private $factory;
 
@@ -62,23 +57,15 @@ class CurlProxyHandler
     }
 
     /**
-     * @return \Swoolefy\Util\Log
+     * @return \Swoolefy\Util\Log|null
      */
-    public static function buildLogChannel()
+    public static function buildLogChannel(): ?\Swoolefy\Util\Log
     {
         if (\Swoole\Coroutine::getCid() >= 0) {
-            $logger = LogManager::getInstance()->getLogger(LogManager::GUZZLE_CURL_LOG);
-            if ($logger) {
-                $logFilePath = $logger->getLogFilePath();
-                if (!SwooleContext::has('is_exist_guzzle_curl_log_file')) {
-                    if (!file_exists($logFilePath)) {
-                        fopen($logFilePath, 'w');
-                        SwooleContext::set('is_exist_guzzle_curl_log_file', 1);
-                    }
-                }
-                return $logger;
-            }
+            return LogManager::getInstance()->getLogger(LogManager::GUZZLE_CURL_LOG);
         }
+
+        return null;
     }
 
     /**
@@ -103,32 +90,14 @@ class CurlProxyHandler
         $stack   = HandlerStack::create($handler);
         self::applyPsr7CompatiblePrepareBody($stack);
 
-        if (SwooleContext::has(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID)) {
-            $traceId = SwooleContext::get(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID);
-        }
-
-        // 设置traceId
-        $stack->push(RequestMiddleware::addHeader(OpentelemetryMiddleware::OPENTELEMETRY_X_TRACE_ID, $traceId ?? ''));
+        // 每次请求时从上下文读取 traceId，避免 HandlerStack 跨协程复用导致串值
+        $stack->push(RequestMiddleware::addTraceIdHeader());
         // 记录请求参数
         $stack->push(RequestMiddleware::requestRecordLog());
         // 记录请求返回的原始数据
         $stack->push(ResponseMiddleware::responseRecordLog());
         // worker进程中开启opentelemetry追踪
-        if (env('OTEL_INSTRUMENTATION_GUZZLE_ENABLED', false) && Swfy::isWorkerProcess()) {
-            if (!SwooleContext::has(self::__HTTP_CURL_MAX_SPAN_TRACE)) {
-                $currentTraceSpanNum = 1;
-                SwooleContext::set(self::__HTTP_CURL_MAX_SPAN_TRACE, $currentTraceSpanNum);
-            } else {
-                $currentTraceSpanNum = SwooleContext::get(self::__HTTP_CURL_MAX_SPAN_TRACE);
-                $maxTraceSpanNum = env('OTEL_INSTRUMENTATION_GUZZLE_MAX_TRACE_SPANS_NUM');
-                if (empty($maxTraceSpanNum)) {
-                    $maxTraceSpanNum = self::_HTTP_CURL_MAX_SPAN_DEFAULT;
-                }
-                if ($currentTraceSpanNum > $maxTraceSpanNum) {
-                    return $stack;
-                }
-                SwooleContext::set(self::__HTTP_CURL_MAX_SPAN_TRACE, ++$currentTraceSpanNum);
-            }
+        if (self::isOpentelemetryEnabled()) {
             // 开始curl opentelemetry追踪
             $stack->push(OpentelemetryMiddleware::opentelemetryStartTrace());
             // 结束curl opentelemetry追踪
@@ -136,5 +105,21 @@ class CurlProxyHandler
         }
 
         return $stack;
+    }
+
+    /**
+     * 非 worker 进程（CLI、自定义进程）或未开启配置时不创建 Span。
+     */
+    private static function isOpentelemetryEnabled(): bool
+    {
+        if (!function_exists('env') || !env('OTEL_INSTRUMENTATION_GUZZLE_ENABLED', false)) {
+            return false;
+        }
+
+        try {
+            return Swfy::isWorkerProcess();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

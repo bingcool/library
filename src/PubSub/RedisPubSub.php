@@ -1,112 +1,148 @@
 <?php
-/**
- * +----------------------------------------------------------------------
- * | Common library of swoole
- * +----------------------------------------------------------------------
- * | Licensed ( https://opensource.org/licenses/MIT )
- * +----------------------------------------------------------------------
- * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
- * +----------------------------------------------------------------------
- */
+
+declare(strict_types=1);
 
 namespace Swoolefy\Library\PubSub;
 
+use Swoolefy\Library\PubSub\Exception\PubSubException;
+use Swoolefy\Library\Redis\Redis as PhpRedisConnection;
 use Swoolefy\Library\Redis\RedisConnection;
 
+/**
+ * phpredis 扩展的 PubSub 驱动。
+ *
+ * 两条实测约束决定了本驱动的写法：
+ * 1. 回调返回 `false` 不会「优雅停止」，phpredis 会直接断开连接并抛
+ *    `RedisException: read error on connection`（非协程下 exit 255）。
+ *    停止循环只能在回调内对同一连接显式 `unsubscribe()/punsubscribe()`。
+ * 2. 订阅中的连接被 Swoole 绑定到发起 `subscribe()` 的协程，跨协程读写它会致命错误，
+ *    因此回调只拿渠道与消息体，连接对象一律不下发给业务。
+ *
+ * @see \Redis
+ */
 class RedisPubSub extends AbstractPubSub
 {
-    /**
-     * @var \Redis
-     */
-    protected $redis;
-
-    /**
-     * RedisPubSub constructor.
-     * @param $redis
-     * @return void
-     */
-    public function __construct(RedisConnection $redis)
+    public function __construct(RedisConnection $redis, array $options = [])
     {
-        parent::__construct($redis);
-        // no timeout
-        $this->redis->setOption(\Redis::OPT_READ_TIMEOUT, -1);
+        if (!extension_loaded('redis')) {
+            throw new PubSubException('RedisPubSub 需要 phpredis 扩展');
+        }
+
+        if (!$redis instanceof PhpRedisConnection) {
+            throw new PubSubException('RedisPubSub 需要 Swoolefy\Library\Redis\Redis 连接');
+        }
+
+        parent::__construct($redis, $options);
     }
 
     /**
-     * @param string $channel
-     * @param string $message
-     * @return int
+     * @return int|false
      */
-    public function publish(string $channel, string $message)
+    protected function doPublish(string $channel, string $message)
     {
         return $this->redis->publish($channel, $message);
     }
 
     /**
-     * @param array $channels
-     * @param $callback
-     * @return mixed
+     * 进入 phpredis 的阻塞订阅循环，读超时仅在循环期间关闭，退出后原样恢复。
+     *
+     * @param string[] $names
      */
-    public function subscribe(array $channels, $callback)
+    protected function openLoop(array $names, callable $handler, bool $isPattern): void
     {
-        return $this->handleSubscribe($channels, $callback);
-    }
+        $previousReadTimeout = $this->suspendReadTimeout();
 
-    /**
-     * @param array $channels
-     * @param $callback
-     * @return mixed
-     */
-    protected function handleSubscribe(array $channels, $callback)
-    {
-        if ($this->isCoroutine) {
-            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use ($callback) {
-               goApp(function () use ($callback, $redis, $chan, $msg) {
-                   return call_user_func($callback, $redis, $chan, $msg);
-               });
-            });
-        } else {
-            $this->redis->subscribe($channels, function ($redis, $chan, $msg) use ($callback) {
-                return call_user_func($callback, $redis, $chan, $msg);
-            });
+        try {
+            if ($isPattern) {
+                $this->redis->psubscribe($names, $this->nativeCallback());
+            } else {
+                $this->redis->subscribe($names, $this->nativeCallback());
+            }
+        } finally {
+            $this->restoreReadTimeout($previousReadTimeout);
         }
     }
 
     /**
-     * @param array $patterns
-     * @param $callback
-     * @return mixed
+     * @param string[] $names
      */
-    public function psubscribe(array $patterns, $callback)
+    protected function doUnsubscribe(array $names, bool $isPattern): void
     {
-        if ($this->isCoroutine) {
-            $this->redis->psubscribe($patterns, function ($redis, $pattern, $chan, $msg) use ($callback) {
-                goApp(function () use ($callback, $redis, $pattern, $chan, $msg) {
-                    return call_user_func($callback, $redis, $pattern, $chan, $msg);
-                });
-            });
+        if ($isPattern) {
+            $this->redis->punsubscribe($names);
         } else {
-            $this->redis->psubscribe($patterns, function ($redis, $pattern, $chan, $msg) use ($callback) {
-                return call_user_func($callback, $redis, $pattern, $chan, $msg);
-            });
+            $this->redis->unsubscribe($names);
+        }
+
+        $this->forgetNames($names, $isPattern);
+    }
+
+    /**
+     * phpredis 回调：形如 `($redis, $channel, $payload)` 与 `($redis, $pattern, $channel, $payload)`。
+     *
+     * 恒返回 true，停止靠显式退订（见类注释）。
+     */
+    private function nativeCallback(): callable
+    {
+        return function (...$args): bool {
+            $payload = array_slice($args, 1);
+            if (count($payload) === 3) {
+                [$pattern, $channel, $body] = $payload;
+                $continue = $this->handleMessage((string) $channel, (string) $body, (string) $pattern);
+            } elseif (count($payload) === 2) {
+                [$channel, $body] = $payload;
+                $continue = $this->handleMessage((string) $channel, (string) $body);
+            } else {
+                $continue = true;
+            }
+
+            if (!$continue) {
+                $this->closeLoop();
+            }
+
+            return true;
+        };
+    }
+
+    /**
+     * 结束循环：把本会话剩下的订阅全部退掉，phpredis 读不到订阅才返回。
+     */
+    private function closeLoop(): void
+    {
+        $channels = $this->subscribedChannels();
+        if ($channels !== []) {
+            $this->doUnsubscribe($channels, false);
+        }
+
+        $patterns = $this->subscribedPatterns();
+        if ($patterns !== []) {
+            $this->doUnsubscribe($patterns, true);
         }
     }
 
     /**
-     * @param array $channels
-     * @return void
+     * 循环期间把读超时设为无限，避免空闲订阅被判死；返回原值供恢复。
+     *
+     * @return float|null 无需改动时返回 null
      */
-    public function unsubscribe(array $channels)
+    private function suspendReadTimeout(): ?float
     {
-        $this->redis->unsubscribe($channels);
+        $current = (float) $this->redis->getOption(\Redis::OPT_READ_TIMEOUT);
+        if ($current === -1.0) {
+            return null;
+        }
+
+        $this->redis->setOption(\Redis::OPT_READ_TIMEOUT, -1);
+
+        return $current;
     }
 
-    /**
-     * @param array $patterns
-     * @return void
-     */
-    public function punsubscribe(array $patterns)
+    private function restoreReadTimeout(?float $previous): void
     {
-        $this->redis->punsubscribe($patterns);
+        if ($previous === null) {
+            return;
+        }
+
+        $this->redis->setOption(\Redis::OPT_READ_TIMEOUT, $previous);
     }
 }

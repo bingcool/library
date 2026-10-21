@@ -316,6 +316,20 @@ class Predis extends RedisConnection
     }
 
     /**
+     * PubSub 等场景需要改变连接参数（如关掉读写超时）：合并后重建原生 Client，
+     * 并沿用重连语义恢复 AUTH 与 SELECT。
+     *
+     * 直接改 `$this->parameters` 无效——已建立的 Client 把旧参数带进了底层连接工厂。
+     *
+     * @param array<string, mixed> $parameters
+     */
+    public function applyParameters(array $parameters): void
+    {
+        $this->parameters = $parameters;
+        $this->reConnect();
+    }
+
+    /**
      * @return Client
      */
     public function getPredisInstance()

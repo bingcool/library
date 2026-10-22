@@ -58,6 +58,7 @@ composer require bingcool/library
 | `Image` | Intervention Image 4：open/create、预设缩放、水印、webp/jpeg 等编码；多档派生需多次 open | [src/Image/README.md](src/Image/README.md) |
 | `Qrcode` | Bacon QR 仅生成：PNG/SVG/EPS/Base64、WiFi 串、可选 Logo（依赖 Image + 纠错 Q/H） | [src/Qrcode/README.md](src/Qrcode/README.md) |
 | `Barcode` | picqer 一维码：CODE_128/39、EAN、UPC、ITF；默认 SVG，PNG 需 gd 或 imagick | [src/Barcode/README.md](src/Barcode/README.md) |
+| `PhpOffice/Excel` | xlswriter Excel 导出、整表读取与流式导入：批量写行、表头样式、合并 / 合计行扩展点，导入按表头映射逐行落库；需 `ext-xlswriter` | [src/PhpOffice/Excel/README.md](src/PhpOffice/Excel/README.md) |
 | `OpenTelemetry` | 内置 OpenTelemetry PHP API / SDK 与 OTLP 导出 | [src/OpenTelemetry/README.md](src/OpenTelemetry/README.md) |
 
 ### 安全与校验
@@ -74,7 +75,7 @@ composer require bingcool/library
 
 | 模块 | 作用 | 文档 |
 |------|------|------|
-| `Lock` | Redis / MySQL / PostgreSQL / 文件锁，协程内 `synchronized` | [src/Lock/README.md](src/Lock/README.md) |
+| `Lock` | Redis / MySQL / PostgreSQL 互斥锁，协程内 `synchronized` | [src/Lock/README.md](src/Lock/README.md) |
 | `RateLimit` | Redis 滑动窗口与令牌桶，Lua 保证原子性 | [src/RateLimit/README.md](src/RateLimit/README.md) |
 | `Uuid` | Redis 分布式自增 ID（时间前缀 + 段内序号，不是 UUID v4） | [src/Uuid/README.md](src/Uuid/README.md) |
 | `Events` | 事件分发 | — |

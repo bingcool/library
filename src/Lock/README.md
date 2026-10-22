@@ -215,7 +215,7 @@ $mutex = new DistributedMutex([
 
 1. **一个 mutex 实例只能被一个业务协程独占使用**。phpredis 连接在 Swoole 下与协程绑定，跨业务协程并发共享会触发 `Socket#N has already been bound to another coroutine` 致命错误；MySQL/PostgreSQL 的 PDO 连接同样不能并发放到两个业务协程里。
 2. `synchronized()` 内部会把连接（Redis 或 PDO）从父协程交接给执行回调的子协程（父协程挂起等待、子协程独占使用），这是模块内的受控交接，不需要额外处理。
-3. 每个协程使用自己从组件容器 / 连接池租借的客户端构造锁；不要缓存到 Worker 级静态变量。
+3. 每个协程使用自己从组件容器 / 连接池租借的客户端构造锁。swoolefy 中直接 `get('redis-order-lock')` 即可：容器按协程缓存单例，同一协程顺序复用安全；不要缓存到 Worker 级静态变量，也不要把实例传给其他协程。
 4. `synchronized()` 的回调耗时应显著小于 `leaseTimeout`，否则释放阶段抛 `ExecutionOutsideLockException`：业务结果/异常仍可通过 `getCodeResult()` / `getCodeException()` 取回，但副作用可能已越界。
 5. 子协程内 `Application::getApp()` 是独立的 `EventController`，需要连接时重新 `get()`，不要使用父协程闭包里捕获的连接/组件 DTO。
 6. **连接池容量决定并发等待上限**：`lock()` 自旋等待期间持续占用一个 Redis 连接，池耗尽时请求会在进入 `synchronized()` 之前被框架拒绝（Test 默认 5 + 10 降级/Worker，100 并发即触发 503）。生产按峰值等待者数量配置 `max_pool_num` / `fallback.max_concurrent`。

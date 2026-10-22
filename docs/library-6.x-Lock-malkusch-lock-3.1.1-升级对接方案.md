@@ -148,7 +148,7 @@ final class PostgreSQLMutex extends \Malkusch\Lock\Mutex\PostgreSQLMutex
 
 ### 5.3 使用约束（README + 代码注释必须写明）
 
-1. **一个 mutex 实例只能被一个业务协程独占使用**（§4-⑧）。连接池租借的对象被两个业务协程并发读写会直接 fatal。因此不要把 mutex 做成进程级/请求级共享单例，也不要在业务层把父协程的 mutex 实例传给另一个并发协程。`synchronized()` 内部「父协程取锁 → 子协程执行/释放」是模块受控交接（§5.6），不属于此限制。
+1. **一个 mutex 实例只能被一个业务协程独占使用**（§4-⑧）。连接池租借的对象被两个业务协程并发读写会直接 fatal。因此不要把 mutex 做成进程级或跨协程共享单例，也不要在业务层把父协程的 mutex 实例传给另一个并发协程。swoolefy 的组件容器按协程缓存实例，`get()` 得到的即是「每协程一个 mutex」。`synchronized()` 内部「父协程取锁 → 子协程执行/释放」是模块受控交接（§5.6），不属于此限制。
 2. `synchronized()` 的回调耗时应显著小于 `leaseTimeout`；否则释放阶段抛 `ExecutionOutsideLockException`，业务结果/异常需从 `getCodeResult()` / `getCodeException()` 取回（§4-④）。
 3. `synchronized()` 的回调运行在 `goApp()` 子协程，`Application::getApp()` 是独立的 `EventController`；需要 Redis/DB 时应在回调内重新 `get()`，不要使用父协程闭包捕获的连接或组件 DTO（mutex 自身持有的连接由模块受控交接）。
 4. 未拿到锁：`catch (LockAcquireTimeoutException)`。释放失败：`catch (LockReleaseException)`，此时临界区已执行，副作用需按幂等设计。
@@ -243,14 +243,14 @@ $mutex = new DistributedMutex([
 | P0 依赖收口 | ~~`library/composer.json` 改 `~3.1.0`；`composer update`~~ **已完成（2026-10-22）：library 与 swoolefy 均锁定 3.1.1** | 依赖锁定；`grep -rn "malkusch\\\\lock" src/Lock` 结果为 0 |
 | P1 模块重写 | **已完成**：新建 `RedisMutex.php`、`PostgreSQLMutex.php`、`CoroutineSynchronizedTrait.php`；改写 `MySQLMutex.php`；删除 `CASMutex`/`FlockMutex`/`MemcachedMutex`/`PHPRedisMutex`/`PgAdvisoryLockMutex`/`PredisMutex`/`SynchronizeTrait`/`TransactionalMutex`；前置校验与契约注释已补 | `src/Lock` 为 3 个封装类 + 1 个共享 trait + README |
 | P2 单元测试 | **已完成**：`tests/Lock/LockModuleTest.php` 覆盖 Redis 锁；新增 `tests/Lock/DatabaseLockTest.php` 覆盖 MySQL/PG 的子协程执行、释放后可重入、业务异常透传、获取超时、非协程回退 | 容器内 39 tests / 116 assertions 全绿（MySQL/PG 不可达时 skip） |
-| P3 swoolefy 侧对接 | **已完成**：`Test/Config/component/common.php:34-43` 改单客户端构造；`Test/App.php` 的 `getRedisLock()` 改为 `makeNewObject()`；`LockController` 改用 `LockAcquireTimeoutException`、`locktest2` 改短等待范式，新增 `/api/lock/hold`、`/api/lock/verify`；`LockVerify` 新增 `mysql_synchronized` / `pgsql_synchronized` 场景（数据库不可达时标记 skipped） | E2E `pass: true` |
+| P3 swoolefy 侧对接 | **已完成**：`Test/Config/component/common.php:34-43` 改单客户端构造；`Test/App.php` 的 `getRedisLock()` 改用协程容器 `get()`（同一协程单例）；`LockController` 改用 `LockAcquireTimeoutException`、`locktest2` 改短等待范式，新增 `/api/lock/hold`、`/api/lock/verify`；`LockVerify` 新增 `mysql_synchronized` / `pgsql_synchronized` 场景（数据库不可达时标记 skipped） | E2E `pass: true` |
 | P4 文档 | **已完成**：重写 `src/Lock/README.md`；本方案文档随 PR 归档 | 文档与实现一致 |
 
 ### 6.2 调用点改造清单（swoolefy）
 
 | 位置 | 现状 | 目标 |
 |---|---|---|
-| `swoolefy/Test/Config/component/common.php:36` | `new PHPRedisMutex([$redis], 'order_lock', 5)` | `new RedisMutex($redis, 'order_lock', 5.0, 30.0)`，并把组件注册改为「每次 `makeNewObject`/工厂闭包产出新实例」，避免跨协程共享 mutex（§5.3-1） |
+| `swoolefy/Test/Config/component/common.php:36` | `new PHPRedisMutex([$redis], 'order_lock', 5)` | `new RedisMutex($redis, 'order_lock', 5.0, 30.0)`；组件实例由协程容器缓存，禁止跨协程传递 mutex（§5.3-1） |
 | `swoolefy/Test/Config/component/common.php:42` | `new PredisMutex([$redis], 'order_lock-1', 5)` | `new RedisMutex($redis, 'order_lock-1', 5.0, 30.0)` |
 | `swoolefy/Test/App.php:18,103-105` | `use ...Lock\PHPRedisMutex`、注释 `@return PHPRedisMutex\|ContainerObjectDto` | 改 `RedisMutex`；注释同步 |
 | `swoolefy/Test/Controller/LockController.php:4` | `use malkusch\lock\exception\TimeoutException` | `use Malkusch\Lock\Exception\LockAcquireTimeoutException` |
@@ -295,7 +295,7 @@ $mutex = new DistributedMutex([
 4. 短等待非阻塞范式（未拿到锁走「稍后重试」分支）。
 5. predis 与 phpredis 混合持锁/竞争。
 6. 业务异常后锁释放。
-7. 组件注册形态：同一请求内两次 `get()` 得到不同 mutex 实例（防止跨协程共享回归）。
+7. 组件注册形态：同一协程内两次 `get()` 复用同一个 mutex（顺序获取两次均成功），子协程经独立 `EventController` 得到不同实例。
 8. 包装器路径：直接用 `Application::getApp()->get('redis')->getObject()`（`Swoolefy\Library\Redis\Redis` 包装器）构造锁，验证自动解包且走 phpredis 分支（对 NX/PX 与释放脚本均生效）。
 9. 协程上下文：`synchronized()` 回调的 cid 与父协程不同，且 `Application::getApp()` 为 `EventController`（验证 `goApp()` 路径与独立组件上下文）。
 

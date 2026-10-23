@@ -1,411 +1,371 @@
 <?php
-/**
- * +----------------------------------------------------------------------
- * | Common library of swoole
- * +----------------------------------------------------------------------
- * | Licensed ( https://opensource.org/licenses/MIT )
- * +----------------------------------------------------------------------
- * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
- * +----------------------------------------------------------------------
- */
+
+declare(strict_types=1);
 
 namespace Swoolefy\Library\Mongodb;
 
-class MongodbCollection
+use Generator;
+use InvalidArgumentException;
+use MongoDB\BulkWriteResult;
+use MongoDB\Collection;
+use MongoDB\DeleteResult;
+use MongoDB\InsertManyResult;
+use MongoDB\InsertOneResult;
+use MongoDB\Operation\FindOneAndUpdate;
+use MongoDB\UpdateResult;
+use Swoolefy\Library\Mongodb\Config\MongodbConfig;
+use Swoolefy\Library\Mongodb\Support\IdNormalizer;
+
+/**
+ * MongoDB\Collection 的轻量包装：强制数组解码、统一 _id 语义、写操作返回原生结果对象。
+ */
+final class MongodbCollection
 {
-    /**
-     * _id 将默认设置成id
-     */
-    public $_id = null;
+    private readonly IdNormalizer $ids;
 
-    /**
-     * $collectionInstance  collection实例
-     * @var null
-     */
-    public $collectionInstance = null;
+    public function __construct(
+        private readonly Collection $collection,
+        string $idKey = '_id',
+        bool $objectId = true
+    ) {
+        $this->ids = new IdNormalizer($idKey, $objectId);
+    }
 
-    /**
-     * __construct
-     * @param string $collection
-     */
-    public function __construct($collection, $_id, $databaseObject)
+    public function raw(): Collection
     {
-        $this->collectionInstance = $databaseObject->$collection;
-        $this->_id = $_id;
+        return $this->collection;
+    }
+
+    public function getName(): string
+    {
+        return $this->collection->getCollectionName();
+    }
+
+    public function getNamespace(): string
+    {
+        return $this->collection->getNamespace();
     }
 
     /**
-     * bulkWrite 批量执行操作命令数据
-     * @param array $insertData
-     * @return  mixed
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $options
+     * @return list<array<string, mixed>>
      */
-    public function bulkWrite($insertData)
+    public function find(array $filter = [], array $options = []): array
     {
-        return $this->collectionInstance->bulkWrite($insertData);
+        return iterator_to_array($this->iterate($filter, $options), false);
     }
 
     /**
-     * parseFilter 条件分析
-     * @param array $filter
-     * @return  mixed
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $options
+     * @return Generator<int, array<string, mixed>>
      */
-    protected function parseFilter($filter = [])
+    public function iterate(array $filter = [], array $options = []): Generator
     {
-        if (isset($filter['_id'])) {
-            if (!$filter['_id'] instanceof \MongoDB\BSON\ObjectId) {
-                $filter['_id'] = new \MongoDB\BSON\ObjectId($filter['_id']);
-            }
-            if (isset($filter[$this->_id])) {
-                unset($filter[$this->_id]);
-            }
-        } else {
-            $keys = array_keys($filter);
-            if (in_array($this->_id, $keys)) {
-                if ($filter[$this->_id] instanceof \MongoDB\BSON\ObjectId) {
-                    $filter['_id'] = $filter[$this->_id];
-                } else {
-                    $filter['_id'] = new \MongoDB\BSON\ObjectId($filter[$this->_id]);
-                }
-                unset($filter[$this->_id]);
+        $filter = $this->ids->normalizeFilter($filter);
+        $options = $this->readOptions($options);
+
+        foreach ($this->collection->find($filter, $options) as $document) {
+            yield $this->ids->normalizeDocument($document);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>|null
+     */
+    public function findOne(array $filter = [], array $options = []): ?array
+    {
+        $filter = $this->ids->normalizeFilter($filter);
+        $document = $this->collection->findOne($filter, $this->readOptions($options));
+
+        return $document === null ? null : $this->ids->normalizeDocument($document);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $options
+     */
+    public function countDocuments(array $filter = [], array $options = []): int
+    {
+        $this->rejectDecodeOptions($options);
+
+        return $this->collection->countDocuments($this->ids->normalizeFilter($filter), $options);
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    public function estimatedDocumentCount(array $options = []): int
+    {
+        $this->rejectDecodeOptions($options);
+
+        return $this->collection->estimatedDocumentCount($options);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $options
+     * @return list<mixed>
+     */
+    public function distinct(string $fieldName, array $filter = [], array $options = []): array
+    {
+        $this->rejectDecodeOptions($options);
+
+        return $this->collection->distinct($fieldName, $this->ids->normalizeFilter($filter), $options);
+    }
+
+    /**
+     * 聚合结果不做 _id 归一化，避免破坏 $group 的分组键。
+     *
+     * @param list<array<string, mixed>> $pipeline
+     * @param array<string, mixed> $options
+     * @return list<array<string, mixed>>
+     */
+    public function aggregate(array $pipeline, array $options = []): array
+    {
+        $options = $this->readOptions($options);
+
+        return iterator_to_array($this->collection->aggregate($pipeline, $options), false);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>|null
+     */
+    public function findOneAndDelete(array $filter, array $options = []): ?array
+    {
+        $options = $this->findOneOptions($options, false);
+        $document = $this->collection->findOneAndDelete($this->ids->normalizeFilter($filter), $options);
+
+        return $document === null ? null : $this->ids->normalizeDocument($document);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $replacement
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>|null
+     */
+    public function findOneAndReplace(array $filter, array $replacement, array $options = []): ?array
+    {
+        $options = $this->findOneOptions($options, true);
+        $document = $this->collection->findOneAndReplace(
+            $this->ids->normalizeFilter($filter),
+            $replacement,
+            $options
+        );
+
+        return $document === null ? null : $this->ids->normalizeDocument($document);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $update
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>|null
+     */
+    public function findOneAndUpdate(array $filter, array $update, array $options = []): ?array
+    {
+        $options = $this->findOneOptions($options, true);
+        $document = $this->collection->findOneAndUpdate(
+            $this->ids->normalizeFilter($filter),
+            $update,
+            $options
+        );
+
+        return $document === null ? null : $this->ids->normalizeDocument($document);
+    }
+
+    /**
+     * @param array<string, mixed> $document
+     * @param array<string, mixed> $options
+     */
+    public function insertOne(array $document, array $options = []): InsertOneResult
+    {
+        return $this->collection->insertOne($this->ids->normalizeInsertDocument($document), $options);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $documents
+     * @param array<string, mixed> $options
+     */
+    public function insertMany(array $documents, array $options = []): InsertManyResult
+    {
+        $normalized = [];
+        foreach ($documents as $index => $document) {
+            $normalized[$index] = $this->ids->normalizeInsertDocument($document);
+        }
+
+        return $this->collection->insertMany($normalized, $options);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $update
+     * @param array<string, mixed> $options
+     */
+    public function updateOne(array $filter, array $update, array $options = []): UpdateResult
+    {
+        return $this->collection->updateOne($this->ids->normalizeFilter($filter), $update, $options);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $update
+     * @param array<string, mixed> $options
+     */
+    public function updateMany(array $filter, array $update, array $options = []): UpdateResult
+    {
+        return $this->collection->updateMany($this->ids->normalizeFilter($filter), $update, $options);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $replacement
+     * @param array<string, mixed> $options
+     */
+    public function replaceOne(array $filter, array $replacement, array $options = []): UpdateResult
+    {
+        return $this->collection->replaceOne($this->ids->normalizeFilter($filter), $replacement, $options);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $options
+     */
+    public function deleteOne(array $filter, array $options = []): DeleteResult
+    {
+        return $this->collection->deleteOne($this->ids->normalizeFilter($filter), $options);
+    }
+
+    /**
+     * @param array<string, mixed> $filter
+     * @param array<string, mixed> $options
+     */
+    public function deleteMany(array $filter, array $options = []): DeleteResult
+    {
+        return $this->collection->deleteMany($this->ids->normalizeFilter($filter), $options);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $operations
+     * @param array<string, mixed> $options
+     */
+    public function bulkWrite(array $operations, array $options = []): BulkWriteResult
+    {
+        return $this->collection->bulkWrite($this->normalizeBulkOperations($operations), $options);
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>
+     */
+    private function readOptions(array $options): array
+    {
+        $this->rejectDecodeOptions($options);
+        $options['typeMap'] = MongodbConfig::TYPE_MAP;
+
+        return $options;
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    private function rejectDecodeOptions(array $options): void
+    {
+        foreach (['typeMap', 'codec'] as $key) {
+            if (array_key_exists($key, $options)) {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'Mongodb option "%s" is managed by the module; use raw() for custom decoding.',
+                        $key
+                    )
+                );
             }
         }
-        return $filter;
     }
 
     /**
-     * find 查询数据
-     * @param array $filter
-     * @param array $options
-     * @return array
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>
      */
-    public function find($filter = [], array $options = [])
+    private function findOneOptions(array $options, bool $allowReturnDocument): array
     {
-        $result = [];
-        $filter = $this->parseFilter($filter);
-        $documents = $this->collectionInstance->find($filter, $options);
-        if ($documents) {
-            foreach ($documents as $k => $document) {
-                $result[$k] = iterator_to_array($document);
-                if (isset($result[$k]['_id'])) {
-                    if (!is_null($this->_id) && ($this->_id != '_id')) {
-                        $result[$k][$this->_id] = (string)$result[$k]['_id'];
-                        unset($result[$k]['_id']);
-                    } else {
-                        $result[$k]['_id'] = (string)$result[$k]['_id'];
+        if (array_key_exists('includeResultMetadata', $options)) {
+            throw new InvalidArgumentException(
+                'Mongodb option "includeResultMetadata" is not supported by mongodb/mongodb v2.3.'
+            );
+        }
+
+        if (array_key_exists('returnDocument', $options)) {
+            if (!$allowReturnDocument) {
+                throw new InvalidArgumentException(
+                    'Mongodb option "returnDocument" is not supported by findOneAndDelete().'
+                );
+            }
+
+            $returnDocument = $options['returnDocument'];
+            if (
+                $returnDocument !== FindOneAndUpdate::RETURN_DOCUMENT_BEFORE
+                && $returnDocument !== FindOneAndUpdate::RETURN_DOCUMENT_AFTER
+            ) {
+                throw new InvalidArgumentException(
+                    'Mongodb option "returnDocument" must be FindOneAndUpdate::RETURN_DOCUMENT_BEFORE (1) '
+                    . 'or FindOneAndUpdate::RETURN_DOCUMENT_AFTER (2).'
+                );
+            }
+        }
+
+        return $this->readOptions($options);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $operations
+     * @return list<array<string, mixed>>
+     */
+    private function normalizeBulkOperations(array $operations): array
+    {
+        foreach ($operations as $index => $operation) {
+            if (!is_array($operation)) {
+                continue;
+            }
+
+            $type = array_key_first($operation);
+            if (!is_string($type)) {
+                continue;
+            }
+
+            $args = $operation[$type] ?? null;
+            if (!is_array($args)) {
+                continue;
+            }
+
+            switch ($type) {
+                case 'insertOne':
+                    if (isset($args[0]) && is_array($args[0])) {
+                        $args[0] = $this->ids->normalizeInsertDocument($args[0]);
                     }
-                }
+                    break;
+
+                case 'updateOne':
+                case 'updateMany':
+                case 'replaceOne':
+                case 'deleteOne':
+                case 'deleteMany':
+                    if (isset($args[0]) && is_array($args[0])) {
+                        $args[0] = $this->ids->normalizeFilter($args[0]);
+                    }
+                    break;
             }
-        }
-        return $result;
-    }
 
-    /**
-     * findOne 查找一个文档
-     * @param array $filter
-     * @param array $options
-     * @return array
-     */
-    public function findOne($filter = [], array $options = [])
-    {
-        $filter = $this->parseFilter($filter);
-        $documents = $this->collectionInstance->findOne($filter, $options);
-        if ($documents) {
-            $document = iterator_to_array($documents);
-        }
-        if (isset($document['_id'])) {
-            if (!is_null($this->_id) && ($this->_id != '_id')) {
-                $document[$this->_id] = (string)$document['_id'];
-                unset($document['_id']);
-            } else {
-                $document['_id'] = (string)$document['_id'];
-            }
-        }
-        return $document;
-    }
-
-    /**
-     * findOneAndDelete 返回将要被删除的文档
-     * @param array $filter
-     * @param array $options
-     * @return mixed
-     */
-    public function findOneAndDelete($filter, array $options = [])
-    {
-        $filter = $this->parseFilter($filter);
-        $result = $this->collectionInstance->findOneAndDelete($filter, $options);
-        if (is_object($result)) {
-            $document = iterator_to_array($result);
-            if (isset($document['_id'])) {
-                if (!is_null($this->_id) && ($this->_id != '_id')) {
-                    $document[$this->_id] = (string)$document['_id'];
-                    unset($document['_id']);
-                } else {
-                    $document['_id'] = (string)$document['_id'];
-                }
-            }
-        } else if (is_array($result)) {
-            $document = $result;
-            if (isset($document['_id'])) {
-                if (!is_null($this->_id) && ($this->_id != '_id')) {
-                    $document[$this->_id] = (string)$document['_id'];
-                    unset($document['_id']);
-                } else {
-                    $document['_id'] = (string)$document['_id'];
-                }
-            }
-        } else {
-            // 没有匹配到文档返回null
-            $document = $result;
+            $operation[$type] = $args;
+            $operations[$index] = $operation;
         }
 
-        return $document;
-    }
-
-    /**
-     * findOneAndReplace 返回替换后的文档
-     * @param array $filter
-     * @param array $replacement
-     * @param array $options
-     * @return mixed
-     */
-    public function findOneAndReplace($filter, $replacement, array $options = [])
-    {
-        $filter = $this->parseFilter($filter);
-        $result = $this->collectionInstance->findOneAndReplace($filter, $replacement, $options);
-        if (is_object($result)) {
-            $document = iterator_to_array($result);
-            if (isset($document['_id'])) {
-                if (!is_null($this->_id) && ($this->_id != '_id')) {
-                    $document[$this->_id] = (string)$document['_id'];
-                    unset($document['_id']);
-                } else {
-                    $document['_id'] = (string)$document['_id'];
-                }
-            }
-        } else if (is_array($result)) {
-            $document = $result;
-            if (isset($document['_id'])) {
-                if (!is_null($this->_id) && ($this->_id != '_id')) {
-                    $document[$this->_id] = (string)$document['_id'];
-                    unset($document['_id']);
-                } else {
-                    $document['_id'] = (string)$document['_id'];
-                }
-            }
-        } else {
-            $document = $result;
-        }
-
-        return $document;
-    }
-
-    /**
-     * findOneAndUpdate 返回更新后的文档
-     * @param array $filter
-     * @param array $update
-     * @param array $options
-     * @return mixed
-     */
-    public function findOneAndUpdate($filter, $update, array $options = [])
-    {
-        $filter = $this->parseFilter($filter);
-        $result = $this->collectionInstance->findOneAndUpdate($filter, $update, $options);
-        if (is_object($result)) {
-            $document = iterator_to_array($result);
-            if (isset($document['_id'])) {
-                if (!is_null($this->_id) && ($this->_id != '_id')) {
-                    $document[$this->_id] = (string)$document['_id'];
-                    unset($document['_id']);
-                } else {
-                    $document['_id'] = (string)$document['_id'];
-                }
-            }
-        } else if (is_array($result)) {
-            $document = $result;
-            if (isset($document['_id'])) {
-                if (!is_null($this->_id) && ($this->_id != '_id')) {
-                    $document[$this->_id] = (string)$document['_id'];
-                    unset($document['_id']);
-                } else {
-                    $document['_id'] = (string)$document['_id'];
-                }
-            }
-        } else {
-            // 没有找到对应的更新文档，返回null
-            $document = $result;
-        }
-
-        return $document;
-    }
-
-    /**
-     * insertMany 插入多个文档
-     * @param array $documents
-     * @param array $options
-     * @return
-     */
-    public function insertMany(array $documents, array $options = [])
-    {
-        return $this->insert($documents, $options);
-    }
-
-    /**
-     * insertMany 插入多个文档
-     * @param array $documents
-     * @param array $options
-     * @return    int
-     */
-    public function insert(array $documents, array $options = [])
-    {
-        if (count($documents) == 1) {
-            return $this->insertOne($documents, $options);
-        }
-        $writeResult = $this->collectionInstance->insertMany($documents, $options);
-        $insertId = $writeResult->getInsertedCount();
-        if ($insertId < 0 || is_null($insertId) || $insertId === false) {
-            return false;
-        }
-        return $insertId;
-    }
-
-    /**
-     * insertOne 插入一条数据
-     * @param array $document
-     * @param array $options
-     * @return    int
-     */
-    public function insertOne(array $document, array $options = [])
-    {
-        $writeResult = $this->collectionInstance->insertOne($document, $options);
-        $insertId = $writeResult->getInsertedCount();
-        if ($insertId < 0 || is_null($insertId) || $insertId === false) {
-            return false;
-        }
-        return $insertId;
-    }
-
-    /**
-     * deleteMany 删除多个文档
-     * @param array $filter
-     * @param array options
-     * @return  int|boolean
-     */
-    public function delete($filter, array $options = [])
-    {
-        $filter = $this->parseFilter($filter);
-        $deleteResult = $this->collectionInstance->deleteMany($filter, $options);
-        $deleteId = $deleteResult->getDeletedCount();
-        if ($deleteId < 0 || is_null($deleteId) || $deleteId === false) {
-            return false;
-        }
-        return $deleteId;
-    }
-
-    /**
-     * deleteMany 删除多个文档
-     * @param array $filter
-     * @param array options
-     * @return  int|boolean
-     */
-    public function deleteMany($filter, array $options = [])
-    {
-        return $this->delete($filter, $options);
-    }
-
-    /**
-     * deleteMany 删除一个文档
-     * @param array $filter
-     * @param array options
-     * @return  int|boolean
-     */
-    public function deleteOne($filter, array $options = [])
-    {
-        $filter = $this->parseFilter($filter);
-        $deleteResult = $this->collectionInstance->deleteOne($filter, $options);
-        $deleteId = $deleteResult->getDeletedCount();
-        if ($deleteId < 0 || is_null($deleteId) || $deleteId === false) {
-            return false;
-        }
-        return $deleteId;
-    }
-
-    /**
-     * updateMany 更新多个文档
-     * @param array $filter
-     * @param array $update
-     * @param array $options
-     * @return int|boolean
-     */
-    public function update($filter, $update, array $options = [])
-    {
-        $filter = $this->parseFilter($filter);
-        $updateResult = $this->collectionInstance->updateMany($filter, $update, $options);
-        $updateId = $updateResult->getUpsertedCount();
-        if ($updateId == 0 || $updateId === false) {
-            return false;
-        }
-        return $updateId;
-    }
-
-    /**
-     * updateMany 更新多个文档
-     * @param array $filter
-     * @param array $update
-     * @param array $options
-     * @return int|boolean
-     */
-    public function updateMany($filter, $update, array $options = [])
-    {
-        return $this->update($filter, $update, $options);
-    }
-
-    /**
-     * updateMany 更新一个文档
-     * @param array $filter
-     * @param array $update
-     * @param array $options
-     * @return int|boolean
-     */
-    public function updateOne($filter, $update, array $options = [])
-    {
-        $filter = $this->parseFilter($filter);
-        $updateResult = $this->collectionInstance->updateOne($filter, $update, $options);
-        $updateId = $updateResult->getUpsertedCount();
-        if ($updateId == 0 || $updateId === false) {
-            return false;
-        }
-        return $updateId;
-    }
-
-    /**
-     * count
-     * @return int
-     */
-    public function count($filter, array $options = [])
-    {
-        return $this->collectionInstance->count($filter, $options);
-    }
-
-    /**
-     * @param mixed $fieldName
-     * @param array $filter
-     * @param array $options
-     * @return mixed
-     */
-    public function distinct($fieldName, $filter = [], array $options = [])
-    {
-        $filter = $this->parseFilter($filter);
-        return $this->collectionInstance->distinct($fieldName, $filter, $options);
-    }
-
-    /**
-     * 自动重载collection类的原始函数
-     * @param string $method
-     * @param mixed $args
-     * @return mixed
-     */
-    public function __call($method, $args)
-    {
-        return call_user_func_array([$this->collectionInstance, $method], $args);
+        return $operations;
     }
 }

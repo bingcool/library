@@ -1,196 +1,114 @@
 <?php
-/**
- * +----------------------------------------------------------------------
- * | Common library of swoole
- * +----------------------------------------------------------------------
- * | Licensed ( https://opensource.org/licenses/MIT )
- * +----------------------------------------------------------------------
- * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
- * +----------------------------------------------------------------------
- */
+
+declare(strict_types=1);
 
 namespace Swoolefy\Library\Mongodb;
 
 use MongoDB\Client;
+use MongoDB\Database;
+use Swoolefy\Library\Mongodb\Config\MongodbConfig;
 
+/**
+ * MongoDB 连接入口与 collection 缓存。
+ *
+ * 每个实例持有独立的 Client 与缓存，同一实例不应跨协程共享；
+ * swoolefy 组件 get() 已按协程缓存实例。
+ */
 class MongodbModel
 {
-    /**
-     * _id 将默认设置成id
-     * @var string
-     */
-    public $_id = null;
+    private readonly MongodbConfig $config;
+
+    private ?Client $client = null;
+
+    /** @var array<string, Database> */
+    private array $databases = [];
+
+    /** @var array<string, MongodbCollection> */
+    private array $collections = [];
 
     /**
-     * $mongodbClient mongodb的客户端对象
-     * @var null
+     * @param array<string, mixed>|MongodbConfig $config
      */
-    public $mongodbClient = null;
-
-    /**
-     * $database 默认连接的数据库
-     * @var null
-     */
-    public $database = null;
-
-    /**
-     * 配置值
-     * @var string
-     */
-    public $uri = 'mongodb=127.0.0.1:27017';
-
-    /**
-     * @var array
-     */
-    public $uriOptions = [];
-
-    /**
-     * @var array
-     */
-    public $driverOptions = [];
-
-    /**
-     * $databaseObject 数据库对象
-     * @var null
-     */
-    protected $databaseObject = null;
-
-    /**
-     * $collectionModels 每个collection的操作对象
-     * @var array
-     */
-    protected $collectionModels = [];
-
-    /**
-     * MongodbModel constructor.
-     * @param string $uri
-     * @param array $uriOptions
-     * @param array $driverOptions
-     */
-    public function __construct(string $uri = 'mongodb=127.0.0.1:27017', array $uriOptions = [], array $driverOptions = [])
+    public function __construct(array|MongodbConfig $config)
     {
-        $this->uri = $uri;
-        $this->uriOptions = $uriOptions;
-        $this->driverOptions = $driverOptions;
+        $this->config = $config instanceof MongodbConfig ? $config : new MongodbConfig($config);
     }
 
-    /**
-     * setDatabase
-     * @param string $db
-     * @return  mixed
-     */
-    public function setDatabase(string $db = null)
+    public function client(): Client
     {
-        if ($db) {
-            return $this->database = $db;
-        }
-        if (isset($this->database) && is_string($this->database)) {
-            return $this->database;
-        }
-    }
+        if ($this->client === null) {
+            $driverOptions = $this->config->driverOptions();
+            $driverOptions['typeMap'] = MongodbConfig::TYPE_MAP;
 
-    /**
-     * dbInstanc
-     * @param string $db
-     * @return   mixed
-     */
-    public function dbInstance(string $db = null)
-    {
-        if (isset($this->databaseObject) && is_object($this->databaseObject)) {
-            return $this->databaseObject;
-        }
-        $db = $this->setDatabase($db);
-        return $this->databaseObject = $this->mongodbClient->$db;
-    }
-
-    /**
-     * db 返回数据库对象实例
-     * @return mixed
-     */
-    public function db()
-    {
-        if (!is_object($this->mongodbClient)) {
-            $this->mongodbClient = new Client($this->uri, $this->uriOptions, $this->driverOptions);
-        }
-        return $this->dbInstance($db = null);
-    }
-
-    /**
-     * ping 测试是否能够连接mongodb server
-     * @param boolean $pong 是否返回ping的所有信息
-     * @return mixed
-     */
-    public function ping(bool $pong = false)
-    {
-        $cursor = $this->db()->command([
-            'ping' => 1,
-        ]);
-        if ($pong) {
-            $pong_info = $cursor->toArray();
-        } else {
-            $pong_info = $cursor->toArray()[0]['ok'];
-        }
-        return $pong_info;
-    }
-
-    /**
-     *  collection 创建collection对象
-     * @param string $collection
-     * @return  mixed
-     */
-    public function collection(string $collection)
-    {
-        if (!is_object($this->mongodbClient)) {
-            $this->mongodbClient = new Client($this->uri, $this->uriOptions, $this->driverOptions);
+            $this->client = new Client(
+                $this->config->uri(),
+                $this->config->uriOptions(),
+                $driverOptions
+            );
         }
 
-        if (isset($this->collectionModels[$collection]) && is_object($this->collectionModels[$collection])) {
-            return $this->collectionModels[$collection];
+        return $this->client;
+    }
+
+    public function database(?string $name = null): Database
+    {
+        $name ??= $this->config->database();
+
+        return $this->databases[$name] ??= $this->client()->selectDatabase($name);
+    }
+
+    public function collection(string $name, ?string $database = null): MongodbCollection
+    {
+        $database ??= $this->config->database();
+        $key = $database . "\0" . $name;
+
+        if (!isset($this->collections[$key])) {
+            $this->collections[$key] = new MongodbCollection(
+                $this->database($database)->selectCollection($name),
+                $this->config->idKey(),
+                $this->config->objectId()
+            );
         }
 
-        $databaseObject = $this->dbInstance();
-        return $this->collectionModels[$collection] = new MongodbCollection($collection, $this->_id, $databaseObject);
+        return $this->collections[$key];
     }
 
-    /**
-     * setId
-     * @param string $_id
-     * @return  void
-     */
-    public function setIdKey(string $_id)
+    public function ping(): bool
     {
-        $this->_id = $_id;
-    }
-
-    /**
-     * getIdKey
-     * @return string
-     */
-    public function getIdKey()
-    {
-        return $this->_id;
-    }
-
-    /**
-     * __get 获取collection
-     * @param string $name
-     * @return mixed
-     */
-    public function __get($name)
-    {
-        if (is_string($name)) {
-            return $this->collection($name);
+        $result = $this->database()->command(['ping' => 1])->toArray()[0] ?? null;
+        if ($result === null) {
+            return false;
         }
-        return false;
+
+        $ok = is_array($result) ? ($result['ok'] ?? 0) : ($result->ok ?? 0);
+
+        return (int) $ok === 1;
+    }
+
+    public function __get(string $name): MongodbCollection
+    {
+        return $this->collection($name);
     }
 
     /**
-     * __destruct
+     * @return array<string, mixed>
      */
+    public function __debugInfo(): array
+    {
+        return [
+            'database' => $this->config->database(),
+            'id_key' => $this->config->idKey(),
+            'object_id' => $this->config->objectId(),
+            'client_created' => $this->client !== null,
+            'databases_cached' => array_keys($this->databases),
+            'collections_cached' => count($this->collections),
+        ];
+    }
+
     public function __destruct()
     {
-        $this->databaseObject = null;
-        $this->collectionModels = [];
+        $this->client = null;
+        $this->databases = [];
+        $this->collections = [];
     }
-
 }

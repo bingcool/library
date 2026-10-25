@@ -14,5 +14,5 @@ declare (strict_types=1);
 namespace Swoolefy\Library;
 class Version
 {
-    const VERSION = '6.0.4';
+    const VERSION = '6.0.5';
 }

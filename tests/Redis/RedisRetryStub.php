@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Swoolefy\Library\Tests\Redis;
 
 use Swoolefy\Library\Redis\Redis;

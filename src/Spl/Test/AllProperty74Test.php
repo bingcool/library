@@ -5,6 +5,8 @@
  * @Copyright:    copyright(2019) Easyswoole all rights reserved
  * @Description:  兼容php7.4约束类型单测
  */
+declare(strict_types=1);
+
 namespace EasySwoole\Spl\Test;
 
 use EasySwoole\Spl\Test\Bean\TestAllProperty;

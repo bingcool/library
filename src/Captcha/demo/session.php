@@ -1,5 +1,7 @@
 <?php
 // We need the session to store the correct phrase for later check
+declare(strict_types=1);
+
 session_start();
 
 // Including the autoload (you need to composer install in the main directory)

@@ -5,6 +5,8 @@
  * @Copyright:    copyright(2019) Easyswoole all rights reserved
  * @Description:  SplString 单元测试
  */
+declare(strict_types=1);
+
 namespace EasySwoole\Spl\Test;
 
 use EasySwoole\Spl\SplString;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Swoolefy\Library\Tests\Db\Stub;
 
 use Swoolefy\Library\Db\Interceptor\TenantLineHandlerInterface;

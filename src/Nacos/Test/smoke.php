@@ -1,10 +1,8 @@
 <?php
-
-declare(strict_types=1);
-
 /**
  * Quick smoke test without PHPUnit (run: php src/Nacos/Test/smoke.php).
  */
+declare(strict_types=1);
 
 require dirname(__DIR__, 3) . '/vendor/autoload.php';
 

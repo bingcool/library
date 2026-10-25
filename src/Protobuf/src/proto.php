@@ -1,5 +1,7 @@
 <?php
 // 包名, 完全限定命名空间
+declare(strict_types=1);
+
 $package = "Common.Library.Tests.Protobuf";
 // 当前模块的proto文件名称
 $proto_name = "book.proto";

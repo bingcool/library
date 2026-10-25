@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 
 function buildObject()

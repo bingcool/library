@@ -5,6 +5,8 @@
  * @Copyright:    copyright(2019) Easyswoole all rights reserved
  * @Description:  SplArray 单元测试
  */
+declare(strict_types=1);
+
 namespace EasySwoole\Spl\Test;
 
 use PHPUnit\Framework\TestCase;

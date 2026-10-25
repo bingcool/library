@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 include_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 
 if (isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 1) {

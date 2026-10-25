@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Swoolefy\Library\Tests\CurlProxy;
 
 use GuzzleHttp\Psr7\NoSeekStream;

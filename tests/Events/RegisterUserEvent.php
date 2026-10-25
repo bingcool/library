@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Swoolefy\Library\Tests\Events;
 
 use Swoolefy\Library\Events\AbstractEventHandle;

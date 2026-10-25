@@ -1,6 +1,7 @@
 <?php
-
 //前序遍历生成二叉树
+declare(strict_types=1);
+
 function createBinTree($data = 1)
 {
     $binTree = new \stdClass();

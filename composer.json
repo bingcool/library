@@ -57,6 +57,9 @@
         "bacon/bacon-qr-code": "~3.1",
         "picqer/php-barcode-generator": "~3.3"
     },
+    "replace": {
+        "clue/block-react": "*"
+    },
     "require-dev": {
         "kwn/php-rdkafka-stubs": "@dev",
         "swoole/ide-helper": "@dev",
